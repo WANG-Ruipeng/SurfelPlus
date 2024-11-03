@@ -73,8 +73,13 @@ Setup
 -----
 
 ~~~~ 
-git clone https://github.com/nvpro-samples/vk_raytrace.git
+git clone https://github.com/WANG-Ruipeng/SurfelPlus.git
+cd ./SurfelPlus
+mkdir build
+cd ./build
+cmake-gui ..
 ~~~~
+Then use Visual Studio 2022 to build the project.
 
 
 Other
