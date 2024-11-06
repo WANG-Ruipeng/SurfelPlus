@@ -586,7 +586,8 @@ void Scene::createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfMod
 void Scene::createDescriptorSet(const nvh::GltfScene& gltf)
 {
   VkShaderStageFlags flag = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-                            | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                            | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_COMPUTE_BIT
+                            | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
   auto nb_meshes  = static_cast<uint32_t>(gltf.m_primMeshes.size());
   auto nbTextures = static_cast<uint32_t>(m_textures.size());
 
@@ -631,6 +632,8 @@ void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
   const auto& view = CameraManip.getMatrix();
   auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 0.001f, 100000.0f);
   proj[1][1] *= -1;
+  m_camera.view = view;
+  m_camera.proj = proj;
   m_camera.viewInverse = glm::inverse(view);
   m_camera.projInverse = glm::inverse(proj);
 

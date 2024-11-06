@@ -38,9 +38,9 @@ layout(set = S_ACCEL, binding = eTlas)					uniform accelerationStructureEXT topL
 //
 layout(set = S_OUT,   binding = eStore)					uniform image2D			resultImage;
 //
-layout(set = S_SCENE, binding = eInstData,	scalar)     buffer _InstanceInfo	{ InstanceData geoInfo[]; };
 layout(set = S_SCENE, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 layout(set = S_SCENE, binding = eMaterials,	scalar)		buffer _MaterialBuffer	{ GltfShadeMaterial materials[]; };
+layout(set = S_SCENE, binding = eInstData,	scalar)     buffer _InstanceInfo	{ InstanceData geoInfo[]; };
 layout(set = S_SCENE, binding = eLights,	scalar)		buffer _Lights			{ Light lights[]; };
 layout(set = S_SCENE, binding = eTextures	      )		uniform sampler2D		texturesMap[]; 
 //

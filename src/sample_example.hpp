@@ -65,6 +65,8 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "render_output.hpp"
 #include "scene.hpp"
 #include "shaders/host_device.h"
+#include "SurfelGI.h"
+#include "gbuffer_pass.h"
 
 #include "imgui_internal.h"
 #include "queue.hpp"
@@ -121,12 +123,19 @@ public:
   void updateHdrDescriptors();
   void updateUniformBuffer(const VkCommandBuffer& cmdBuf);
 
+  void createSurfelResources();
+  void createGbufferPass();
+
   Scene              m_scene;
+  SurfelGI           m_surfel;
   AccelStructure     m_accelStruct;
   RenderOutput       m_offscreen;
   HdrSampling        m_skydome;
   nvvk::AxisVK       m_axis;
   nvvk::RayPickerKHR m_picker;
+
+  // surfel render passes
+  GbufferPass m_gbufferPass;
 
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }

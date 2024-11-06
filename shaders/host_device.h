@@ -106,6 +106,8 @@ END_ENUM();
 // Camera of the scene
 struct SceneCamera
 {
+  mat4  view;
+  mat4  proj;
   mat4  viewInverse;
   mat4  projInverse;
   float focalDist;

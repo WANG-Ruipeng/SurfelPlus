@@ -73,6 +73,9 @@ void SampleExample::setup(const VkInstance&               instance,
   m_offscreen.setup(m_device, physicalDevice, queues[eTransfer].familyIndex, &m_alloc);
   m_skydome.setup(device, physicalDevice, queues[eTransfer].familyIndex, &m_alloc);
 
+  m_surfel.setup(m_device, physicalDevice, queues, &m_alloc);
+  m_gbufferPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+
   // Create and setup all renderers
   m_pRender[eRtxPipeline] = new RtxPipeline;
   m_pRender[eRayQuery]    = new RayQuery;
@@ -257,6 +260,17 @@ void SampleExample::createUniformBuffer()
   m_sunAndSkyBuffer = m_alloc.createBuffer(sizeof(SunAndSky), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   NAME_VK(m_sunAndSkyBuffer.buffer);
+}
+
+void SampleExample::createSurfelResources()
+{
+    createGbufferPass();
+    m_surfel.createGbuffers(m_size, m_gbufferPass.getRenderPass());
+}
+
+void SampleExample::createGbufferPass()
+{
+    m_gbufferPass.create(m_size, { m_scene.getDescLayout() }, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
