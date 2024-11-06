@@ -265,7 +265,7 @@ void SampleExample::createUniformBuffer()
 void SampleExample::createSurfelResources()
 {
     createGbufferPass();
-    m_surfel.createGbuffers(m_size, m_gbufferPass.getRenderPass());
+    m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
 }
 
 void SampleExample::createGbufferPass()

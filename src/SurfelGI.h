@@ -38,7 +38,8 @@ public:
 
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const std::vector<nvvk::Queue>& queues, nvvk::ResourceAllocator* allocator);
 
-	void createGbuffers(const VkExtent2D& size, VkRenderPass renderPass);
+	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
+	VkFramebuffer getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
 
 	// better to have a descriptor name
 	VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }

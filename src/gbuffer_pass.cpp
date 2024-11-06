@@ -6,6 +6,8 @@
 #include "nvvk/pipeline_vk.hpp"
 #include "nvvk/renderpasses_vk.hpp"
 
+#include "scene.hpp"
+
 #include "autogen/gbuffer.vert.h"
 #include "autogen/gbuffer.frag.h"
 
@@ -35,11 +37,12 @@ void GbufferPass::destroy()
 void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& descSetLayouts, Scene* scene)
 {
 	m_size = size;
+	m_scene = scene;
 
 	createRenderPass();
 
 	std::vector<VkPushConstantRange> push_constants;
-	push_constants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint) });
+	push_constants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(InstanceData) });
 
 	VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 	layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
@@ -63,8 +66,8 @@ void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorS
 	pipelineGenerator.addShader(vertexShader, VK_SHADER_STAGE_VERTEX_BIT);
 	pipelineGenerator.addShader(fragShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	pipelineGenerator.setBlendAttachmentState(0, pipelineGenerator.makePipelineColorBlendAttachmentState(0, VK_FALSE));
-	pipelineGenerator.addBlendAttachmentState(pipelineGenerator.makePipelineColorBlendAttachmentState(0, VK_FALSE));
+	pipelineGenerator.setBlendAttachmentState(0, pipelineGenerator.makePipelineColorBlendAttachmentState(0xf, VK_FALSE));
+	pipelineGenerator.addBlendAttachmentState(pipelineGenerator.makePipelineColorBlendAttachmentState(0xf, VK_FALSE));
 	pipelineGenerator.rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
 
 	const std::vector<VkVertexInputBindingDescription> vertexInputBindingsInterleaved = {
@@ -83,6 +86,43 @@ void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorS
 
 void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
+
+	VkViewport viewport{ static_cast<float>(0),
+						static_cast<float>(0),
+						static_cast<float>(m_size.width),
+						static_cast<float>(m_size.height),
+						0.0f,
+						1.0f };
+	VkRect2D   scissor{ {0, 0}, {m_size.width, m_size.height}};
+	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
+	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0,
+		static_cast<uint32_t>(descSets.size()), descSets.data(), 0, nullptr);
+
+	const std::vector<nvvk::Buffer>& vertexBuffers = m_scene->getBuffers(Scene::eVertex);
+	const std::vector<nvvk::Buffer>& indexBuffers = m_scene->getBuffers(Scene::eIndex);
+	const std::vector<uint32_t>& indicesCount = m_scene->getIndicesCount();
+	VkDeviceSize offsets[] = { 0 };
+
+	InstanceData instanceData;
+
+	for (const auto& node : m_scene->getScene().m_nodes)
+	{
+		instanceData.id = node.primMesh;
+		instanceData.model = node.worldMatrix;
+
+		// Sending the push constant information
+		vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(InstanceData), &instanceData);
+
+		vkCmdBindVertexBuffers(cmdBuf, 0, 1, &vertexBuffers[instanceData.id].buffer, offsets);
+
+		vkCmdBindIndexBuffer(cmdBuf, indexBuffers[instanceData.id].buffer, 0, VK_INDEX_TYPE_UINT32);
+
+		// Drawing the object
+		vkCmdDrawIndexed(cmdBuf, indicesCount[instanceData.id], 1, 0, 0, 0);
+	}
 
 }
 
@@ -143,4 +183,26 @@ void GbufferPass::createRenderPass()
 	renderPassInfo.pDependencies = subpassDependencies.data();
 
 	vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
+}
+
+void GbufferPass::beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer framebuffer, const VkExtent2D& size)
+{
+	std::array<VkClearValue, 3> clearValues;
+	clearValues[0].color = { {0, 0, 0, 0} };
+	clearValues[1].color = { {0, 0, 0, 0} };
+	clearValues[2].depthStencil = { 1.0f, 0 };
+
+	VkRenderPassBeginInfo postRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+	postRenderPassBeginInfo.clearValueCount = clearValues.size();
+	postRenderPassBeginInfo.pClearValues = clearValues.data();
+	postRenderPassBeginInfo.renderPass = m_renderPass;
+	postRenderPassBeginInfo.framebuffer = framebuffer;
+	postRenderPassBeginInfo.renderArea = { {}, size};
+
+	vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void GbufferPass::endRenderPass(const VkCommandBuffer& cmdBuf)
+{
+	vkCmdEndRenderPass(cmdBuf);
 }

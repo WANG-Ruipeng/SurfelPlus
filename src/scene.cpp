@@ -242,7 +242,8 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
       }
       v_buffer = m_pAlloc->createBuffer(cmdBuf, vertex,
                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-                                            | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+                                            | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+                                            | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
       NAME_IDX_VK(v_buffer.buffer, prim_idx);
       m_cachePrimitive[key] = v_buffer;
     }
@@ -260,13 +261,16 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
 
     nvvk::Buffer i_buffer = m_pAlloc->createBuffer(cmdBuf, indices,
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-                                                       | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+                                                       | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+                                                       | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     m_buffers[eVertex].push_back(v_buffer);
     NAME_IDX_VK(v_buffer.buffer, prim_idx);
 
     m_buffers[eIndex].push_back(i_buffer);
     NAME_IDX_VK(i_buffer.buffer, prim_idx);
+
+    m_indicesCount.push_back(indices.size());
 
     prim_idx++;
   }
@@ -630,7 +634,7 @@ void Scene::createDescriptorSet(const nvh::GltfScene& gltf)
 void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
 {
   const auto& view = CameraManip.getMatrix();
-  auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 0.001f, 100000.0f);
+  auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 0.1f, 1000.0f);
   proj[1][1] *= -1;
   m_camera.view = view;
   m_camera.proj = proj;

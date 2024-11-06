@@ -228,6 +228,15 @@ int main(int argc, char** argv)
     // Rendering Scene (ray tracing)
     sample.renderScene(cmdBuf, profiler);
 
+    // begin gbuffer pass
+    if (!sample.m_busy)
+    {
+        sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
+        sample.m_gbufferPass.run(cmdBuf, sample.getSize(), profiler, { sample.m_scene.getDescSet() });
+        sample.m_gbufferPass.endRenderPass(cmdBuf);
+    }
+	
+
     // Rendering pass in swapchain framebuffer + tone mapper, UI
     {
       auto sec = profiler.timeRecurring("Tonemap", cmdBuf);

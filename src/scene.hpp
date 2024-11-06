@@ -74,6 +74,7 @@ public:
   const std::vector<nvvk::Buffer>& getBuffers(EBuffers b) { return m_buffers[b]; }
   const std::string&               getSceneName() const { return m_sceneName; }
   SceneCamera&                     getCamera() { return m_camera; }
+  const std::vector<uint32_t>&     getIndicesCount() { return m_indicesCount; }
 
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);
@@ -97,6 +98,7 @@ private:
   std::vector<nvvk::Texture>                             m_textures;         // vector of all textures of the scene
   std::vector<std::pair<nvvk::Image, VkImageCreateInfo>> m_images;           // vector of all images of the scene
   std::vector<size_t>                                    m_defaultTextures;  // for cleanup
+  std::vector<uint32_t>								     m_indicesCount;
 
   VkDescriptorPool      m_descPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};

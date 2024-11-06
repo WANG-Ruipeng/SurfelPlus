@@ -11,6 +11,12 @@
 class GbufferPass : Renderer
 {
 public:
+	struct InstanceData
+	{
+		glm::mat4 model;
+		uint32_t id;
+	};
+
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator) override;
 	void destroy() override;
 	void create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& descSetLayouts, Scene* scene) override;
@@ -20,6 +26,9 @@ public:
 	void createRenderPass() override;
 	VkRenderPass getRenderPass() { return m_renderPass; };
 
+	void beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer framebuffer, const VkExtent2D& size);
+	void endRenderPass(const VkCommandBuffer& cmdBuf);
+
 private:
 	// Setup
 	nvvk::ResourceAllocator* m_pAlloc{ nullptr };  // Allocator for buffer, images, acceleration structures
@@ -27,6 +36,7 @@ private:
 	VkDevice                 m_device{ VK_NULL_HANDLE };
 	uint32_t                 m_queueIndex{ 0 };
 	VkExtent2D			     m_size;
+	Scene*					 m_scene{ nullptr };
 
 
 	VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };

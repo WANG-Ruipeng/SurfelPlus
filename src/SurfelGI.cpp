@@ -13,7 +13,7 @@ void SurfelGI::setup(const VkDevice& device, const VkPhysicalDevice& physicalDev
 	m_debug.setup(device);
 }
 
-void SurfelGI::createGbuffers(const VkExtent2D& size, VkRenderPass renderPass)
+void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass)
 {
 	// creating objPrimID, normal, and depth images
 	{
@@ -130,8 +130,8 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, VkRenderPass renderPass)
 		framebufferCreateInfo.layers = 1;
 		framebufferCreateInfo.pAttachments = attachments.data();
 
-		m_gbufferResources.m_frameBuffers.resize(2);
-		for (uint32_t i = 0; i < 2; i++)
+		m_gbufferResources.m_frameBuffers.resize(frameBufferCnt);
+		for (uint32_t i = 0; i < frameBufferCnt; i++)
 		{
 			attachments[0] = m_gbufferResources.m_images[0].descriptor.imageView;
 			attachments[1] = m_gbufferResources.m_images[1].descriptor.imageView;

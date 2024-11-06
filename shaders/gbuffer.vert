@@ -12,9 +12,10 @@
 
 layout(set = 0, binding = 0,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 
-layout(push_constant) uniform InstanceIndex {
+layout(push_constant) uniform Instance {
+    mat4 model;
     uint id;
-} instanceIndex;
+} instanceData;
 
 layout(location = 0) in vec3 in_pos;
 layout(location = 1) in uint in_normal;
@@ -24,7 +25,11 @@ layout(location = 1) out vec3 normal;
 
 void main()
 {
-  instanceID = instanceIndex.id;
+  instanceID = instanceData.id;
   normal = decompress_unit_vec(in_normal);
-  gl_Position = sceneCamera.proj * sceneCamera.view * vec4(in_pos, 1);
+
+  vec4 wpos = instanceData.model * vec4(in_pos, 1);
+  wpos /= wpos.w;
+
+  gl_Position = sceneCamera.proj * sceneCamera.view * wpos;
 }
