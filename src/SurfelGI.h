@@ -40,6 +40,7 @@ public:
 
 	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
 	VkFramebuffer getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
+	VkDescriptorSet getGbufferDescSet() { return m_gbufferResources.m_descSet; }
 
 	// better to have a descriptor name
 	VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
