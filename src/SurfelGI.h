@@ -1,11 +1,13 @@
 #pragma once
 
 #include <string>
+#include <glm/glm.hpp>
 
 #include "nvh/gltfscene.hpp"
 #include "nvvk/resourceallocator_vk.hpp"
 #include "nvvk/debug_util_vk.hpp"
 #include "nvvk/descriptorsets_vk.hpp"
+#include "nvh/fileoperations.hpp"
 #include "queue.hpp"
 
 class GBufferResources
@@ -22,6 +24,17 @@ public:
 	VkDescriptorSetLayout	   m_descSetLayout;
 	VkDescriptorSet			   m_descSet;
 	std::vector<VkFramebuffer> m_frameBuffers;
+};
+
+class ComputeResources
+{
+public:
+	VkPipeline pipeline{ VK_NULL_HANDLE };
+	VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
+	VkDescriptorPool descPool{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout descSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet descSet{ VK_NULL_HANDLE };
+	nvvk::Buffer surfelCounterBuffer;  // For storing surfel counters
 };
 
 
@@ -46,6 +59,11 @@ public:
 	VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
 	VkDescriptorSet                  getDescSet() { return m_descSet; }
 
+	// Compute shader resources
+	void createComputeResources();
+	void destroyComputeResources();
+	void dispatchCompute(VkCommandBuffer cmdBuf);
+
 private:
 
 	// Setup
@@ -69,5 +87,22 @@ private:
 	GBufferResources	  m_gbufferResources;
 	VkFormat 			  m_gbufferDepthFormat{ VK_FORMAT_D32_SFLOAT };
 
+	// Compute Resources
+	ComputeResources m_computeResources;
 };
 
+struct MSMEData {
+	// TODO: Add MSME data for future use
+};
+
+struct Surfel {
+	MSMEData msmeData;
+	glm::vec3 position;   
+	glm::vec3 normal;
+	glm::vec3 radiance;
+	float radius;           
+	float sumLuminance;   
+	uint32_t rayOffset;    
+	uint32_t rayCount;    
+	bool hasHole;
+};

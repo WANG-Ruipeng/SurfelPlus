@@ -236,6 +236,10 @@ int main(int argc, char** argv)
         sample.m_gbufferPass.endRenderPass(cmdBuf);
     }
 	
+	//Inserting surfel process pass here, but could do some async work here?
+    if (!sample.m_busy) {
+        sample.m_surfel.dispatchCompute(cmdBuf);
+    }
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
     {
