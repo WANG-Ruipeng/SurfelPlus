@@ -282,5 +282,16 @@ struct SunAndSky
   int   in_use;
 };
 
+// Surfel data
+#define kTotalSurfelLimit 1000000
+
+struct SurfelCounterOffset {
+    int ValidSurfel;
+    int DirtySurfel;
+    int intFreeSurfel;
+    int Cell;
+    int RequestedRay;
+    int MissBounce;
+};
 
 #endif  // COMMON_HOST_DEVICE

@@ -60,9 +60,7 @@ public:
 	VkDescriptorSet                  getDescSet() { return m_descSet; }
 
 	// Compute shader resources
-	void createComputeResources();
-	void destroyComputeResources();
-	void dispatchCompute(VkCommandBuffer cmdBuf);
+	void createComputeShaders();
 
 private:
 
