@@ -75,6 +75,7 @@ void SampleExample::setup(const VkInstance&               instance,
 
   m_surfel.setup(m_device, physicalDevice, queues, &m_alloc);
   m_gbufferPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_surfelComputePass.setup(m_device, physicalDevice, queues[eCompute].familyIndex, &m_alloc);
 
   // Create and setup all renderers
   m_pRender[eRtxPipeline] = new RtxPipeline;
@@ -266,8 +267,6 @@ void SampleExample::createSurfelResources()
 {
     createGbufferPass();
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
-
-    m_surfel.createComputeShaders();
 }
 
 void SampleExample::createGbufferPass()

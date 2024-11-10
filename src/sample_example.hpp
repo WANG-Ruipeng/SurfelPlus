@@ -67,6 +67,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "shaders/host_device.h"
 #include "SurfelGI.h"
 #include "gbuffer_pass.h"
+#include "surfel_compute_pass.h"
 
 #include "imgui_internal.h"
 #include "queue.hpp"
@@ -136,6 +137,7 @@ public:
 
   // surfel render passes
   GbufferPass m_gbufferPass;
+  SurfelComputePass m_surfelComputePass;
 
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }
