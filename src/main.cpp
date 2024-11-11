@@ -40,6 +40,9 @@ static void onErrorCallback(int error, const char* description)
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+#define ENABLE_GPU_PRINTF 1//   Enabling printf in shaders
+// debugPrintfEXT("");
+
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -115,9 +118,7 @@ int main(int argc, char** argv)
   // Extra queues for parallel load/build
   contextInfo.addRequestedQueue(contextInfo.defaultQueueGCT, 1, 1.0f);  // Loading scene - mipmap generation
 
-// #define ENABLE_GPU_PRINTF //   Enabling printf in shaders
-// #extension GL_EXT_debug_printf
-// debugPrintfEXT("");
+
 #ifdef ENABLE_GPU_PRINTF
   contextInfo.addDeviceExtension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
   std::vector<VkValidationFeatureEnableEXT>  enables{VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
@@ -129,7 +130,6 @@ int main(int argc, char** argv)
   features.pDisabledValidationFeatures    = disables.data();
   contextInfo.instanceCreateInfoExt       = &features;
 #endif  // ENABLE_GPU_PRINTF
-
 
   // Creating Vulkan base application
   nvvk::Context vkctx{};
@@ -231,14 +231,19 @@ int main(int argc, char** argv)
     // begin gbuffer pass
     if (!sample.m_busy)
     {
+		// Run gbuffer pass
         sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
         sample.m_gbufferPass.run(cmdBuf, sample.getSize(), sample.m_renderRegion, profiler, { sample.m_scene.getDescSet() });
         sample.m_gbufferPass.endRenderPass(cmdBuf);
-    }
-	
-	//Inserting surfel process pass here, but could do some async work here?
-    if (!sample.m_busy) {
-        
+
+        // Run compute shader
+        sample.m_surfelComputePass.setGBufferImages(
+            sample.m_surfel.getGBufferPrimIDView(),
+            sample.m_surfel.getGBufferNormalView(),
+            sample.getDevice()
+        );
+        sample.m_surfelComputePass.dispatch();
+        sample.m_surfelComputePass.submit(sample.getDevice());
     }
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI

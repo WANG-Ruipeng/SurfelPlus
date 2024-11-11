@@ -8,19 +8,39 @@
 #extension GL_EXT_ray_query : enable
 #extension GL_ARB_shader_clock : enable                 // Using clockARB
 #extension GL_EXT_shader_image_load_formatted : enable  // The folowing extension allow to pass images as function parameters
-
+#extension GL_EXT_debug_printf : enable                 // Debug - printf
 #extension GL_NV_shader_sm_builtins : require     // Debug - gl_WarpIDNV, gl_SMIDNV
-#extension GL_ARB_gpu_shader_int64 : enable       // Debug - heatmap value
 #extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
-#extension GL_EXT_buffer_reference2 : require
-#extension GL_EXT_debug_printf : enable
 
 #include "host_device.h"
+#include "compress.glsl"
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+// Gbuffer Output
+layout(binding = 0, r32ui) uniform readonly uimage2D g_primObjID;  // out_primObjID
+layout(binding = 1, r32ui) uniform readonly uimage2D g_normal;     // out_normal
+
+// Compute input
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main() {
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     
+    uint primObjID = imageLoad(g_primObjID, pixel_coords).r;
+    uint compressed_normal = imageLoad(g_normal, pixel_coords).r;
+    
+    vec3 normal = decompress_unit_vec(compressed_normal);
+
+    uint instanceID = (primObjID >> 23) & 0xFF;
+    uint primitiveID = primObjID & 0x007FFFFF;
+    
+    if(pixel_coords.x == 0 && pixel_coords.y == 0) {
+        debugPrintfEXT("Pixel(%d,%d)\n", pixel_coords.x, pixel_coords.y);
+        debugPrintfEXT("primObjID=0x%x\n", primObjID);
+        debugPrintfEXT("instanceID=%u, primitiveID=%u\n", instanceID, primitiveID);
+        debugPrintfEXT("Normal: (%f)\n", normal.x);
+        debugPrintfEXT("Normal: (%f)\n", normal.y);
+        debugPrintfEXT("Normal: (%f)\n", normal.z);
+    }
 }

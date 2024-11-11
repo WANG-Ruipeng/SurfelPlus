@@ -59,8 +59,13 @@ public:
 	VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
 	VkDescriptorSet                  getDescSet() { return m_descSet; }
 
-	// Compute shader resources
-	void createComputeShaders();
+	// Get GBuffer Resources
+	VkImageView getGBufferPrimIDView() const {
+		return m_gbufferResources.m_images[0].descriptor.imageView;
+	}
+	VkImageView getGBufferNormalView() const {
+		return m_gbufferResources.m_images[1].descriptor.imageView;
+	}
 
 private:
 

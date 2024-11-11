@@ -9,6 +9,7 @@ public:
     void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator);
     void dispatch();
     void submit(const VkDevice& device);
+    void setGBufferImages(VkImageView primObjIDView, VkImageView normalView, const VkDevice& device);
 
 private:
     VkPipeline m_computePipeline;
@@ -20,4 +21,8 @@ private:
     VkDescriptorSet m_descriptorSet;
     VkDescriptorSetLayout m_descSetLayout;
     VkShaderModule m_shaderModule;
+
+	//Image view from GBuffer, need to update it
+    VkImageView m_primObjIDImageView;
+    VkImageView m_normalImageView;
 };

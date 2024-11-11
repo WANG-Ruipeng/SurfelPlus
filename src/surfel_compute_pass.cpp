@@ -18,20 +18,55 @@ void SurfelComputePass::setup(const VkDevice& device, const VkPhysicalDevice& ph
     }
 
     // Create descriptor set layout
-    VkDescriptorSetLayoutBinding setLayoutBinding{};
-    setLayoutBinding.binding = 0;
-    setLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    setLayoutBinding.descriptorCount = 1;
-    setLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    setLayoutBinding.pImmutableSamplers = nullptr;
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings{}; 
+
+    // GBuffer primObjID binding
+    bindings[0].binding = 0;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bindings[0].pImmutableSamplers = nullptr;
+
+    // GBuffer normal binding
+    bindings[1].binding = 1;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[1].descriptorCount = 1;
+    bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bindings[1].pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &setLayoutBinding;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    // Create Descriptor Pool
+    std::array<VkDescriptorPoolSize, 1> descPoolSizes{}; 
+    descPoolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descPoolSizes[0].descriptorCount = 2; 
+
+    VkDescriptorPoolCreateInfo descPoolInfo{};
+    descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descPoolInfo.poolSizeCount = static_cast<uint32_t>(descPoolSizes.size());
+    descPoolInfo.pPoolSizes = descPoolSizes.data();
+    descPoolInfo.maxSets = 1;
+
+    if (vkCreateDescriptorPool(device, &descPoolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+
+    // Allocate Descriptor Set
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &m_descSetLayout;
+
+    if (vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor set!");
     }
 
     // Create pipeline layout
@@ -60,49 +95,6 @@ void SurfelComputePass::setup(const VkDevice& device, const VkPhysicalDevice& ph
     if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_computePipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create compute pipeline!");
     }
-
-    // Create Descriptor Pool
-    VkDescriptorPoolSize descPoolSize{};
-    descPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descPoolSize.descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo descPoolInfo{};
-    descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descPoolInfo.poolSizeCount = 1;
-    descPoolInfo.pPoolSizes = &descPoolSize;
-    descPoolInfo.maxSets = 1;
-
-    if (vkCreateDescriptorPool(device, &descPoolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-
-    // Allocate Descriptor Set
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_descriptorPool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &m_descSetLayout;
-
-    if (vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor set!");
-    }
-
-    // Update Descriptor Set
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = NULL; // TODO: Leave null for now, should put actual buffer into it later
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;
-
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = m_descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-
-    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
     // Get compute queue
     vkGetDeviceQueue(device, familyIndex, 0, &m_computeQueue);
@@ -143,8 +135,16 @@ void SurfelComputePass::dispatch() {
     vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
         m_pipelineLayout, 0, 1, &m_descriptorSet, 0, nullptr);
 
+	//TODO: Get image size from surfel, assume 1024*1024 for now
+    VkExtent2D imageSize; 
+	imageSize.width = 1024;
+	imageSize.height = 1024;
+
+    uint32_t groupsX = (imageSize.width + 16 - 1) / 16;   
+    uint32_t groupsY = (imageSize.height + 16 - 1) / 16;
+
     // Dispatch compute work
-    vkCmdDispatch(m_commandBuffer, 1, 1, 1); //TODO: Adjust these numbers based on the workload
+    vkCmdDispatch(m_commandBuffer, groupsX, groupsY, 1);
 
     vkEndCommandBuffer(m_commandBuffer);
 }
@@ -169,4 +169,37 @@ void SurfelComputePass::submit(const VkDevice& device) {
 
     // Cleanup Fence
     vkDestroyFence(device, fence, nullptr);
+}
+
+void SurfelComputePass::setGBufferImages(VkImageView primObjIDView, VkImageView normalView, const VkDevice& device) {
+    m_primObjIDImageView = primObjIDView;
+    m_normalImageView = normalView;
+
+    std::array<VkDescriptorImageInfo, 2> imageInfos{};
+    // 确保使用正确的布局
+    imageInfos[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;  // 不是SHADER_READ_ONLY_OPTIMAL
+    imageInfos[0].imageView = m_primObjIDImageView;
+    imageInfos[0].sampler = nullptr;
+
+    imageInfos[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfos[1].imageView = m_normalImageView;
+    imageInfos[1].sampler = nullptr;
+
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = m_descriptorSet;
+    descriptorWrites[0].dstBinding = 0; 
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pImageInfo = &imageInfos[0];
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = m_descriptorSet;
+    descriptorWrites[1].dstBinding = 1;  
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = &imageInfos[1];
+
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()),
+        descriptorWrites.data(), 0, nullptr);
 }

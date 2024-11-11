@@ -19,11 +19,13 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 	{
 		auto objprimIDCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, VK_FORMAT_R32_UINT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, false);
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT
+			, false);
 
 		auto normalCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, VK_FORMAT_R32_UINT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, false);
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT
+			, false);
 
 		const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 		VkImageCreateInfo        depthCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -57,10 +59,10 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 		VkSamplerCreateInfo depthsampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
 		nvvk::Texture objPrimIdTex = m_pAlloc->createTexture(objPrimID, objPrimIDvInfo, objPrimIDsampler);
-		objPrimIdTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		objPrimIdTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 		nvvk::Texture normalTex = m_pAlloc->createTexture(normal, normalvInfo, normalsampler);
-		normalTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		normalTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 		nvvk::Texture depthTex = m_pAlloc->createTexture(depth, depthvInfo, depthsampler);
 		depthTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
@@ -71,8 +73,8 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 		nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
 		VkCommandBuffer   cmdBuf = cmdBufGet.createCommandBuffer();
 
-		nvvk::cmdBarrierImageLayout(cmdBuf, objPrimID.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		nvvk::cmdBarrierImageLayout(cmdBuf, normal.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		nvvk::cmdBarrierImageLayout(cmdBuf, objPrimID.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		nvvk::cmdBarrierImageLayout(cmdBuf, normal.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 		nvvk::cmdBarrierImageLayout(cmdBuf, depth.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		cmdBufGet.submitAndWait(cmdBuf);
@@ -141,8 +143,4 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 	}
 }
 
-void SurfelGI::createComputeShaders()
-{
-
-}
 

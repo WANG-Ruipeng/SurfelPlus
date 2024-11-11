@@ -91,6 +91,7 @@ void main()
   ivec2 imageRes    = rtxState.size;
   ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);  //SampleSizzled();
 
+
   // Initialize the seed for the random number only once once
   // uvec2 s    = pcg2d(imageCoords * int(clockARB()));
   // prd.seed = s.x + s.y;
