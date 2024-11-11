@@ -280,6 +280,12 @@ int main(int argc, char** argv)
       vkCmdEndRenderPass(cmdBuf);
     }
 
+    // end of frame 
+    if (!sample.m_busy)
+    {
+        sample.m_surfel.gbufferLayoutTransition(cmdBuf);
+    }
+
     profiler.endFrame();
 
     // Submit for display

@@ -274,7 +274,7 @@ void SampleExample::createSurfelResources()
     createGbufferPass();
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
 
-    m_surfel.createResources();
+    m_surfel.createResources(m_size);
 
 	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout()}, &m_scene);
 }

@@ -14,14 +14,15 @@ void SurfelGI::setup(const VkDevice& device, const VkPhysicalDevice& physicalDev
 	m_debug.setup(device);
 }
 
-void SurfelGI::createResources()
+void SurfelGI::createResources(const VkExtent2D& size)
 {
 	nvvk::CommandPool cmdBufGet(m_device, m_queues[eGraphics].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eGraphics].queue);
 	VkCommandBuffer   cmdBuf = cmdBufGet.createCommandBuffer();
 
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
 		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 5 }
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 5 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5 }
 	};
 	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 10);
 
@@ -44,8 +45,10 @@ void SurfelGI::createResources()
 	
 	m_surfelDeadBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDeadBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
+	// create indirect lighting map
+	createIndirectLightingMap(size);
 
-	// Create the descriptor set layout
+	// Create the surfel descriptor set layout
 	{
 		nvvk::DescriptorSetBindings bind;
 		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
@@ -75,6 +78,54 @@ void SurfelGI::createResources()
 	}
 
 
+}
+
+void SurfelGI::createIndirectLightingMap(const VkExtent2D& size)
+{
+	if (m_indirectLightingMap.image != VK_NULL_HANDLE)
+	{
+		m_pAlloc->destroy(m_indirectLightingMap);
+	}
+
+	// Creating indirect lighting image
+	{
+		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+			size, VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+
+		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+		NAME_VK(image.image);
+		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		sampler.maxLod = FLT_MAX;
+		m_indirectLightingMap = m_pAlloc->createTexture(image, ivInfo, sampler);
+		m_indirectLightingMap.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+
+	// Setting the image layout
+	{
+		nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
+		auto              cmdBuf = cmdBufGet.createCommandBuffer();
+		nvvk::cmdBarrierImageLayout(cmdBuf, m_indirectLightingMap.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+		cmdBufGet.submitAndWait(cmdBuf);
+	}
+
+	nvvk::DescriptorSetBindings bind;
+
+	vkDestroyDescriptorSetLayout(m_device, m_indirectLightDescSetLayout, nullptr);
+
+	bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+					 VK_SHADER_STAGE_COMPUTE_BIT});
+	m_indirectLightDescSetLayout = bind.createLayout(m_device);
+	m_indirectLightDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_indirectLightDescSetLayout);
+
+	std::vector<VkWriteDescriptorSet> writes;
+	writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eSampler, &m_indirectLightingMap.descriptor));
+	writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eStore, &m_indirectLightingMap.descriptor));
+	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass)
@@ -209,9 +260,9 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 
 void SurfelGI::gbufferLayoutTransition(VkCommandBuffer cmdBuf)
 {
-	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[0].image, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[1].image, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[2].image, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[0].image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[1].image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+	nvvk::cmdBarrierImageLayout(cmdBuf, m_gbufferResources.m_images[2].image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 

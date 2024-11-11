@@ -40,15 +40,17 @@ public:
 
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const std::vector<nvvk::Queue>& queues, nvvk::ResourceAllocator* allocator);
 
-	void createResources();
+	void createResources(const VkExtent2D& size);
+	void createIndirectLightingMap(const VkExtent2D& size);
 	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
 	VkFramebuffer getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
 	VkDescriptorSetLayout getGbufferDescLayout() { return m_gbufferResources.m_descSetLayout; }
 	VkDescriptorSet getGbufferDescSet() { return m_gbufferResources.m_descSet; }
 
-	// better to have a descriptor name
 	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
 	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }
+
+	void gbufferLayoutTransition(VkCommandBuffer cmdBuf);
 
 	// Surfel Configuration
 	uint32_t maxSurfelCnt = 10000;
@@ -82,10 +84,11 @@ private:
 	nvvk::Buffer				m_surfelBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelAliveBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelDeadBuffer{ VK_NULL_HANDLE };
-	nvvk::Texture				m_indirectLighting;
-	std::vector<VkFramebuffer>  m_indirectFrameBuffers;
+	nvvk::Texture				m_indirectLightingMap;
 
 	VkDescriptorSetLayout       m_surfelBuffersDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet             m_surfelBuffersDescSet{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout       m_indirectLightDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet             m_indirectLightDescSet{ VK_NULL_HANDLE };
 	
 };
