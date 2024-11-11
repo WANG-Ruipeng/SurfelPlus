@@ -19,6 +19,7 @@
 
 
 #include <thread>
+#include <iostream>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <implot.h>
@@ -204,6 +205,7 @@ int main(int argc, char** argv)
   profiler.init(vkctx.m_device, vkctx.m_physicalDevice, vkctx.m_queueGCT.familyIndex);
   profiler.setLabelUsage(true);  // depends on VK_EXT_debug_utils
 
+  bool isfirstFrame = true;
   // Main loop
   while(glfwWindowShouldClose(window) == GLFW_FALSE)
   {
@@ -241,15 +243,18 @@ int main(int argc, char** argv)
         sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
         sample.m_gbufferPass.run(cmdBuf, sample.getSize(), sample.m_renderRegion, profiler, { sample.m_scene.getDescSet() });
         sample.m_gbufferPass.endRenderPass(cmdBuf);
-
+        
         // Run compute shader
         sample.m_surfelComputePass.setGBufferImages(
             sample.m_surfel.getGBufferPrimIDView(),
             sample.m_surfel.getGBufferNormalView(),
+			sample.m_surfel.getGBufferDepthView(),
             sample.getDevice()
         );
         sample.m_surfelComputePass.dispatch();
         sample.m_surfelComputePass.submit(sample.getDevice());
+
+        isfirstFrame = false;
     }
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
@@ -286,6 +291,8 @@ int main(int argc, char** argv)
     sample.submitFrame();
 
     CameraManip.updateAnim();
+
+	
   }
 
   // Cleanup

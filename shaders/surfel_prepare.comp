@@ -20,6 +20,7 @@
 // Gbuffer Output
 layout(binding = 0, r32ui) uniform readonly uimage2D g_primObjID;  // out_primObjID
 layout(binding = 1, r32ui) uniform readonly uimage2D g_normal;     // out_normal
+layout(binding = 2) uniform sampler2D g_depth; // depth buffer
 
 // Compute input
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -29,18 +30,10 @@ void main() {
     
     uint primObjID = imageLoad(g_primObjID, pixel_coords).r;
     uint compressed_normal = imageLoad(g_normal, pixel_coords).r;
+    float depth = texture(g_depth, vec2(pixel_coords) / vec2(textureSize(g_depth, 0))).r;
     
     vec3 normal = decompress_unit_vec(compressed_normal);
-
     uint instanceID = (primObjID >> 23) & 0xFF;
     uint primitiveID = primObjID & 0x007FFFFF;
-    
-    if(pixel_coords.x == 0 && pixel_coords.y == 0) {
-        debugPrintfEXT("Pixel(%d,%d)\n", pixel_coords.x, pixel_coords.y);
-        debugPrintfEXT("primObjID=0x%x\n", primObjID);
-        debugPrintfEXT("instanceID=%u, primitiveID=%u\n", instanceID, primitiveID);
-        debugPrintfEXT("Normal: (%f)\n", normal.x);
-        debugPrintfEXT("Normal: (%f)\n", normal.y);
-        debugPrintfEXT("Normal: (%f)\n", normal.z);
-    }
+
 }

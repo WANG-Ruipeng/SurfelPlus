@@ -152,7 +152,7 @@ void GbufferPass::createRenderPass()
 	attachments[2].format = VK_FORMAT_D32_SFLOAT;
 	attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[2].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
 
 	const VkAttachmentReference primReference{ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -208,4 +208,6 @@ void GbufferPass::beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer f
 void GbufferPass::endRenderPass(const VkCommandBuffer& cmdBuf)
 {
 	vkCmdEndRenderPass(cmdBuf);
+
+
 }

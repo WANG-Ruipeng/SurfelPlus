@@ -17,8 +17,8 @@ void SurfelComputePass::setup(const VkDevice& device, const VkPhysicalDevice& ph
         throw std::runtime_error("failed to create shader module!");
     }
 
-    // Create descriptor set layout
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings{}; 
+	// Create Descriptor Set Layout
+    std::array<VkDescriptorSetLayoutBinding, 3> bindings{}; 
 
     // GBuffer primObjID binding
     bindings[0].binding = 0;
@@ -33,6 +33,13 @@ void SurfelComputePass::setup(const VkDevice& device, const VkPhysicalDevice& ph
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     bindings[1].pImmutableSamplers = nullptr;
+
+    // Depth buffer binding
+    bindings[2].binding = 2;
+    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[2].descriptorCount = 1;
+    bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bindings[2].pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -171,35 +178,77 @@ void SurfelComputePass::submit(const VkDevice& device) {
     vkDestroyFence(device, fence, nullptr);
 }
 
-void SurfelComputePass::setGBufferImages(VkImageView primObjIDView, VkImageView normalView, const VkDevice& device) {
+void SurfelComputePass::setGBufferImages(VkImageView primObjIDView, VkImageView normalView, VkImageView depthView, const VkDevice& device) {
     m_primObjIDImageView = primObjIDView;
     m_normalImageView = normalView;
+    m_depthImageView = depthView;
 
-    std::array<VkDescriptorImageInfo, 2> imageInfos{};
-    // 确保使用正确的布局
-    imageInfos[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;  // 不是SHADER_READ_ONLY_OPTIMAL
+    // 创建采样器
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+    VkSampler depthSampler;
+    vkCreateSampler(device, &samplerInfo, nullptr, &depthSampler);
+
+    std::array<VkDescriptorImageInfo, 3> imageInfos{};
+    // PrimObjID
+    imageInfos[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     imageInfos[0].imageView = m_primObjIDImageView;
     imageInfos[0].sampler = nullptr;
 
+    // Normal
     imageInfos[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     imageInfos[1].imageView = m_normalImageView;
     imageInfos[1].sampler = nullptr;
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+    // Depth
+    imageInfos[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfos[2].imageView = m_depthImageView;
+    imageInfos[2].sampler = depthSampler;
+
+    std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+
+    // PrimObjID descriptor
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = m_descriptorSet;
-    descriptorWrites[0].dstBinding = 0; 
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pImageInfo = &imageInfos[0];
+    descriptorWrites[0].pBufferInfo = nullptr;
+    descriptorWrites[0].pTexelBufferView = nullptr;
 
+    // Normal descriptor
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[1].dstSet = m_descriptorSet;
-    descriptorWrites[1].dstBinding = 1;  
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptorWrites[1].descriptorCount = 1;
     descriptorWrites[1].pImageInfo = &imageInfos[1];
+    descriptorWrites[1].pBufferInfo = nullptr;
+    descriptorWrites[1].pTexelBufferView = nullptr;
+
+    // Depth descriptor
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = m_descriptorSet;
+    descriptorWrites[2].dstBinding = 2;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &imageInfos[2];
+    descriptorWrites[2].pBufferInfo = nullptr;
+    descriptorWrites[2].pTexelBufferView = nullptr;
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()),
         descriptorWrites.data(), 0, nullptr);
+
+    m_depthSampler = depthSampler;
 }

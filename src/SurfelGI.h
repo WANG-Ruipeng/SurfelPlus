@@ -26,17 +26,6 @@ public:
 	std::vector<VkFramebuffer> m_frameBuffers;
 };
 
-class ComputeResources
-{
-public:
-	VkPipeline pipeline{ VK_NULL_HANDLE };
-	VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
-	VkDescriptorPool descPool{ VK_NULL_HANDLE };
-	VkDescriptorSetLayout descSetLayout{ VK_NULL_HANDLE };
-	VkDescriptorSet descSet{ VK_NULL_HANDLE };
-	nvvk::Buffer surfelCounterBuffer;  // For storing surfel counters
-};
-
 
 class SurfelGI
 {
@@ -66,6 +55,12 @@ public:
 	VkImageView getGBufferNormalView() const {
 		return m_gbufferResources.m_images[1].descriptor.imageView;
 	}
+	VkImageView getGBufferDepthView() const {
+		return m_gbufferResources.m_images[2].descriptor.imageView;
+	}
+	VkImage getGBufferDepthImage() const {
+		return m_gbufferResources.m_images[2].image;
+	}
 
 private:
 
@@ -89,9 +84,6 @@ private:
 	// GBuufer Resources
 	GBufferResources	  m_gbufferResources;
 	VkFormat 			  m_gbufferDepthFormat{ VK_FORMAT_D32_SFLOAT };
-
-	// Compute Resources
-	ComputeResources m_computeResources;
 };
 
 struct MSMEData {
