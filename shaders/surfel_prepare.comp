@@ -36,7 +36,7 @@ void main()
 {
 
 	surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
-	surfelAlive[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
+	surfelAlive[gl_GlobalInvocationID.x] = 0;
 
 //    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 //    
