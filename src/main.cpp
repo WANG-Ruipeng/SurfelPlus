@@ -55,6 +55,12 @@ static int const SAMPLE_HEIGHT = 720;
 //
 int main(int argc, char** argv)
 {
+#ifdef _WIN32
+    _putenv_s("VK_LAYER_SETTINGS_PATH", "../vk_layer_settings.txt");
+#else
+    setenv("VK_LAYER_SETTINGS_PATH", "../vk_layer_settings.txt", 1);
+#endif
+
   InputParser parser(argc, argv);
   std::string sceneFile   = parser.getString("-f", "robot_toon/robot-toon.gltf");
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
