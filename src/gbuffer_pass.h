@@ -8,7 +8,7 @@
 #include "renderer.h"
 #include "shaders/host_device.h"
 
-class GbufferPass
+class GbufferPass : Renderer
 {
 public:
 	struct InstanceData
@@ -20,7 +20,7 @@ public:
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator);
 	void destroy();
 	void create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& descSetLayouts, Scene* scene);
-	void run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkRect2D& renderArea,
+	void run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size,
 		nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets);
 	const std::string name() { return std::string("GbufferPass"); }
 

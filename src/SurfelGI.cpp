@@ -4,6 +4,7 @@
 #include "nvvk/images_vk.hpp"
 #include "nvvk/pipeline_vk.hpp"
 #include "nvvk/renderpasses_vk.hpp"
+#include "shaders/host_device.h"
 
 void SurfelGI::setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const std::vector<nvvk::Queue>& queues, nvvk::ResourceAllocator* allocator)
 {
@@ -11,6 +12,69 @@ void SurfelGI::setup(const VkDevice& device, const VkPhysicalDevice& physicalDev
 	m_pAlloc = allocator;
 	m_queues.assign(queues.begin(), queues.end());
 	m_debug.setup(device);
+}
+
+void SurfelGI::createResources()
+{
+	nvvk::CommandPool cmdBufGet(m_device, m_queues[eGraphics].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eGraphics].queue);
+	VkCommandBuffer   cmdBuf = cmdBufGet.createCommandBuffer();
+
+	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 5 }
+	};
+	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 10);
+
+	SurfelCounter counter;
+	counter.DirtySurfel = 0;
+	counter.FreeSurfel = maxSurfelCnt;
+	counter.ValidSurfel = 0;
+	std::vector<SurfelCounter> counters = { counter };
+	m_surfelCounterBuffer = m_pAlloc->createBuffer(cmdBuf, counters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	std::vector<Surfel> surfels(maxSurfelCnt);
+	m_surfelBuffer = m_pAlloc->createBuffer(cmdBuf, surfels, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	std::vector<uint32_t> surfelAliveBuffer(maxSurfelCnt, 0);
+	m_surfelAliveBuffer = m_pAlloc->createBuffer(cmdBuf, surfelAliveBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	std::vector<uint32_t> surfelDeadBuffer(maxSurfelCnt, 0);
+	for (int i = 0; i < maxSurfelCnt; i++)
+		surfelDeadBuffer[i] = i;
+	
+	m_surfelDeadBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDeadBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+
+	// Create the descriptor set layout
+	{
+		nvvk::DescriptorSetBindings bind;
+		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+
+		m_surfelBuffersDescSetLayout = bind.createLayout(m_device);
+
+		// Create the edscriptor set
+		m_surfelBuffersDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_surfelBuffersDescSetLayout);
+
+		std::array<VkDescriptorBufferInfo, 4> dbi;
+		dbi[0] = VkDescriptorBufferInfo{ m_surfelCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[1] = VkDescriptorBufferInfo{ m_surfelBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[2] = VkDescriptorBufferInfo{ m_surfelAliveBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[3] = VkDescriptorBufferInfo{ m_surfelDeadBuffer.buffer, 0, VK_WHOLE_SIZE };
+
+		std::vector<VkWriteDescriptorSet> writes;
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 0, &dbi[0]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 1, &dbi[1]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 2, &dbi[2]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 3, &dbi[3]));
+
+		// Writing the information
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+	}
+
+
 }
 
 void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass)

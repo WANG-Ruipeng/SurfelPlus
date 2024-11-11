@@ -68,6 +68,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "SurfelGI.h"
 #include "gbuffer_pass.h"
 #include "surfel_compute_pass.h"
+#include "surfel_prepare_pass.h"
 
 #include "imgui_internal.h"
 #include "queue.hpp"
@@ -123,6 +124,7 @@ public:
   void updateFrame();
   void updateHdrDescriptors();
   void updateUniformBuffer(const VkCommandBuffer& cmdBuf);
+  VkRect2D getRenderRegion();
 
   void createSurfelResources();
   void createGbufferPass();
@@ -138,6 +140,7 @@ public:
   // surfel render passes
   GbufferPass m_gbufferPass;
   SurfelComputePass m_surfelComputePass;
+  SurfelPreparePass m_surfelPreparePass;
 
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }
@@ -168,6 +171,8 @@ public:
 
   // #VKRay
   void renderScene(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
+
+  void calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
 
 
   RtxState m_rtxState{

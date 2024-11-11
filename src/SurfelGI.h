@@ -40,27 +40,17 @@ public:
 
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const std::vector<nvvk::Queue>& queues, nvvk::ResourceAllocator* allocator);
 
+	void createResources();
 	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
 	VkFramebuffer getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
 	VkDescriptorSet getGbufferDescSet() { return m_gbufferResources.m_descSet; }
 
 	// better to have a descriptor name
-	VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
-	VkDescriptorSet                  getDescSet() { return m_descSet; }
+	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
+	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }
 
-	// Get GBuffer Resources
-	VkImageView getGBufferPrimIDView() const {
-		return m_gbufferResources.m_images[0].descriptor.imageView;
-	}
-	VkImageView getGBufferNormalView() const {
-		return m_gbufferResources.m_images[1].descriptor.imageView;
-	}
-	VkImageView getGBufferDepthView() const {
-		return m_gbufferResources.m_images[2].descriptor.imageView;
-	}
-	VkImage getGBufferDepthImage() const {
-		return m_gbufferResources.m_images[2].image;
-	}
+	// Surfel Configuration
+	uint32_t maxSurfelCnt = 10000;
 
 private:
 
@@ -69,6 +59,7 @@ private:
 	nvvk::DebugUtil          m_debug;   // Utility to name objects
 	VkDevice                 m_device;
 	std::vector<nvvk::Queue> m_queues;
+
 
 	// Resources
 	//std::array<nvvk::Buffer, 5>                            m_buffer;           // For single buffer
@@ -84,20 +75,16 @@ private:
 	// GBuufer Resources
 	GBufferResources	  m_gbufferResources;
 	VkFormat 			  m_gbufferDepthFormat{ VK_FORMAT_D32_SFLOAT };
-};
 
-struct MSMEData {
-	// TODO: Add MSME data for future use
-};
+	// Surfel Resrouces
+	nvvk::Buffer				m_surfelCounterBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelAliveBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelDeadBuffer{ VK_NULL_HANDLE };
+	nvvk::Texture				m_indirectLighting;
+	std::vector<VkFramebuffer>  m_indirectFrameBuffers;
 
-struct Surfel {
-	MSMEData msmeData;
-	glm::vec3 position;   
-	glm::vec3 normal;
-	glm::vec3 radiance;
-	float radius;           
-	float sumLuminance;   
-	uint32_t rayOffset;    
-	uint32_t rayCount;    
-	bool hasHole;
+	VkDescriptorSetLayout       m_surfelBuffersDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet             m_surfelBuffersDescSet{ VK_NULL_HANDLE };
+	
 };

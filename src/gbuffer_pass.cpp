@@ -84,19 +84,19 @@ void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorS
 	CREATE_NAMED_VK(m_pipeline, pipelineGenerator.createPipeline());
 }
 
-void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkRect2D& renderArea, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
+void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
 
 	LABEL_SCOPE_VK(cmdBuf);
-	auto area = glm::vec2(renderArea.extent.width, renderArea.extent.height);
+	auto area = glm::vec2(size.width, size.height);
 
-	VkViewport viewport{ static_cast<float>(renderArea.offset.x),
-						static_cast<float>(renderArea.offset.y),
-						static_cast<float>(renderArea.extent.width),
-						static_cast<float>(renderArea.extent.height),
+	VkViewport viewport{ static_cast<float>(0),
+						static_cast<float>(0),
+						static_cast<float>(size.width),
+						static_cast<float>(size.height),
 						0.0f,
 						1.0f };
-	VkRect2D   scissor{ renderArea.offset, {renderArea.extent.width, renderArea.extent.height} };
+	VkRect2D   scissor{ {0,0}, {size.width, size.height}};
 	//VkRect2D   scissor{ renderArea.offset, {size.width, size.height} };
 	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
 	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);

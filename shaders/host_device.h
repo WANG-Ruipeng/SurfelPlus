@@ -102,6 +102,33 @@ START_ENUM(DebugMode)
 END_ENUM();
 // clang-format on
 
+// Surfel data
+
+struct SurfelCounter
+{
+	uint ValidSurfel;
+	uint DirtySurfel;
+	uint FreeSurfel;
+};
+
+struct Surfel 
+{
+	//0
+	vec3 position;
+	float radius;
+
+	//4
+	vec3 normal;
+	float irradiance;
+
+	// 8
+	vec3 radiance;
+	uint objID;
+	
+	uint rayOffset;
+	uint rayCount;
+};
+
 
 // Camera of the scene
 struct SceneCamera

@@ -90,7 +90,7 @@ public:
     glm::vec3 eye = glm::vec3(10, 10, 10);
     glm::vec3 ctr = glm::vec3(0, 0, 0);
     glm::vec3 up  = glm::vec3(0, 1, 0);
-    float     fov = 60.0f;
+    float     fov = 45.0f;
 
     bool operator!=(const Camera& rhr) const
     {

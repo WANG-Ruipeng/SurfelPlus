@@ -75,7 +75,8 @@ void SampleExample::setup(const VkInstance&               instance,
 
   m_surfel.setup(m_device, physicalDevice, queues, &m_alloc);
   m_gbufferPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
-  m_surfelComputePass.setup(m_device, physicalDevice, queues[eCompute].familyIndex, &m_alloc);
+  //m_surfelComputePass.setup(m_device, physicalDevice, queues[eCompute].familyIndex, &m_alloc);
+  m_surfelPreparePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
   m_pRender[eRtxPipeline] = new RtxPipeline;
@@ -181,6 +182,11 @@ void SampleExample::updateUniformBuffer(const VkCommandBuffer& cmdBuf)
   vkCmdUpdateBuffer(cmdBuf, m_sunAndSkyBuffer.buffer, 0, sizeof(SunAndSky), &m_sunAndSky);
 }
 
+VkRect2D SampleExample::getRenderRegion()
+{
+    return m_renderRegion;
+}
+
 //--------------------------------------------------------------------------------------------------
 // If the camera matrix has changed, resets the frame otherwise, increments frame.
 //
@@ -267,6 +273,10 @@ void SampleExample::createSurfelResources()
 {
     createGbufferPass();
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
+
+    m_surfel.createResources();
+
+	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout()}, &m_scene);
 }
 
 void SampleExample::createGbufferPass()
@@ -441,6 +451,29 @@ void SampleExample::renderScene(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK&
     auto slot = profiler.timeRecurring("Mipmap", cmdBuf);
     m_offscreen.genMipmap(cmdBuf);
   }
+}
+
+void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler)
+{
+	if (m_busy)
+	{
+		m_gui->showBusyWindow();  // Busy while loading scene
+		return;
+	}
+
+	LABEL_SCOPE_VK(cmdBuf);
+
+    auto sec = profiler.timeRecurring("Surfel Calculate", cmdBuf);
+
+    VkExtent2D render_size = m_renderRegion.extent;
+    if (m_descaling)
+        render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
+
+    m_rtxState.size = { render_size.width, render_size.height };
+
+
+
+	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler, {m_surfel.getSurfelBuffersDescSet()});
 }
 
 

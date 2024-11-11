@@ -634,7 +634,7 @@ void Scene::createDescriptorSet(const nvh::GltfScene& gltf)
 void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
 {
   const auto& view = CameraManip.getMatrix();
-  auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 0.1f, 1000.0f);
+  auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 1.f, 1000.0f);
   proj[1][1] *= -1;
   m_camera.view = view;
   m_camera.proj = proj;

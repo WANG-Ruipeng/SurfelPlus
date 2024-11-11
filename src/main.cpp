@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 #endif
 
   InputParser parser(argc, argv);
-  std::string sceneFile   = parser.getString("-f", "robot_toon/robot-toon.gltf");
+  std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
   // Setup GLFW window
@@ -240,19 +240,15 @@ int main(int argc, char** argv)
     if (!sample.m_busy)
     {
 		// Run gbuffer pass
+        auto sec = profiler.timeRecurring("Gbuffer", cmdBuf);
         sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
-        sample.m_gbufferPass.run(cmdBuf, sample.getSize(), sample.m_renderRegion, profiler, { sample.m_scene.getDescSet() });
+        sample.m_gbufferPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, {sample.m_scene.getDescSet()});
         sample.m_gbufferPass.endRenderPass(cmdBuf);
         
-        // Run compute shader
-        sample.m_surfelComputePass.setGBufferImages(
-            sample.m_surfel.getGBufferPrimIDView(),
-            sample.m_surfel.getGBufferNormalView(),
-			sample.m_surfel.getGBufferDepthView(),
-            sample.getDevice()
-        );
-        sample.m_surfelComputePass.dispatch();
-        sample.m_surfelComputePass.submit(sample.getDevice());
+        // Run surfel passes
+		sample.calculateSurfels(cmdBuf, profiler);
+        //sample.m_surfelComputePass.dispatch();
+        //sample.m_surfelComputePass.submit(sample.getDevice());
 
         isfirstFrame = false;
     }
