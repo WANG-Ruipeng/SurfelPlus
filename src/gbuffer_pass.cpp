@@ -139,19 +139,22 @@ void GbufferPass::createRenderPass()
 	// objPrimID attachment
 	attachments[0].format = VK_FORMAT_R32_UINT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 
 	// normal attachment
 	attachments[1].format = VK_FORMAT_R32_UINT;
 	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 
 	// depth attachment
 	attachments[2].format = VK_FORMAT_D32_SFLOAT;
 	attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[2].initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -208,6 +211,5 @@ void GbufferPass::beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer f
 void GbufferPass::endRenderPass(const VkCommandBuffer& cmdBuf)
 {
 	vkCmdEndRenderPass(cmdBuf);
-
 
 }
