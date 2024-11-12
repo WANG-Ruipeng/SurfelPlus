@@ -1,0 +1,54 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+#extension GL_ARB_shader_clock : enable                 // Using clockARB
+#extension GL_EXT_shader_image_load_formatted : enable  // The folowing extension allow to pass images as function parameters
+#extension GL_EXT_debug_printf : enable                 // Debug - printf
+#extension GL_NV_shader_sm_builtins : require     // Debug - gl_WarpIDNV, gl_SMIDNV
+#extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
+
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
+#include "host_device.h"
+#include "compress.glsl"
+
+
+// surfel buffers
+layout(set = 0, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter surfelCounter; };
+layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
+layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
+layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
+
+// scene buffers
+layout(set = 0, binding = 0,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
+
+layout(push_constant) uniform _RtxState
+{
+  RtxState rtxState;
+};
+
+// Compute input
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+void main()
+{
+
+	surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
+	surfelAlive[gl_GlobalInvocationID.x] = 0;
+
+//    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+//    
+//    uint primObjID = imageLoad(g_primObjID, pixel_coords).r;
+//    uint compressed_normal = imageLoad(g_normal, pixel_coords).r;
+//    float depth = texture(g_depth, vec2(pixel_coords) / vec2(textureSize(g_depth, 0))).r;
+//    
+//    vec3 normal = decompress_unit_vec(compressed_normal);
+//    uint instanceID = (primObjID >> 23) & 0xFF;
+//    uint primitiveID = primObjID & 0x007FFFFF;
+
+}
