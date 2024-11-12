@@ -106,9 +106,9 @@ END_ENUM();
 
 struct SurfelCounter
 {
-	uint ValidSurfel;
-	uint DirtySurfel;
-	uint FreeSurfel;
+	uint aliveSurfelCnt;
+	uint deadSurfelCnt;
+	uint dirtySurfelCnt;
 };
 
 struct Surfel 
@@ -118,13 +118,11 @@ struct Surfel
 	float radius;
 
 	//4
-	vec3 normal;
-	float irradiance;
+	vec3 radiance;
+	uint normal;
 
 	// 8
-	vec3 radiance;
 	uint objID;
-	
 	uint rayOffset;
 	uint rayCount;
 };

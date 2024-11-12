@@ -8,8 +8,7 @@
 #include "renderer.h"
 #include "shaders/host_device.h"
 
-
-class SurfelPreparePass : Renderer
+class SurfelGenerationPass : Renderer
 {
 public:
     void setup(const VkDevice& device,

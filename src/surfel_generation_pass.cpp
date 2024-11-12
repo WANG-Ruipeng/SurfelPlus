@@ -1,4 +1,4 @@
-#include "surfel_prepare_pass.h"
+#include "surfel_generation_pass.h"
 
 #include "nvh/alignment.hpp"
 #include "nvh/fileoperations.hpp"
@@ -6,9 +6,9 @@
 #include "scene.hpp"
 #include "tools.hpp"
 
-#include "autogen/surfel_prepare.comp.h"
+#include "autogen/surfel_generation_pass.comp.h"
 
-void SurfelPreparePass::setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator)
+void SurfelGenerationPass::setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator)
 {
 	m_device = device;
 	m_pAlloc = allocator;
@@ -16,7 +16,7 @@ void SurfelPreparePass::setup(const VkDevice& device, const VkPhysicalDevice& ph
 	m_debug.setup(device);
 }
 
-void SurfelPreparePass::destroy()
+void SurfelGenerationPass::destroy()
 {
 	vkDestroyPipeline(m_device, m_pipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
@@ -25,9 +25,9 @@ void SurfelPreparePass::destroy()
 	m_pipeline = VK_NULL_HANDLE;
 }
 
-void SurfelPreparePass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
+void SurfelGenerationPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
-	const int GROUP_SIZE = 32;
+	const int GROUP_SIZE = 16;
 	// Preparing for the compute shader
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
 	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayout, 0,
@@ -40,7 +40,7 @@ void SurfelPreparePass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& siz
 	vkCmdDispatch(cmdBuf, (size.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (size.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
 }
 
-void SurfelPreparePass::create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& extraDescSetsLayout, Scene* _scene)
+void SurfelGenerationPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& extraDescSetsLayout, Scene* _scene)
 {
 	std::vector<VkPushConstantRange> push_constants;
 	push_constants.push_back({ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState) });
@@ -55,7 +55,7 @@ void SurfelPreparePass::create(const VkExtent2D& size, const std::vector<VkDescr
 	VkComputePipelineCreateInfo computePipelineCreateInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
 	computePipelineCreateInfo.layout = m_pipelineLayout;
 	computePipelineCreateInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, surfel_prepare_comp, sizeof(surfel_prepare_comp));
+	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, surfel_generation_pass_comp, sizeof(surfel_generation_pass_comp));
 	computePipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 	computePipelineCreateInfo.stage.pName = "main";
 
@@ -65,7 +65,7 @@ void SurfelPreparePass::create(const VkExtent2D& size, const std::vector<VkDescr
 	vkDestroyShaderModule(m_device, computePipelineCreateInfo.stage.module, nullptr);
 }
 
-const std::string SurfelPreparePass::name()
+const std::string SurfelGenerationPass::name()
 {
-	return "Surfel Prepare Pass";
+	return "Surfel Generation Pass";
 }

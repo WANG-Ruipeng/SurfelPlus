@@ -69,6 +69,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "gbuffer_pass.h"
 #include "surfel_compute_pass.h"
 #include "surfel_prepare_pass.h"
+#include "surfel_generation_pass.h"
 
 #include "imgui_internal.h"
 #include "queue.hpp"
@@ -141,6 +142,7 @@ public:
   GbufferPass m_gbufferPass;
   SurfelComputePass m_surfelComputePass;
   SurfelPreparePass m_surfelPreparePass;
+  SurfelGenerationPass m_surfelGenerationPass;
 
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }

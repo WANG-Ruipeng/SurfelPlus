@@ -20,9 +20,10 @@ public:
 		Depth
 	};
 	std::vector<nvvk::Texture> m_images;
-	VkDescriptorPool		   m_descPool{ VK_NULL_HANDLE };
-	VkDescriptorSetLayout	   m_descSetLayout;
-	VkDescriptorSet			   m_descSet;
+	VkDescriptorSetLayout	   m_samplerDescSetLayout;
+	VkDescriptorSet			   m_samplerDescSet;
+	VkDescriptorSetLayout	   m_imageDescSetLayout;
+	VkDescriptorSet			   m_imageDescSet;
 	std::vector<VkFramebuffer> m_frameBuffers;
 };
 
@@ -43,12 +44,16 @@ public:
 	void createResources(const VkExtent2D& size);
 	void createIndirectLightingMap(const VkExtent2D& size);
 	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
-	VkFramebuffer getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
-	VkDescriptorSetLayout getGbufferDescLayout() { return m_gbufferResources.m_descSetLayout; }
-	VkDescriptorSet getGbufferDescSet() { return m_gbufferResources.m_descSet; }
+	VkFramebuffer			getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
+	VkDescriptorSetLayout	getGbufferSamplerDescLayout() { return m_gbufferResources.m_samplerDescSetLayout; }
+	VkDescriptorSet			getGbufferSamplerDescSet() { return m_gbufferResources.m_samplerDescSet; }
+	VkDescriptorSetLayout	getGbufferImageDescLayout() { return m_gbufferResources.m_samplerDescSetLayout; }
+	VkDescriptorSet			getGbufferImageDescSet() { return m_gbufferResources.m_samplerDescSet; }
 
 	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
 	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }
+	VkDescriptorSetLayout            getIndirectLightDescLayout() { return m_indirectLightDescSetLayout; }
+	VkDescriptorSet                  getIndirectLightDescSet() { return m_indirectLightDescSet; }
 
 	void gbufferLayoutTransition(VkCommandBuffer cmdBuf);
 

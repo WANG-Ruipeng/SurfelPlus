@@ -21,15 +21,15 @@ void SurfelGI::createResources(const VkExtent2D& size)
 
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
 		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 5 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5 }
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10 },
 	};
-	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 10);
+	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 20);
 
 	SurfelCounter counter;
-	counter.DirtySurfel = 0;
-	counter.FreeSurfel = maxSurfelCnt;
-	counter.ValidSurfel = 0;
+	counter.aliveSurfelCnt = 0;
+	counter.deadSurfelCnt = maxSurfelCnt;
+	counter.dirtySurfelCnt = 0;
 	std::vector<SurfelCounter> counters = { counter };
 	m_surfelCounterBuffer = m_pAlloc->createBuffer(cmdBuf, counters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
@@ -134,12 +134,12 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 	{
 		auto objprimIDCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, VK_FORMAT_R32_UINT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 			, false);
 
 		auto normalCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, VK_FORMAT_R32_UINT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 			, false);
 
 		const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -202,33 +202,36 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 
 	VkShaderStageFlags flags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	nvvk::DescriptorSetBindings bind;
-	// objPrimID
-	bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
-	// normal
-	bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
-	// depth
-	bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
+	// gbuffer sampler descriptor set
+	{
+		nvvk::DescriptorSetBindings bind;
+		// objPrimID
+		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
+		// normal
+		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
+		// depth
+		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, flags });
 
-	// allocate the descriptor set
-	m_gbufferResources.m_descPool = bind.createPool(m_device);
-	m_gbufferResources.m_descSetLayout = bind.createLayout(m_device);
-	m_gbufferResources.m_descSet = nvvk::allocateDescriptorSet(m_device, m_gbufferResources.m_descPool, m_gbufferResources.m_descSetLayout);
+		// allocate the descriptor set
+		m_gbufferResources.m_samplerDescSetLayout = bind.createLayout(m_device);
+		m_gbufferResources.m_samplerDescSet = nvvk::allocateDescriptorSet(m_device,
+			m_descPool, m_gbufferResources.m_samplerDescSetLayout);
 
-	// update the descriptor set
-	std::vector<VkWriteDescriptorSet> writes;
-	VkDescriptorImageInfo descImg[3] = {
-		m_gbufferResources.m_images[0].descriptor,
-		m_gbufferResources.m_images[1].descriptor,
-		m_gbufferResources.m_images[2].descriptor
-	};
-	descImg[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	descImg[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	descImg[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	writes.emplace_back(bind.makeWrite(m_gbufferResources.m_descSet, 0, &descImg[0]));
-	writes.emplace_back(bind.makeWrite(m_gbufferResources.m_descSet, 1, &descImg[1]));
-	writes.emplace_back(bind.makeWrite(m_gbufferResources.m_descSet, 2, &descImg[2]));
-	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+		// update the descriptor set
+		std::vector<VkWriteDescriptorSet> writes;
+		VkDescriptorImageInfo descImg[3] = {
+			m_gbufferResources.m_images[0].descriptor,
+			m_gbufferResources.m_images[1].descriptor,
+			m_gbufferResources.m_images[2].descriptor
+		};
+		descImg[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descImg[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descImg[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		writes.emplace_back(bind.makeWrite(m_gbufferResources.m_samplerDescSet, 0, &descImg[0]));
+		writes.emplace_back(bind.makeWrite(m_gbufferResources.m_samplerDescSet, 1, &descImg[1]));
+		writes.emplace_back(bind.makeWrite(m_gbufferResources.m_samplerDescSet, 2, &descImg[2]));
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+	}
 
 	// Recreate the frame buffers
 	{

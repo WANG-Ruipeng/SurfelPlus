@@ -77,6 +77,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_gbufferPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   //m_surfelComputePass.setup(m_device, physicalDevice, queues[eCompute].familyIndex, &m_alloc);
   m_surfelPreparePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_surfelGenerationPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
   m_pRender[eRtxPipeline] = new RtxPipeline;
@@ -271,12 +272,18 @@ void SampleExample::createUniformBuffer()
 
 void SampleExample::createSurfelResources()
 {
+    m_surfel.createResources(m_size);
+
     createGbufferPass();
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
 
-    m_surfel.createResources(m_size);
-
 	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout()}, &m_scene);
+	m_surfelGenerationPass.create(m_size,
+        {   m_surfel.getSurfelBuffersDescLayout(),
+            m_surfel.getGbufferSamplerDescLayout(),
+            m_scene.getDescLayout(),
+            m_surfel.getIndirectLightDescLayout()}, & m_scene);
+    
 }
 
 void SampleExample::createGbufferPass()
@@ -471,9 +478,15 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 
     m_rtxState.size = { render_size.width, render_size.height };
 
-
+	m_surfelPreparePass.setPushContants(m_rtxState);
+	m_surfelGenerationPass.setPushContants(m_rtxState);
 
 	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler, {m_surfel.getSurfelBuffersDescSet()});
+	m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
+        m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getGbufferSamplerDescSet(),
+        m_scene.getDescSet(),
+        m_surfel.getIndirectLightDescSet() });
 }
 
 

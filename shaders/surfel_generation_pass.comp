@@ -25,9 +25,15 @@ layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAli
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 
 // gbuffers
-layout(set = 1, binding = 0)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
+layout(set = 1, binding = 0)	uniform sampler2D primObjIDMap;
+layout(set = 1, binding = 1)	uniform sampler2D normalMap;
+layout(set = 1, binding = 2)	uniform sampler2D depthMap;
 
+// scene buffers
+layout(set = 2, binding = 0,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 
+// output buffer
+layout(set = 3,   binding = 1)	uniform image2D	resultImage;
 
 layout(push_constant) uniform _RtxState
 {
@@ -35,13 +41,17 @@ layout(push_constant) uniform _RtxState
 };
 
 // Compute input
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main()
 {
 
-	surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
-	surfelAlive[gl_GlobalInvocationID.x] = 0;
+	ivec2 imageRes    = rtxState.size;
+	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
+
+	// get the depth value
+	float depth = texelFetch(depthMap, imageCoords, 0).r;
+	imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
 
 //    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 //    
