@@ -43,4 +43,6 @@ void main()
     if(idx < surfelCounter.aliveSurfelCnt) {
         surfelDirty[idx] = surfelAlive[idx];
     }
+
+	// Reset alive surfel counter
 }

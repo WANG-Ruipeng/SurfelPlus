@@ -133,6 +133,11 @@ struct CellInfo
 	uint surfelCount;
 };
 
+struct CellCounter
+{
+	uint totalCellCount;
+};
+
 // Camera of the scene
 struct SceneCamera
 {

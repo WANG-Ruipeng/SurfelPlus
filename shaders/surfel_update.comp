@@ -24,8 +24,9 @@ layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAli
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
 
-// gbuffers
-layout(set = 1, binding = 0)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
+// cell buffer
+layout(set = 1, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 1, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 
 layout(push_constant) uniform _RtxState
 {
@@ -39,14 +40,16 @@ void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
-	// Get all dirty Surfel
-	uint dirtySurfelCount = surfelCounter.dirtySurfelCnt;
-	if (idx >= dirtySurfelCount)
-        return;
+	// Calculate offset of cell to surfel buffer.
+	if(idx > cellCounter.totalCellCount) return;
 
-	// Get the surfel to process
-	uint thisSurfelIndex = surfelDirty[idx];
-	Surfel thisSurfel = surfelBuffer[thisSurfelIndex];
+	// Get the cell to process
+	CellInfo thisCell = cellBuffer[idx];
+	if(thisCell.surfelCount == 0) return;
 
+	// Calculate offsets of the surfel buffer
+	uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
+    cellBuffer[idx].surfelOffset = offset;
+	thisCell.surfelCount = 0;
 
 }
