@@ -89,6 +89,7 @@ private:
 	nvvk::Buffer				m_surfelBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelAliveBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelDeadBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelDirtyBuffer{ VK_NULL_HANDLE };
 	nvvk::Texture				m_indirectLightingMap;
 
 	VkDescriptorSetLayout       m_surfelBuffersDescSetLayout{ VK_NULL_HANDLE };

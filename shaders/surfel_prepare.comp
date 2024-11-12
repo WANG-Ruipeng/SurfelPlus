@@ -23,6 +23,7 @@ layout(set = 0, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter su
 layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
+layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
 
 layout(push_constant) uniform _RtxState
 {
@@ -34,18 +35,12 @@ layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
 {
+	uint idx = gl_GlobalInvocationID.x;
 
-	surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
-	surfelAlive[gl_GlobalInvocationID.x] = 0;
-
-//    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-//    
-//    uint primObjID = imageLoad(g_primObjID, pixel_coords).r;
-//    uint compressed_normal = imageLoad(g_normal, pixel_coords).r;
-//    float depth = texture(g_depth, vec2(pixel_coords) / vec2(textureSize(g_depth, 0))).r;
-//    
-//    vec3 normal = decompress_unit_vec(compressed_normal);
-//    uint instanceID = (primObjID >> 23) & 0xFF;
-//    uint primitiveID = primObjID & 0x007FFFFF;
-
+	// Get last frame valid surfel -> dirty surfel
+	surfelCounter.dirtySurfelCnt = surfelCounter.aliveSurfelCnt;
+	// Put all valid surfel into dirty Surfel
+    if(idx < surfelCounter.aliveSurfelCnt) {
+        surfelDirty[idx] = surfelAlive[idx];
+    }
 }
