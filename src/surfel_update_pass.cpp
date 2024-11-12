@@ -6,7 +6,7 @@
 #include "scene.hpp"
 #include "tools.hpp"
 
-//#include "autogen/surfel_update.comp.h"
+#include "autogen/surfel_update.comp.h"
 
 
 void SurfelUpdatePass::setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator)
@@ -53,17 +53,17 @@ void SurfelUpdatePass::create(const VkExtent2D& size, const std::vector<VkDescri
 	layout_info.pSetLayouts = descSetsLayout.data();
 	vkCreatePipelineLayout(m_device, &layout_info, nullptr, &m_pipelineLayout);
 
-	/*VkComputePipelineCreateInfo computePipelineCreateInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+	VkComputePipelineCreateInfo computePipelineCreateInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
 	computePipelineCreateInfo.layout = m_pipelineLayout;
 	computePipelineCreateInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, surfel_prepare_comp, sizeof(surfel_prepare_comp));
+	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, surfel_update_comp, sizeof(surfel_update_comp));
 	computePipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 	computePipelineCreateInfo.stage.pName = "main";
 
 	vkCreateComputePipelines(m_device, {}, 1, &computePipelineCreateInfo, nullptr, &m_pipeline);
 
-	m_debug.setObjectName(m_pipeline, "Surfel Prepare Pass");
-	vkDestroyShaderModule(m_device, computePipelineCreateInfo.stage.module, nullptr);*/
+	m_debug.setObjectName(m_pipeline, "Surfel Update Pass");
+	vkDestroyShaderModule(m_device, computePipelineCreateInfo.stage.module, nullptr);
 }
 
 const std::string SurfelUpdatePass::name()

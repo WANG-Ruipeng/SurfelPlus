@@ -127,6 +127,11 @@ struct Surfel
 	uint rayCount;
 };
 
+struct CellInfo
+{
+	uint surfelOffset;
+	uint surfelCount;
+};
 
 // Camera of the scene
 struct SceneCamera
