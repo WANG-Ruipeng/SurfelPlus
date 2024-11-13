@@ -56,6 +56,7 @@ public:
   void run(VkCommandBuffer cmdBuf);
   void genMipmap(VkCommandBuffer cmdBuf);
   const VkFormat getOffscreenColorFormat() const {return m_offscreenColorFormat; }
+  nvvk::Texture& getOffscreenColor() { return m_offscreenColor; }
 
   VkDescriptorSetLayout getDescLayout() { return m_postDescSetLayout; }
   VkDescriptorSet       getDescSet() { return m_postDescSet; }

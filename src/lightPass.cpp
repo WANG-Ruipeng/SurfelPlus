@@ -24,6 +24,8 @@ void LightPass::setup(const VkDevice& device, const VkPhysicalDevice& physicalDe
 
 void LightPass::destroy()
 {
+	m_pAlloc->destroy(m_offscreenColor);
+
 	vkDestroyPipeline(m_device, m_pipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 
@@ -39,14 +41,14 @@ void LightPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSet
 	m_size = size;
 	m_scene = scene;
 
-	createRenderPass();
+	//createRenderPass();
 
 	std::vector<VkPushConstantRange> push_constants;
 	push_constants.push_back({}); // delete
 
 	VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-	layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
-	layout_info.pPushConstantRanges = push_constants.data();
+	//layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
+	//layout_info.pPushConstantRanges = push_constants.data();
 	layout_info.setLayoutCount = static_cast<uint32_t>(descSetLayouts.size());
 	layout_info.pSetLayouts = descSetLayouts.data();
 	vkCreatePipelineLayout(m_device, &layout_info, nullptr, &m_pipelineLayout);
@@ -74,13 +76,55 @@ void LightPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSet
 
 }
 
-void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat, const VkImageView& imageView)
+void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat)
 {
+
 	m_colorFormat = colorFormat;
-	vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
+
+	createRenderPass();
+
+	if (m_offscreenColor.image != VK_NULL_HANDLE)
+	{
+		m_pAlloc->destroy(m_offscreenColor);
+	}
+
+	// Creating the color image
+	{
+		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+			size, m_colorFormat,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+
+		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+		NAME_VK(image.image);
+		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		sampler.maxLod = FLT_MAX;
+		m_offscreenColor = m_pAlloc->createTexture(image, ivInfo, sampler);
+		m_offscreenColor.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		// Transition the image to general layout
+		nvvk::CommandPool genCmdBuf(m_device, m_queueIndex);
+		auto cmdBuf = genCmdBuf.createCommandBuffer();
+
+		nvvk::cmdBarrierImageLayout(
+			cmdBuf,
+			m_offscreenColor.image,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_GENERAL
+		);
+
+		genCmdBuf.submitAndWait(cmdBuf);
+	}
+
+	if (m_framebuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
+		m_framebuffer = VK_NULL_HANDLE; 
+	}
 
 	std::array<VkImageView, 1> attachments = {
-		imageView
+		m_offscreenColor.descriptor.imageView
 	};
 
 	// create framebuffer
@@ -99,7 +143,10 @@ void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorF
 	}
 }
 
-void LightPass::run(const VkCommandBuffer& cmdBuf, const std::vector<VkDescriptorSet>& descSets)
+void LightPass::run(const VkCommandBuffer& cmdBuf,
+	const VkExtent2D& size,
+	nvvk::ProfilerVK& profiler,
+	const std::vector<VkDescriptorSet>& descSets)
 {
 
 	LABEL_SCOPE_VK(cmdBuf);
@@ -152,8 +199,9 @@ void LightPass::createRenderPass()
 	vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
 }
 
-void LightPass::beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer framebuffer, const VkExtent2D& size)
+void LightPass::beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size)
 {
+
 	std::array<VkClearValue, 1> clearValues;
 	clearValues[0].color = { {0, 0, 0, 0} };
 
@@ -161,7 +209,7 @@ void LightPass::beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer fra
 	postRenderPassBeginInfo.clearValueCount = clearValues.size();
 	postRenderPassBeginInfo.pClearValues = clearValues.data();
 	postRenderPassBeginInfo.renderPass = m_renderPass;
-	postRenderPassBeginInfo.framebuffer = framebuffer;
+	postRenderPassBeginInfo.framebuffer = m_framebuffer;
 	postRenderPassBeginInfo.renderArea = { {}, size };
 
 	vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);

@@ -20,16 +20,21 @@ public:
 	void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator);
 	void destroy();
 	void create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& descSetLayouts, Scene* scene);
-	void run(const VkCommandBuffer& cmdBuf, const std::vector<VkDescriptorSet>& descSets);
+
+	virtual void run(const VkCommandBuffer& cmdBuf,
+		const VkExtent2D& size,
+		nvvk::ProfilerVK& profiler,
+		const std::vector<VkDescriptorSet>& extraDescSets);
+
 	const std::string name() { return std::string("LightPass"); }
 
 	void createRenderPass();
 	VkRenderPass getRenderPass() { return m_renderPass; };
 
-	void beginRenderPass(const VkCommandBuffer& cmdBuf, VkFramebuffer framebuffer, const VkExtent2D& size);
+	void beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size);
 	void endRenderPass(const VkCommandBuffer& cmdBuf);
 
-	void createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat, const VkImageView& imageView);
+	void createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat);
 private:
 	// Setup
 	nvvk::ResourceAllocator* m_pAlloc{ nullptr };  // Allocator for buffer, images, acceleration structures
@@ -45,5 +50,6 @@ private:
 	VkRenderPass	 m_renderPass{ VK_NULL_HANDLE };
 	VkFramebuffer    m_framebuffer{ VK_NULL_HANDLE };
 	VkFormat 	     m_colorFormat{ VK_FORMAT_B8G8R8A8_UNORM };
+	nvvk::Texture    m_offscreenColor;
 };
 
