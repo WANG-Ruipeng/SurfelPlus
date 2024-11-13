@@ -41,6 +41,21 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	
 	m_surfelDeadBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDeadBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
+	
+	std::vector<uint32_t> surfelDirtyBuffer(maxSurfelCnt, 0);
+	m_surfelDirtyBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDirtyBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	const uint32_t cellCountX = (size.width + cellSize - 1) / cellSize;
+	const uint32_t cellCountY = (size.height + cellSize - 1) / cellSize;
+	const uint32_t totalCellCount = cellCountX * cellCountY;
+	std::vector<CellInfo> cells(totalCellCount);
+	m_cellInfoBuffer = m_pAlloc->createBuffer(cmdBuf, cells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	CellCounter cellCounter;
+	cellCounter.totalCellCount = totalCellCount;
+	std::vector<CellCounter> cellCounters = { cellCounter };
+	m_cellCounterBuffer = m_pAlloc->createBuffer(cmdBuf, cellCounters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
 	cmdBufGet.submitAndWait(cmdBuf);
 
 	// create indirect lighting map
@@ -53,28 +68,53 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 
 		m_surfelBuffersDescSetLayout = bind.createLayout(m_device);
 
 		// Create the edscriptor set
 		m_surfelBuffersDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_surfelBuffersDescSetLayout);
 
-		std::array<VkDescriptorBufferInfo, 4> dbi;
+		std::array<VkDescriptorBufferInfo, 5> dbi;
 		dbi[0] = VkDescriptorBufferInfo{ m_surfelCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[1] = VkDescriptorBufferInfo{ m_surfelBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[2] = VkDescriptorBufferInfo{ m_surfelAliveBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[3] = VkDescriptorBufferInfo{ m_surfelDeadBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[4] = VkDescriptorBufferInfo{ m_surfelDirtyBuffer.buffer, 0, VK_WHOLE_SIZE };
 
 		std::vector<VkWriteDescriptorSet> writes;
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 0, &dbi[0]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 1, &dbi[1]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 2, &dbi[2]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 3, &dbi[3]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 4, &dbi[4]));
 
 		// Writing the information
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}
 
+	// Create cell buffer descriptor set layout
+	{
+		nvvk::DescriptorSetBindings bind;
+		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+
+		m_cellBufferDescSetLayout = bind.createLayout(m_device);
+
+		// Create descriptor set
+		m_cellBufferDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_cellBufferDescSetLayout);
+
+		// Write descriptor set
+		std::array<VkDescriptorBufferInfo, 2> dbi;
+		dbi[0] = VkDescriptorBufferInfo{ m_cellInfoBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[1] = VkDescriptorBufferInfo{ m_cellCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
+		
+		std::vector<VkWriteDescriptorSet> writes;
+		writes.emplace_back(bind.makeWrite(m_cellBufferDescSet, 0, &dbi[0]));
+		writes.emplace_back(bind.makeWrite(m_cellBufferDescSet, 1, &dbi[1]));
+
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+	}
 
 }
 

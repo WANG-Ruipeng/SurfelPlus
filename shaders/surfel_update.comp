@@ -22,9 +22,11 @@ layout(set = 0, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter su
 layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
+layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
 
-// gbuffers
-layout(set = 1, binding = 0)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
+// cell buffer
+layout(set = 1, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 1, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 
 layout(push_constant) uniform _RtxState
 {
@@ -34,12 +36,20 @@ layout(push_constant) uniform _RtxState
 // Compute input
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
-#include "shaderUtils.glsl"
-
 void main()
 {
-	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+	uint idx = gl_GlobalInvocationID.x;
 
-	// Get all dirty Surfel
+	// Calculate offset of cell to surfel buffer.
+	if(idx > cellCounter.totalCellCount) return;
+
+	// Get the cell to process
+	CellInfo thisCell = cellBuffer[idx];
+	if(thisCell.surfelCount == 0) return;
+
+	// Calculate offsets of the surfel buffer
+	uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
+    cellBuffer[idx].surfelOffset = offset;
+	thisCell.surfelCount = 0;
 
 }

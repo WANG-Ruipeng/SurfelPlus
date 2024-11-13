@@ -281,8 +281,12 @@ void SampleExample::createSurfelResources()
         {   m_surfel.getSurfelBuffersDescLayout(),
             m_surfel.getGbufferSamplerDescLayout(),
             m_scene.getDescLayout(),
-            m_surfel.getIndirectLightDescLayout()}, & m_scene);
-	m_surfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout() }, &m_scene);
+            m_surfel.getIndirectLightDescLayout(),
+            m_surfel.getCellBufferDescLayout()}, & m_scene);
+	m_surfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, {
+        m_surfel.getSurfelBuffersDescLayout(),
+        m_surfel.getCellBufferDescLayout()
+        }, &m_scene);
 }
 
 void SampleExample::createGbufferPass()
@@ -486,8 +490,12 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getGbufferSamplerDescSet(),
         m_scene.getDescSet(),
-        m_surfel.getIndirectLightDescSet() });
-	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { m_surfel.getSurfelBuffersDescSet() });
+        m_surfel.getIndirectLightDescSet(),
+        m_surfel.getCellBufferDescSet()});
+	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { 
+        m_surfel.getSurfelBuffersDescSet(),
+		m_surfel.getCellBufferDescSet()
+        });
 }
 
 

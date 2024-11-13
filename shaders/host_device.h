@@ -134,6 +134,11 @@ struct CellInfo
 	uint surfelCount;
 };
 
+struct CellCounter
+{
+	uint totalCellCount;
+};
+
 // Camera of the scene
 struct SceneCamera
 {
@@ -312,18 +317,6 @@ struct SunAndSky
   int   y_is_up;
   int   physically_scaled_sun;
   int   in_use;
-};
-
-// Surfel data
-#define kTotalSurfelLimit 1000000
-
-struct SurfelCounterOffset {
-    int ValidSurfel;
-    int DirtySurfel;
-    int intFreeSurfel;
-    int Cell;
-    int RequestedRay;
-    int MissBounce;
 };
 
 #endif  // COMMON_HOST_DEVICE

@@ -23,6 +23,7 @@ layout(set = 0, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter su
 layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
+layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
 
 // gbuffers
 layout(set = 1, binding = 0)	uniform usampler2D primObjIDMap;
@@ -30,10 +31,14 @@ layout(set = 1, binding = 1)	uniform usampler2D normalMap;
 layout(set = 1, binding = 2)	uniform sampler2D depthMap;
 
 // scene buffers
-layout(set = 2, binding = 0,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
+layout(set = 2, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
 
 // output buffer
-layout(set = 3,   binding = 1)	uniform image2D	resultImage;
+layout(set = 3,   binding = 1)				uniform image2D	resultImage;
+
+// cell buffer
+layout(set = 4, binding = 0, scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 4, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 
 layout(push_constant) uniform _RtxState
 {
