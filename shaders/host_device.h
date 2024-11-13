@@ -228,7 +228,7 @@ struct RtxState
   float hdrMultiplier;          // To brightening the scene
   int   debugging_mode;         // See DebugMode
   int   pbrMode;                // 0-Disney, 1-Gltf
-  int   _pad0;                  // vec2 need alignment
+  uint  totalFrames;
   ivec2 size;                   // rendering size
   int   minHeatmap;             // Debug mode - heat map
   int   maxHeatmap;

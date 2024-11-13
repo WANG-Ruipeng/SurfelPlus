@@ -85,6 +85,7 @@ void SampleExample::setup(const VkInstance&               instance,
   {
     r->setup(m_device, physicalDevice, queues[eTransfer].familyIndex, &m_alloc);
   }
+  m_rtxState.totalFrames = 0;
 }
 
 
@@ -204,8 +205,12 @@ void SampleExample::updateFrame()
     fov          = f;
   }
 
-  if(m_rtxState.frame < m_maxFrames)
-    m_rtxState.frame++;
+  if (m_rtxState.frame < m_maxFrames)
+  {
+      m_rtxState.frame++;
+	  m_rtxState.totalFrames++;
+  }
+    
 }
 
 //--------------------------------------------------------------------------------------------------

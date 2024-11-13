@@ -73,6 +73,8 @@ void main()
 		return;
 	}
 
+	rng_initialize(imageCoords, rtxState.totalFrames);
+
 	// get the normal
 	uint compressedNor = texelFetch(normalMap, imageCoords, 0).r;
 	vec3 normal = decompress_unit_vec(compressedNor);
@@ -127,20 +129,21 @@ void main()
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
-		imageStore(resultImage, imageCoords, vec4(mainNor * 0.5f + 0.5f, 1.f));
+		//imageStore(resultImage, imageCoords, vec4(mainNor * 0.5f + 0.5f, 1.f));
+		imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
 	}
 	else
 	{
-		imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
+		imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
 	}
+	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 
 	if ((rtxState.frame & 0x0000ffff) != 0) return;
 
-	//imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
 
 	uint coverageData = 0;
     coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
-    coverageData |= ((uint(255 * hash13(vec3(imageCoords.x, imageCoords.y, rtxState.frame))) & 0x000000FF) << 8);
+    coverageData |= ((uint(255 * rand3()) & 0x000000FF) << 8);
     coverageData |= ((gl_LocalInvocationID.x & 0x0000000F) << 4);
     coverageData |= ((gl_LocalInvocationID.y & 0x0000000F) << 0);
 
@@ -170,7 +173,7 @@ void main()
 	{
 		if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
 		{
-			if (coverage < 0.1f)
+			if (coverage < 1.f && rand() < depth * 0.3f)
 			{
 			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 				if (surfelAliveIndex < surfelMaxCount)
@@ -179,7 +182,7 @@ void main()
 					surfelAlive[surfelAliveIndex] = surfelID;
 
 					// const radius tmp
-					float radius = 0.01f;
+					float radius = 0.02f;
 					Surfel newSurfel;
 					newSurfel.position = worldPos;
 					newSurfel.normal = compressedNor;
