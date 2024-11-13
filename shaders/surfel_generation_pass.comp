@@ -39,6 +39,7 @@ layout(set = 3,   binding = 1)				uniform image2D	resultImage;
 // cell buffer
 layout(set = 4, binding = 0, scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
 layout(set = 4, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
+layout(set = 4, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
 
 layout(push_constant) uniform _RtxState
 {

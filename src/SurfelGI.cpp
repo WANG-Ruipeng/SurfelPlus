@@ -40,7 +40,6 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		surfelDeadBuffer[i] = i;
 	
 	m_surfelDeadBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDeadBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-
 	
 	std::vector<uint32_t> surfelDirtyBuffer(maxSurfelCnt, 0);
 	m_surfelDirtyBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDirtyBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -55,6 +54,10 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	cellCounter.totalCellCount = totalCellCount;
 	std::vector<CellCounter> cellCounters = { cellCounter };
 	m_cellCounterBuffer = m_pAlloc->createBuffer(cmdBuf, cellCounters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	//TODO: Size should be different! Currently is the same as maxSurfelCnt, should have something different
+	std::vector<uint32_t> cellToSurfelBuffer(maxSurfelCnt, 0);
+	m_cellToSurfelBuffer = m_pAlloc->createBuffer(cmdBuf, cellToSurfelBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
 	cmdBufGet.submitAndWait(cmdBuf);
 
@@ -98,6 +101,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		nvvk::DescriptorSetBindings bind;
 		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 
 		m_cellBufferDescSetLayout = bind.createLayout(m_device);
 
@@ -105,13 +109,15 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		m_cellBufferDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_cellBufferDescSetLayout);
 
 		// Write descriptor set
-		std::array<VkDescriptorBufferInfo, 2> dbi;
+		std::array<VkDescriptorBufferInfo, 3> dbi;
 		dbi[0] = VkDescriptorBufferInfo{ m_cellInfoBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[1] = VkDescriptorBufferInfo{ m_cellCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[2] = VkDescriptorBufferInfo{ m_cellToSurfelBuffer.buffer, 0, VK_WHOLE_SIZE };
 		
 		std::vector<VkWriteDescriptorSet> writes;
 		writes.emplace_back(bind.makeWrite(m_cellBufferDescSet, 0, &dbi[0]));
 		writes.emplace_back(bind.makeWrite(m_cellBufferDescSet, 1, &dbi[1]));
+		writes.emplace_back(bind.makeWrite(m_cellBufferDescSet, 2, &dbi[2]));
 
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}

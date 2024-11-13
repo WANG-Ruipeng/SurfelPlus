@@ -96,6 +96,7 @@ private:
 	// Cell Resources
 	nvvk::Buffer 				m_cellInfoBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_cellCounterBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer 			    m_cellToSurfelBuffer{ VK_NULL_HANDLE };
 
 	nvvk::Texture				m_indirectLightingMap;
 
