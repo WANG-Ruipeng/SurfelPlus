@@ -72,6 +72,13 @@ layout(set = 0, binding = 2) uniform sampler2D gbufferDepth;
 
 void main()
 {
-    fragColor.xyz = vec3(1.0, 0.0, 0.0);
+//    Light light = _Lights[0];
+//    fragColor.xyz = light.direction.xyz;
+
+    // reconstruct world position from depth
+//    vec3 clipPos = vec3(uvCoords.x * 2.0 - 1.0, 1.0 - uvCoords.y * 2.0, texture(gbufferDepth, uvCoords).r);
+//    vec3 worldPos = (sceneCamera.viewInverse * sceneCamera.projInverse * vec4(clipPos, 1.0)).xyz;
+//    worldPos = clamp(worldPos, 0.0, 1.0);
+    fragColor.xyz = vec3(1.0);
     fragColor.a = 1.0;
 }
