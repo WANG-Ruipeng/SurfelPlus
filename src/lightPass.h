@@ -8,7 +8,7 @@
 #include "renderer.h"
 #include "shaders/host_device.h"
 
-class LightPass : Renderer
+class LightPass : public Renderer
 {
 public:
 	struct InstanceData

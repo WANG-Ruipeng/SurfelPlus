@@ -169,6 +169,7 @@ int main(int argc, char** argv)
   queues.push_back({vkctx.m_queueT.queue, vkctx.m_queueT.familyIndex, vkctx.m_queueT.queueIndex});
 
   // Create example
+
   sample.setup(vkctx.m_instance, vkctx.m_device, vkctx.m_physicalDevice, queues);
   sample.createSwapchain(surface, SAMPLE_WIDTH, SAMPLE_HEIGHT);
   sample.createDepthBuffer();
@@ -259,6 +260,7 @@ int main(int argc, char** argv)
 	{
 		auto sec = profiler.timeRecurring("Light", cmdBuf);
 		sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
+        sample.m_lightPass.setPushContants(sample.m_rtxState);
 		sample.m_lightPass.run(cmdBuf, sample.getSize(), profiler, { sample.m_surfel.getGbufferImageDescSet()});
 		sample.m_lightPass.endRenderPass(cmdBuf);
 	}
