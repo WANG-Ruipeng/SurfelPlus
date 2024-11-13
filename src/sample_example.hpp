@@ -174,6 +174,7 @@ public:
   // #Post
   void createOffscreenRender();
   void drawPost(VkCommandBuffer cmdBuf);
+  void execPost(const VkCommandBuffer& cmdBuf, const VkExtent2D& size);
 
   // #VKRay
   void renderScene(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);

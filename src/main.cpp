@@ -195,7 +195,7 @@ int main(int argc, char** argv)
     sample.createRender(SampleExample::eRayQuery);
     sample.createSurfelResources();
     sample.resetFrame();
-	//sample.createLightPass();
+	//sample.createLightPass(); // this function is called in sample.createSurfelResources() to load gbuffer resources
     sample.m_busy = false;
   }).detach();
 
@@ -261,28 +261,12 @@ int main(int argc, char** argv)
 		sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
 		sample.m_lightPass.run(cmdBuf, sample.getSize(), profiler, { sample.m_surfel.getGbufferImageDescSet()});
 		sample.m_lightPass.endRenderPass(cmdBuf);
-        
 	}
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
     {
       auto sec = profiler.timeRecurring("Tonemap", cmdBuf);
-
-      std::array<VkClearValue, 2> clearValues;
-      clearValues[0].color        = {{0.0f, 0.0f, 0.0f, 0.0f}};
-      clearValues[1].depthStencil = {1.0f, 0};
-
-      VkRenderPassBeginInfo postRenderPassBeginInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-      postRenderPassBeginInfo.clearValueCount = 2;
-      postRenderPassBeginInfo.pClearValues    = clearValues.data();
-      postRenderPassBeginInfo.renderPass      = sample.getRenderPass();
-      postRenderPassBeginInfo.framebuffer     = sample.getFramebuffers()[curFrame];
-      postRenderPassBeginInfo.renderArea      = {{}, sample.getSize()};
-
-      vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-      // Draw the rendering result + tonemapper
-      sample.drawPost(cmdBuf);
+	  sample.execPost(cmdBuf, sample.getSize());
 
       // Render the UI
       ImGui::Render();
