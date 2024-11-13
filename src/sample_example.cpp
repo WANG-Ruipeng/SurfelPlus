@@ -78,6 +78,8 @@ void SampleExample::setup(const VkInstance&               instance,
   m_surfelPreparePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelGenerationPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+
   // Create and setup all renderers
   m_pRender[eRtxPipeline] = new RtxPipeline;
   m_pRender[eRayQuery]    = new RayQuery;
@@ -292,11 +294,19 @@ void SampleExample::createSurfelResources()
         m_surfel.getSurfelBuffersDescLayout(),
         m_surfel.getCellBufferDescLayout()
         }, &m_scene);
+
+	createLightPass();
 }
 
 void SampleExample::createGbufferPass()
 {
     m_gbufferPass.create(m_size, { m_scene.getDescLayout() }, &m_scene);
+}
+
+void SampleExample::createLightPass()
+{
+	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat());
+	m_lightPass.create(m_size, { m_surfel.getGbufferImageDescLayout()}, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
