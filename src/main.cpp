@@ -195,6 +195,7 @@ int main(int argc, char** argv)
     sample.createRender(SampleExample::eRayQuery);
     sample.createSurfelResources();
     sample.resetFrame();
+	//sample.createLightPass();
     sample.m_busy = false;
   }).detach();
 
@@ -252,6 +253,16 @@ int main(int argc, char** argv)
 
         isfirstFrame = false;
     }
+
+	// begin light pass
+	if (!sample.m_busy)
+	{
+		auto sec = profiler.timeRecurring("Light", cmdBuf);
+		sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
+		sample.m_lightPass.run(cmdBuf, sample.getSize(), profiler, { sample.m_surfel.getGbufferImageDescSet()});
+		sample.m_lightPass.endRenderPass(cmdBuf);
+        
+	}
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
     {

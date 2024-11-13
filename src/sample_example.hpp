@@ -72,6 +72,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "surfel_update_pass.h"
 #include "imgui_internal.h"
 #include "queue.hpp"
+#include "lightPass.h"
 
 class SampleGUI;
 
@@ -128,6 +129,7 @@ public:
 
   void createSurfelResources();
   void createGbufferPass();
+  void createLightPass();
 
   Scene              m_scene;
   SurfelGI           m_surfel;
@@ -142,6 +144,9 @@ public:
   SurfelPreparePass m_surfelPreparePass;
   SurfelUpdatePass m_surfelUpdatePass;
   SurfelGenerationPass m_surfelGenerationPass;
+
+  // light pass
+  LightPass m_lightPass;
 
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }
