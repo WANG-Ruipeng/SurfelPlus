@@ -25,8 +25,8 @@ layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAli
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 
 // gbuffers
-layout(set = 1, binding = 0)	uniform sampler2D primObjIDMap;
-layout(set = 1, binding = 1)	uniform sampler2D normalMap;
+layout(set = 1, binding = 0)	uniform usampler2D primObjIDMap;
+layout(set = 1, binding = 1)	uniform usampler2D normalMap;
 layout(set = 1, binding = 2)	uniform sampler2D depthMap;
 
 // scene buffers
@@ -40,27 +40,161 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
+#include "shaderUtils.glsl"
+
+shared uint groupShareMinCoverage;
+shared uint groupShareMaxContribution;
+
 // Compute input
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main()
 {
 
+	
+
 	ivec2 imageRes    = rtxState.size;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
 
-	// get the depth value
+	if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
+	{
+		return;
+	}
 	float depth = texelFetch(depthMap, imageCoords, 0).r;
-	imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
 
-//    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-//    
-//    uint primObjID = imageLoad(g_primObjID, pixel_coords).r;
-//    uint compressed_normal = imageLoad(g_normal, pixel_coords).r;
-//    float depth = texture(g_depth, vec2(pixel_coords) / vec2(textureSize(g_depth, 0))).r;
-//    
-//    vec3 normal = decompress_unit_vec(compressed_normal);
-//    uint instanceID = (primObjID >> 23) & 0xFF;
-//    uint primitiveID = primObjID & 0x007FFFFF;
+	if (depth == 1.f)
+	{
+		return;
+	}
+
+	// get the normal
+	uint compressedNor = texelFetch(normalMap, imageCoords, 0).r;
+	vec3 normal = decompress_unit_vec(compressedNor);
+	vec3 worldPos = WorldPosFromDepth(uv, depth);
+
+	vec4 indirectLighting = vec4(0.f);
+
+	uint aliveSurfelCnt = surfelCounter.aliveSurfelCnt;
+	float coverage = 0.f;
+    float variance = 0.f;
+    float maxVariance = 0.f;
+    float maxContribution = 0.f;
+    uint maxContributionSurfelIndex = 0xffffffff;
+
+	for (uint i = 0; i < aliveSurfelCnt; i++)
+	{
+		uint surfelIndex = surfelAlive[i];
+		Surfel surfel = surfelBuffer[surfelIndex];
+
+		vec3 bias = worldPos - surfel.position;
+        float dist2 = dot(bias, bias);
+
+		if (dist2 < surfel.radius * surfel.radius)
+        {
+            vec3 surfelNor = decompress_unit_vec(surfel.normal);
+            float dotN = dot(normal, surfelNor);
+            if (dotN > 0.f)
+            {
+                float dist = sqrt(dist2);
+                float contribution = 1.f;
+
+                contribution *= clamp(dotN, 0.f, 1.f);
+                contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
+                contribution = smoothstep(0, 1, contribution);
+
+                coverage += contribution;
+
+				indirectLighting += vec4(surfel.radiance, 1.f) * contribution;
+
+				if (maxContribution < contribution)
+				{
+				    maxContribution = contribution;
+				    maxContributionSurfelIndex = surfelIndex;
+				}
+            }
+
+		
+		}
+	}
+
+	if (maxContributionSurfelIndex != 0xffffffff)
+	{
+		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
+		imageStore(resultImage, imageCoords, vec4(mainNor * 0.5f + 0.5f, 1.f));
+	}
+	else
+	{
+		imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
+	}
+
+	if ((rtxState.frame & 0x0000ffff) != 0) return;
+
+	//imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
+
+	uint coverageData = 0;
+    coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
+    coverageData |= ((uint(255 * hash13(vec3(imageCoords.x, imageCoords.y, rtxState.frame))) & 0x000000FF) << 8);
+    coverageData |= ((gl_LocalInvocationID.x & 0x0000000F) << 4);
+    coverageData |= ((gl_LocalInvocationID.y & 0x0000000F) << 0);
+
+    atomicMin(groupShareMinCoverage, coverageData);
+
+    uint contributionData = 0;
+    contributionData |= floatBitsToUint(maxContribution) & 0xFFFF0000;
+    contributionData |= ((maxContributionSurfelIndex & 0x0000FFFF) << 0);
+
+	atomicMax(groupShareMaxContribution, contributionData);
+
+	barrier();
+
+	coverageData = groupShareMinCoverage;
+    coverage = uintBitsToFloat(coverageData & 0xFFFF0000);
+    uint x = (coverageData & 0x000000F0) >> 4;
+    uint y = (coverageData & 0x0000000F) >> 0;
+
+	contributionData = groupShareMaxContribution;
+	maxContribution = uintBitsToFloat(contributionData & 0xFFFF0000);
+	maxContributionSurfelIndex = contributionData & 0x0000FFFF;
+
+	// replace later
+	const uint surfelMaxCount = 10000;
+
+	if (surfelCounter.aliveSurfelCnt < 10000)
+	{
+		if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
+		{
+			if (coverage < 0.1f)
+			{
+			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
+				if (surfelAliveIndex < surfelMaxCount)
+				{
+					uint surfelID = surfelDead[surfelMaxCount - surfelAliveIndex - 1];
+					surfelAlive[surfelAliveIndex] = surfelID;
+
+					// const radius tmp
+					float radius = 0.01f;
+					Surfel newSurfel;
+					newSurfel.position = worldPos;
+					newSurfel.normal = compressedNor;
+					newSurfel.radiance = vec3(0.f);
+					newSurfel.radius = radius;
+
+					surfelBuffer[surfelID] = newSurfel;
+				}
+				else
+				{
+					atomicAdd(surfelCounter.aliveSurfelCnt, -1);
+				}
+			}
+		}
+	}
+
+//	Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+//	vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
+//	// get the depth value
+//	imageStore(resultImage, imageCoords, vec4(vec3(mainNor * 0.5f + 0.5f), 1.f));
+	
 
 }

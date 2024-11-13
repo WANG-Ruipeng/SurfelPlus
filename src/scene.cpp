@@ -640,6 +640,7 @@ void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
   m_camera.proj = proj;
   m_camera.viewInverse = glm::inverse(view);
   m_camera.projInverse = glm::inverse(proj);
+  m_camera.fov = CameraManip.getFov();
 
   // Focal is the interest point
   glm::vec3 eye, center, up;

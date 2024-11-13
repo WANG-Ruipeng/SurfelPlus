@@ -26,11 +26,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	};
 	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 20);
 
-	SurfelCounter counter;
-	counter.aliveSurfelCnt = 0;
-	counter.deadSurfelCnt = maxSurfelCnt;
-	counter.dirtySurfelCnt = 0;
-	std::vector<SurfelCounter> counters = { counter };
+	std::vector<SurfelCounter> counters = { {0, maxSurfelCnt, 0} };
 	m_surfelCounterBuffer = m_pAlloc->createBuffer(cmdBuf, counters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
 	std::vector<Surfel> surfels(maxSurfelCnt);
@@ -44,6 +40,8 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		surfelDeadBuffer[i] = i;
 	
 	m_surfelDeadBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDeadBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+	cmdBufGet.submitAndWait(cmdBuf);
 
 	// create indirect lighting map
 	createIndirectLightingMap(size);

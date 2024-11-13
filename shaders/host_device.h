@@ -125,6 +125,7 @@ struct Surfel
 	uint objID;
 	uint rayOffset;
 	uint rayCount;
+	uint pad;
 };
 
 struct CellInfo
@@ -142,6 +143,7 @@ struct SceneCamera
   mat4  projInverse;
   float focalDist;
   float aperture;
+  float fov;
   // Extra
   int nbLights;
 };

@@ -35,8 +35,23 @@ layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
 
-	surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
-	surfelAlive[gl_GlobalInvocationID.x] = 0;
+	// tmp value
+	const uint maxSurfelCount = 10000;
+	if (rtxState.frame == 0)
+	{
+		surfelCounter.aliveSurfelCnt = 0;
+		surfelCounter.deadSurfelCnt = maxSurfelCount;
+		surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
+		surfelAlive[gl_GlobalInvocationID.x] = 0;
+		Surfel surfel;
+		surfel.position = vec3(0.0f);
+		surfel.normal = 0;
+		surfel.radius = 0.0f;
+		surfel.radiance = vec3(0.0f);
+		surfelBuffer[gl_GlobalInvocationID.x] = surfel;
+	}
+	//surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
+	//surfelAlive[gl_GlobalInvocationID.x] = 0;
 
 //    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 //    
