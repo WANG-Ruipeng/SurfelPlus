@@ -143,6 +143,7 @@ public:
   SurfelUpdatePass m_surfelUpdatePass;
   SurfelGenerationPass m_surfelGenerationPass;
 
+
   // It is possible that ray query isn't supported (ex. Titan)
   void supportRayQuery(bool support) { m_supportRayQuery = support; }
   bool m_supportRayQuery{true};

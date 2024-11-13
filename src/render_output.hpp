@@ -55,6 +55,7 @@ public:
   void update(const VkExtent2D& size);
   void run(VkCommandBuffer cmdBuf);
   void genMipmap(VkCommandBuffer cmdBuf);
+  const VkFormat getOffscreenColorFormat() const {return m_offscreenColorFormat; }
 
   VkDescriptorSetLayout getDescLayout() { return m_postDescSetLayout; }
   VkDescriptorSet       getDescSet() { return m_postDescSet; }

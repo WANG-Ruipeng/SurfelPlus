@@ -253,6 +253,13 @@ int main(int argc, char** argv)
         isfirstFrame = false;
     }
 
+	// begin light pass
+	if (!sample.m_busy)
+	{
+		auto sec = profiler.timeRecurring("Light", cmdBuf);
+        
+	}
+
     // Rendering pass in swapchain framebuffer + tone mapper, UI
     {
       auto sec = profiler.timeRecurring("Tonemap", cmdBuf);
