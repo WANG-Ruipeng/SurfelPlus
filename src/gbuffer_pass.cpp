@@ -68,7 +68,7 @@ void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorS
 
 	pipelineGenerator.setBlendAttachmentState(0, pipelineGenerator.makePipelineColorBlendAttachmentState(0xf, VK_FALSE));
 	pipelineGenerator.addBlendAttachmentState(pipelineGenerator.makePipelineColorBlendAttachmentState(0xf, VK_FALSE));
-	pipelineGenerator.rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
+	pipelineGenerator.rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
 
 	const std::vector<VkVertexInputBindingDescription> vertexInputBindingsInterleaved = {
 		{ 0, sizeof(VertexAttributes), VK_VERTEX_INPUT_RATE_VERTEX },

@@ -65,20 +65,20 @@ ShadowHitPayload shadow_payload;
 layout(location = 0) in vec2 uvCoords;
 layout(location = 0) out vec4 fragColor;
 
-layout(set = 0, binding = 0) uniform usampler2D gbufferMaterial;
-layout(set = 0, binding = 1) uniform usampler2D gbufferNormal;
-layout(set = 0, binding = 2) uniform sampler2D gbufferDepth;
+layout(set = 4, binding = 0) uniform usampler2D gbufferMaterial;
+layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
+layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 
 void main()
 {
-//    Light light = _Lights[0];
-//    fragColor.xyz = light.direction.xyz;
-
+    vec3 normal = decompress_unit_vec(texture(gbufferNormal, uvCoords).r) * 2.0 - 1.0;
     // reconstruct world position from depth
-//    vec3 clipPos = vec3(uvCoords.x * 2.0 - 1.0, 1.0 - uvCoords.y * 2.0, texture(gbufferDepth, uvCoords).r);
-//    vec3 worldPos = (sceneCamera.viewInverse * sceneCamera.projInverse * vec4(clipPos, 1.0)).xyz;
-//    worldPos = clamp(worldPos, 0.0, 1.0);
-    fragColor.xyz = vec3(1.0);
+    vec3 clipPos = vec3(uvCoords.x * 2.0 - 1.0, 1.0 - uvCoords.y * 2.0, texture(gbufferDepth, uvCoords).r);
+    vec3 worldPos = (sceneCamera.viewInverse * sceneCamera.projInverse * vec4(clipPos, 1.0)).xyz;
+    bool hit = AnyHit(Ray(worldPos, normal), 1000.0);
+
+
+    fragColor.xyz = vec3(texture(gbufferDepth, uvCoords).xxx);
     fragColor.a = 1.0;
 }
