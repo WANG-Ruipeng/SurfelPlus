@@ -306,7 +306,7 @@ void SampleExample::createGbufferPass()
 void SampleExample::createLightPass()
 {
 	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat());
-	m_lightPass.create(m_size, { m_surfel.getGbufferImageDescLayout()}, &m_scene);
+	m_lightPass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout, m_surfel.getGbufferImageDescLayout() }, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -433,6 +433,24 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);
 }
 
+void SampleExample::execPost(const VkCommandBuffer& cmdBuf, const VkExtent2D& size)
+{
+    std::array<VkClearValue, 2> clearValues;
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 0.0f} };
+    clearValues[1].depthStencil = { 1.0f, 0 };
+
+    VkRenderPassBeginInfo postRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    postRenderPassBeginInfo.clearValueCount = 2;
+    postRenderPassBeginInfo.pClearValues = clearValues.data();
+    postRenderPassBeginInfo.renderPass = getRenderPass();
+    postRenderPassBeginInfo.framebuffer = getFramebuffers()[getCurFrame()];
+    postRenderPassBeginInfo.renderArea = { {}, getSize() };
+
+    vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // Draw the rendering result + tonemapper
+    drawPost(cmdBuf);
+}
 //////////////////////////////////////////////////////////////////////////
 // Ray tracing
 //////////////////////////////////////////////////////////////////////////

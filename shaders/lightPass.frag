@@ -21,76 +21,64 @@
 // This is called by the post process shader to display the result of ray tracing.
 // It applied a tonemapper and do dithering on the image to avoid banding.
 
-#version 450
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+#extension GL_ARB_shader_clock : enable                 // Using clockARB
+#extension GL_EXT_shader_image_load_formatted : enable  // The folowing extension allow to pass images as function parameters
+
+#extension GL_NV_shader_sm_builtins : require     // Debug - gl_WarpIDNV, gl_SMIDNV
+#extension GL_ARB_gpu_shader_int64 : enable       // Debug - heatmap value
+#extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
+
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_debug_printf : enable
-#extension GL_ARB_gpu_shader_int64 : enable  // Shader reference
 #extension GL_KHR_vulkan_glsl : enable
 
-#define TONEMAP_UNCHARTED
-#include "random.glsl"
-#include "tonemapping.glsl"
 #include "host_device.h"
 
+layout(push_constant) uniform _RtxState
+{
+  RtxState rtxState;
+};
+
+
+#include "globals.glsl"
+
+PtPayload        prd;
+ShadowHitPayload shadow_payload;
+
+#include "layouts.glsl"
+#include "random.glsl"
+#include "common.glsl"
+#include "traceray_rq.glsl"
+
+#include "pathtrace.glsl"
+
+#define FIREFLIES 1
 
 layout(location = 0) in vec2 uvCoords;
 layout(location = 0) out vec4 fragColor;
 
-layout(set = 0, binding = 0) uniform usampler2D gbufferMaterial;
-layout(set = 0, binding = 1) uniform sampler2D gbufferNormal;
-layout(set = 0, binding = 2) uniform sampler2D gbufferDepth;
+layout(set = 4, binding = 0) uniform usampler2D gbufferMaterial;
+layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
+layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 
 void main()
 {
-  // Raw result of ray tracing
-//  vec4 hdr = texture(inImage, uvCoords * tm.zoom).rgba;
-//
-//  if(((tm.autoExposure >> 0) & 1) == 1)
-//  {
-//    vec4  avg     = textureLod(inImage, vec2(0.5), 20);  // Get the average value of the image
-//    float avgLum2 = luminance(avg.rgb);                  // Find the luminance
-//    if(((tm.autoExposure >> 1) & 1) == 1)
-//      hdr.rgb = toneLocalExposure(hdr.rgb, avgLum2);  // Adjust exposure
-//    else
-//      hdr.rgb = toneExposure(hdr.rgb, avgLum2);  // Adjust exposure
-//  }
-//
-//  // Tonemap + Linear to sRgb
-//  vec3 color = toneMap(hdr.rgb, tm.avgLum);
-//
-//  // Remove banding
-//  if(tm.dither > 0)
-//  {
-//    // Generates a 3D random number using the PCG (Permuted Congruential Generator) algorithm
-//    uvec3 r = pcg3d(uvec3(gl_FragCoord.xy, 0));
-//
-//    // The HEX value 0x3f800000 corresponds to the 32-bit floating-point representation of 1.0f.
-//    // It is bitwise ORed into the lower 23 bits of the 32-bit floating-point format,
-//    // following the IEEE 754 standard (1 sign bit, 8 exponent bits, 23 mantissa bits).
-//    // This operation effectively sets the exponent to 0 (bias of 127), generating a float between 1.0 and 2.0.
-//    // The uintBitsToFloat function then interprets this bit pattern as a floating-point number,
-//    // and finally, 1.0 is subtracted to bring the range to (0.0, 1.0).
-//    vec3 noise = uintBitsToFloat(0x3f800000 | (r >> 9)) - 1.0f;
-//
-//    // Apply dithering to hide banding artifacts.
-//    color = dither(sRGBToLinear(color), noise, 1. / 255.);
-//  }
-//
-//  // contrast
-//  color = clamp(mix(vec3(0.5), color, tm.contrast), 0, 1);
-//  // brighness
-//  color = pow(color, vec3(1.0 / tm.brightness));
-//  // saturation
-//  vec3 i = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
-//  color  = mix(i, color, tm.saturation);
-//  // vignette
-//  vec2 uv = ((uvCoords * tm.renderingRatio) - 0.5) * 2.0;
-//  color *= 1.0 - dot(uv, uv) * tm.vignette;
-//
-//  fragColor.xyz = color;
-//  fragColor.a   = hdr.a;
+    vec3 normal = decompress_unit_vec(texture(gbufferNormal, uvCoords).r) * 2.0 - 1.0;
+    // reconstruct world position from depth
+    vec3 clipPos = vec3(uvCoords.x * 2.0 - 1.0, 1.0 - uvCoords.y * 2.0, texture(gbufferDepth, uvCoords).r);
+    vec3 worldPos = (sceneCamera.viewInverse * sceneCamera.projInverse * vec4(clipPos, 1.0)).xyz;
+    bool hit = AnyHit(Ray(worldPos, normal), 1000.0);
 
-    fragColor.xyz = vec3(1.0, 0.0, 0.0);
+
+    fragColor.xyz = vec3(texture(gbufferDepth, uvCoords).xxx);
     fragColor.a = 1.0;
 }

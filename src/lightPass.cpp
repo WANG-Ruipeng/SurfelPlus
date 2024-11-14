@@ -44,11 +44,11 @@ void LightPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSet
 	//createRenderPass();
 
 	std::vector<VkPushConstantRange> push_constants;
-	push_constants.push_back({}); // delete
+	push_constants.push_back({ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState) }); 
 
 	VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-	//layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
-	//layout_info.pPushConstantRanges = push_constants.data();
+	layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
+	layout_info.pPushConstantRanges = push_constants.data();
 	layout_info.setLayoutCount = static_cast<uint32_t>(descSetLayouts.size());
 	layout_info.pSetLayouts = descSetLayouts.data();
 	vkCreatePipelineLayout(m_device, &layout_info, nullptr, &m_pipelineLayout);
@@ -93,28 +93,31 @@ void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorF
 		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, m_colorFormat,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+		colorCreateInfo.mipLevels = 1;
 
 		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
 		NAME_VK(image.image);
 		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+		ivInfo.subresourceRange.levelCount = 1;
 
 		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 		sampler.maxLod = FLT_MAX;
 		m_offscreenColor = m_pAlloc->createTexture(image, ivInfo, sampler);
 		m_offscreenColor.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-		// Transition the image to general layout
-		nvvk::CommandPool genCmdBuf(m_device, m_queueIndex);
-		auto cmdBuf = genCmdBuf.createCommandBuffer();
+		//// Transition the image to general layout
+		//nvvk::CommandPool genCmdBuf(m_device, m_queueIndex);
+		//auto cmdBuf = genCmdBuf.createCommandBuffer();
 
-		nvvk::cmdBarrierImageLayout(
-			cmdBuf,
-			m_offscreenColor.image,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
+		//nvvk::cmdBarrierImageLayout(
+		//	cmdBuf,
+		//	m_offscreenColor.image,
+		//	VK_IMAGE_LAYOUT_UNDEFINED,
+		//	VK_IMAGE_LAYOUT_GENERAL
+		//);
 
-		genCmdBuf.submitAndWait(cmdBuf);
+
+		//genCmdBuf.submitAndWait(cmdBuf);
 	}
 
 	if (m_framebuffer != VK_NULL_HANDLE)
@@ -151,7 +154,9 @@ void LightPass::run(const VkCommandBuffer& cmdBuf,
 
 	LABEL_SCOPE_VK(cmdBuf);
 
-	//vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Tonemapper), &m_tonemapper);
+	// Sending the push constant information
+	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState), &m_state);
+
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, static_cast<uint32_t>(descSets.size()), descSets.data(), 0, nullptr);
 	vkCmdDraw(cmdBuf, 3, 1, 0, 0);

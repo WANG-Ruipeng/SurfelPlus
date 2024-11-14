@@ -55,7 +55,7 @@ START_ENUM(SetBindings)
   S_OUT   = 1,  // Offscreen output image
   S_SCENE = 2,  // Scene data
   S_ENV   = 3,  // Environment / Sun & Sky
-  S_WF    = 4   // Wavefront extra data
+  S_WF    = 4  // Wavefront extra data
 END_ENUM();
 
 // Acceleration Structure - Set 0
