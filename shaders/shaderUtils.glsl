@@ -58,8 +58,6 @@ vec4 rand4()
     pcg4d(s0); return vec4(s0) * denom;
 }
 
-
-
 vec3 WorldPosFromDepth(in vec2 uv, in float depth)
 {
     float z = depth * 2.0 - 1.0;
@@ -69,3 +67,180 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
 
     return worldSpacePosition.xyz;
 }
+
+uvec3 getCellPos(vec3 posW, vec3 cameraPosW, float cellUnit)
+{
+    vec3 posC = posW - cameraPosW;
+    posC /= cellUnit;
+    return uvec3(round(posC));
+}
+
+vec3 getCameraPosition(SceneCamera camera)
+{
+    return vec3(camera.viewInverse[3]); 
+}
+
+const float cellSize = 0.05f;
+const uint kCellDimension = 64;
+
+bool isCellValid(vec3 cellPos)
+{
+    if (abs(cellPos.x) >= cellSize / 2)
+        return false;
+    if (abs(cellPos.y) >= cellSize / 2)
+        return false;
+    if (abs(cellPos.z) >= cellSize / 2)
+        return false;
+
+    return true;
+}
+
+bool isSurfelIntersectCell(Surfel surfel, vec3 cellPos, vec3 cameraPosW, float cellUnit)
+{
+	if (!isCellValid(cellPos))
+		return false;
+
+    vec3 minPosW = cellPos * cellUnit - cellUnit / 2.0f + cameraPosW;
+    vec3 maxPosW = cellPos * cellUnit + cellUnit / 2.0f + cameraPosW;
+    vec3 closePoint = min(max(surfel.position, minPosW), maxPosW);
+
+    float dist = distance(closePoint, surfel.position);
+    return dist < surfel.radius;
+}
+
+uint getFlattenCellIndex(vec3 cellPos)
+{
+    uvec3 unsignedPos = uvec3(cellPos + ivec3(kCellDimension / 2));
+    return (unsignedPos.z * kCellDimension * kCellDimension) +
+        (unsignedPos.y * kCellDimension) +
+        unsignedPos.x;
+}
+
+// 3x3x3 neighborhood
+const vec3 neighborOffset[125] = vec3[125](
+    vec3(-2, -2, -2),
+    vec3(-2, -2, -1),
+    vec3(-2, -2, 0),
+    vec3(-2, -2, 1),
+    vec3(-2, -2, 2),
+    vec3(-2, -1, -2),
+    vec3(-2, -1, -1),
+    vec3(-2, -1, 0),
+    vec3(-2, -1, 1),
+    vec3(-2, -1, 2),
+    vec3(-2, 0, -2),
+    vec3(-2, 0, -1),
+    vec3(-2, 0, 0),
+    vec3(-2, 0, 1),
+    vec3(-2, 0, 2),
+    vec3(-2, 1, -2),
+    vec3(-2, 1, -1),
+    vec3(-2, 1, 0),
+    vec3(-2, 1, 1),
+    vec3(-2, 1, 2),
+    vec3(-2, 2, -2),
+    vec3(-2, 2, -1),
+    vec3(-2, 2, 0),
+    vec3(-2, 2, 1),
+    vec3(-2, 2, 2),
+    vec3(-1, -2, -2),
+    vec3(-1, -2, -1),
+    vec3(-1, -2, 0),
+    vec3(-1, -2, 1),
+    vec3(-1, -2, 2),
+    vec3(-1, -1, -2),
+    vec3(-1, -1, -1),
+    vec3(-1, -1, 0),
+    vec3(-1, -1, 1),
+    vec3(-1, -1, 2),
+    vec3(-1, 0, -2),
+    vec3(-1, 0, -1),
+    vec3(-1, 0, 0),
+    vec3(-1, 0, 1),
+    vec3(-1, 0, 2),
+    vec3(-1, 1, -2),
+    vec3(-1, 1, -1),
+    vec3(-1, 1, 0),
+    vec3(-1, 1, 1),
+    vec3(-1, 1, 2),
+    vec3(-1, 2, -2),
+    vec3(-1, 2, -1),
+    vec3(-1, 2, 0),
+    vec3(-1, 2, 1),
+    vec3(-1, 2, 2),
+    vec3(0, -2, -2),
+    vec3(0, -2, -1),
+    vec3(0, -2, 0),
+    vec3(0, -2, 1),
+    vec3(0, -2, 2),
+    vec3(0, -1, -2),
+    vec3(0, -1, -1),
+    vec3(0, -1, 0),
+    vec3(0, -1, 1),
+    vec3(0, -1, 2),
+    vec3(0, 0, -2),
+    vec3(0, 0, -1),
+    vec3(0, 0, 0),
+    vec3(0, 0, 1),
+    vec3(0, 0, 2),
+    vec3(0, 1, -2),
+    vec3(0, 1, -1),
+    vec3(0, 1, 0),
+    vec3(0, 1, 1),
+    vec3(0, 1, 2),
+    vec3(0, 2, -2),
+    vec3(0, 2, -1),
+    vec3(0, 2, 0),
+    vec3(0, 2, 1),
+    vec3(0, 2, 2),
+    vec3(1, -2, -2),
+    vec3(1, -2, -1),
+    vec3(1, -2, 0),
+    vec3(1, -2, 1),
+    vec3(1, -2, 2),
+    vec3(1, -1, -2),
+    vec3(1, -1, -1),
+    vec3(1, -1, 0),
+    vec3(1, -1, 1),
+    vec3(1, -1, 2),
+    vec3(1, 0, -2),
+    vec3(1, 0, -1),
+    vec3(1, 0, 0),
+    vec3(1, 0, 1),
+    vec3(1, 0, 2),
+    vec3(1, 1, -2),
+    vec3(1, 1, -1),
+    vec3(1, 1, 0),
+    vec3(1, 1, 1),
+    vec3(1, 1, 2),
+    vec3(1, 2, -2),
+    vec3(1, 2, -1),
+    vec3(1, 2, 0),
+    vec3(1, 2, 1),
+    vec3(1, 2, 2),
+    vec3(2, -2, -2),
+    vec3(2, -2, -1),
+    vec3(2, -2, 0),
+    vec3(2, -2, 1),
+    vec3(2, -2, 2),
+    vec3(2, -1, -2),
+    vec3(2, -1, -1),
+    vec3(2, -1, 0),
+    vec3(2, -1, 1),
+    vec3(2, -1, 2),
+    vec3(2, 0, -2),
+    vec3(2, 0, -1),
+    vec3(2, 0, 0),
+    vec3(2, 0, 1),
+    vec3(2, 0, 2),
+    vec3(2, 1, -2),
+    vec3(2, 1, -1),
+    vec3(2, 1, 0),
+    vec3(2, 1, 1),
+    vec3(2, 1, 2),
+    vec3(2, 2, -2),
+    vec3(2, 2, -1),
+    vec3(2, 2, 0),
+    vec3(2, 2, 1),
+    vec3(2, 2, 2)
+    );

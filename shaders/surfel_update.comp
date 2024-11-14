@@ -29,28 +29,51 @@ layout(set = 1, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffe
 layout(set = 1, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 layout(set = 1, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
 
+// scene buffers
+layout(set = 2, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
+
 layout(push_constant) uniform _RtxState
 {
   RtxState rtxState;
 };
 
-// Compute input
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+#include "shaderUtils.glsl"
 
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
-	// Calculate offset of cell to surfel buffer.
-	if(idx > cellCounter.totalCellCount) return;
+	{
+		 /// Compute offset of the cell to surfel buffer
+		if(idx > cellCounter.totalCellCount) return;
 
-	// Get the cell to process
-	CellInfo thisCell = cellBuffer[idx];
-	if(thisCell.surfelCount == 0) return;
+		// Get the cell to process
+		CellInfo thisCell = cellBuffer[idx];
+		if(thisCell.surfelCount == 0) return;
 
-	// Calculate offsets of the surfel buffer
-	uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
-    cellBuffer[idx].surfelOffset = offset;
-	thisCell.surfelCount = 0;
+		// Calculate offsets of the surfel buffer
+		uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
+		cellBuffer[idx].surfelOffset = offset;
+		thisCell.surfelCount = 0;
+	}
+
+	{
+		// Update _CellToSurfel buffer
+		uint surfelIndex = surfelAlive[idx];
+		Surfel surfel = surfelBuffer[surfelIndex];
+		vec3 camPos = getCameraPosition(sceneCamera);
+		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+
+		for(uint i = 0; i<125;i++){
+			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+				uint flattenIndex = getFlattenCellIndex(neighbourPos);
+				uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+				cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
+			}
+		}
+	}
 
 }
