@@ -308,7 +308,6 @@ void SampleExample::createLightPass()
 {
 	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat());
 	m_lightPass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout, m_surfel.getGbufferImageDescLayout() }, &m_scene);
-    //m_lightPass.create(m_size, { m_surfel.getGbufferImageDescLayout() }, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------

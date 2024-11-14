@@ -270,7 +270,7 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
     m_buffers[eIndex].push_back(i_buffer);
     NAME_IDX_VK(i_buffer.buffer, prim_idx);
 
-    m_indicesCount.push_back(indices.size());
+    m_indicesCount.push_back(primMesh.indexCount);
 
     prim_idx++;
   }

@@ -138,6 +138,7 @@ void main()
 		imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
+	imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 
 	if ((rtxState.frame & 0x0000ffff) != 0) return;
 
