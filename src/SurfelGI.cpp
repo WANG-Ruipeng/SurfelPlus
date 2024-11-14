@@ -44,6 +44,9 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<uint32_t> surfelDirtyBuffer(maxSurfelCnt, 0);
 	m_surfelDirtyBuffer = m_pAlloc->createBuffer(cmdBuf, surfelDirtyBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
+	std::vector<SurfelRecycleInfo> surfelRecycleBuffer(maxSurfelCnt);
+	m_surfelRecycleBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRecycleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
 	const uint32_t cellCountX = (size.width + cellSize - 1) / cellSize;
 	const uint32_t cellCountY = (size.height + cellSize - 1) / cellSize;
 	const uint32_t totalCellCount = cellCountX * cellCountY;
@@ -72,18 +75,20 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 
 		m_surfelBuffersDescSetLayout = bind.createLayout(m_device);
 
 		// Create the edscriptor set
 		m_surfelBuffersDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_surfelBuffersDescSetLayout);
 
-		std::array<VkDescriptorBufferInfo, 5> dbi;
+		std::array<VkDescriptorBufferInfo, 6> dbi;
 		dbi[0] = VkDescriptorBufferInfo{ m_surfelCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[1] = VkDescriptorBufferInfo{ m_surfelBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[2] = VkDescriptorBufferInfo{ m_surfelAliveBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[3] = VkDescriptorBufferInfo{ m_surfelDeadBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[4] = VkDescriptorBufferInfo{ m_surfelDirtyBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[5] = VkDescriptorBufferInfo{ m_surfelRecycleBuffer.buffer, 0, VK_WHOLE_SIZE };
 
 		std::vector<VkWriteDescriptorSet> writes;
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 0, &dbi[0]));
@@ -91,6 +96,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 2, &dbi[2]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 3, &dbi[3]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 4, &dbi[4]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 5, &dbi[5]));
 
 		// Writing the information
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);

@@ -92,6 +92,7 @@ private:
 	nvvk::Buffer				m_surfelAliveBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelDeadBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelDirtyBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelRecycleBuffer{ VK_NULL_HANDLE };
 	
 	// Cell Resources
 	nvvk::Buffer 				m_cellInfoBuffer{ VK_NULL_HANDLE };

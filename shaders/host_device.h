@@ -128,6 +128,17 @@ struct Surfel
 	uint pad;
 };
 
+// [status]
+// 0x0001 : isSleeping
+// 0x0002 : lastSeen
+struct SurfelRecycleInfo
+{
+	uint life;
+	uint frame;
+	uint status;
+};
+const int maxSurfelLife = 255;
+
 struct CellInfo
 {
 	uint surfelOffset;
