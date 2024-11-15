@@ -43,6 +43,7 @@ public:
     eMaterial,
     eInstData,
     eLights,
+    eNodes,
   };
 
 
@@ -93,7 +94,7 @@ private:
   nvvk::Queue              m_queue;
 
   // Resources
-  std::array<nvvk::Buffer, 5>                            m_buffer;           // For single buffer
+  std::array<nvvk::Buffer, 6>                            m_buffer;           // For single buffer
   std::array<std::vector<nvvk::Buffer>, 2>               m_buffers;          // For array of buffers (vertex/index)
   std::vector<nvvk::Texture>                             m_textures;         // vector of all textures of the scene
   std::vector<std::pair<nvvk::Image, VkImageCreateInfo>> m_images;           // vector of all images of the scene

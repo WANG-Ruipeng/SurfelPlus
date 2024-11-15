@@ -42,6 +42,7 @@ layout(set = S_SCENE, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCa
 layout(set = S_SCENE, binding = eMaterials,	scalar)		buffer _MaterialBuffer	{ GltfShadeMaterial materials[]; };
 layout(set = S_SCENE, binding = eInstData,	scalar)     buffer _InstanceInfo	{ InstanceData geoInfo[]; };
 layout(set = S_SCENE, binding = eLights,	scalar)		buffer _Lights			{ Light lights[]; };
+layout(set = S_SCENE, binding = eNodes,		scalar)		buffer _SceneNodes		{ SceneNodeData sceneNodes[]; };
 layout(set = S_SCENE, binding = eTextures	      )		uniform sampler2D		texturesMap[]; 
 //
 layout(set = S_ENV, binding = eSunSky,		scalar)		uniform _SSBuffer		{ SunAndSky _sunAndSky; };

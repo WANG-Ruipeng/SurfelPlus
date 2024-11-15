@@ -75,7 +75,8 @@ START_ENUM(SceneBindings)
   eMaterials = 1, 
   eInstData  = 2, 
   eLights    = 3,            
-  eTextures  = 4  // must be last elem            
+  eNodes     = 4,
+  eTextures  = 5  // must be last elem            
 END_ENUM();
 
 // Environment - Set 3
@@ -240,7 +241,17 @@ struct InstanceData
 {
   uint64_t vertexAddress;
   uint64_t indexAddress;
+  uint64_t modelAddress;
   int      materialIndex;
+};
+
+struct SceneNodeData
+{
+	mat4 worldMatrix;
+	int  primMesh;
+	int _pad0;
+	int _pad1;
+	int _pad2;
 };
 
 

@@ -194,6 +194,7 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
 
   std::vector<VertexAttributes> vertex{};
   std::vector<uint32_t>         indices;
+  std::vector<SceneNodeData>    sceneNodes;
 
 
   std::unordered_map<std::string, nvvk::Buffer> m_cachePrimitive;
@@ -264,6 +265,7 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
                                                        | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
                                                        | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
+
     m_buffers[eVertex].push_back(v_buffer);
     NAME_IDX_VK(v_buffer.buffer, prim_idx);
 
@@ -274,6 +276,17 @@ void Scene::createVertexBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& glt
 
     prim_idx++;
   }
+
+  for (const auto& node : gltf.m_nodes)
+  {
+      SceneNodeData data = { node.worldMatrix, node.primMesh };
+      sceneNodes.push_back(data);
+  }
+
+  m_buffer[eNodes] = m_pAlloc->createBuffer(cmdBuf, sceneNodes,
+      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+  NAME_VK(m_buffer[eNodes].buffer);
+
   timer.print();
 }
 
@@ -601,16 +614,18 @@ void Scene::createDescriptorSet(const nvh::GltfScene& gltf)
   bind.addBinding({SceneBindings::eTextures, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, nbTextures, flag});
   bind.addBinding({SceneBindings::eInstData, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, flag});
   bind.addBinding({SceneBindings::eLights, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, flag});
+  bind.addBinding({ SceneBindings::eNodes, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, flag });
 
   m_descPool = bind.createPool(m_device, 1);
   CREATE_NAMED_VK(m_descSetLayout, bind.createLayout(m_device));
   CREATE_NAMED_VK(m_descSet, nvvk::allocateDescriptorSet(m_device, m_descPool, m_descSetLayout));
 
-  std::array<VkDescriptorBufferInfo, 5> dbi;
+  std::array<VkDescriptorBufferInfo, 6> dbi;
   dbi[eCameraMat] = VkDescriptorBufferInfo{m_buffer[eCameraMat].buffer, 0, VK_WHOLE_SIZE};
   dbi[eMaterial]  = VkDescriptorBufferInfo{m_buffer[eMaterial].buffer, 0, VK_WHOLE_SIZE};
   dbi[eInstData]  = VkDescriptorBufferInfo{m_buffer[eInstData].buffer, 0, VK_WHOLE_SIZE};
   dbi[eLights]    = VkDescriptorBufferInfo{m_buffer[eLights].buffer, 0, VK_WHOLE_SIZE};
+  dbi[eNodes]     = VkDescriptorBufferInfo{ m_buffer[eNodes].buffer, 0, VK_WHOLE_SIZE };
 
   // array of images
   std::vector<VkDescriptorImageInfo> t_info;
@@ -622,6 +637,7 @@ void Scene::createDescriptorSet(const nvh::GltfScene& gltf)
   writes.emplace_back(bind.makeWrite(m_descSet, SceneBindings::eMaterials, &dbi[eMaterial]));
   writes.emplace_back(bind.makeWrite(m_descSet, SceneBindings::eInstData, &dbi[eInstData]));
   writes.emplace_back(bind.makeWrite(m_descSet, SceneBindings::eLights, &dbi[eLights]));
+  writes.emplace_back(bind.makeWrite(m_descSet, SceneBindings::eNodes, &dbi[eNodes]));
   writes.emplace_back(bind.makeWriteArray(m_descSet, SceneBindings::eTextures, t_info.data()));
 
   // Writing the information
@@ -645,7 +661,7 @@ void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
   // Focal is the interest point
   glm::vec3 eye, center, up;
   CameraManip.getLookat(eye, center, up);
-  m_camera.focalDist = glm::length(center - eye);
+  m_camera.focalDist = glm::radians(CameraManip.getFov());
 
   // UBO on the device
   VkBuffer deviceUBO = m_buffer[eCameraMat].buffer;
