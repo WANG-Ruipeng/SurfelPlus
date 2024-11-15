@@ -47,6 +47,7 @@ layout(push_constant) uniform _RtxState
 };
 
 
+
 #include "globals.glsl"
 
 PtPayload        prd;

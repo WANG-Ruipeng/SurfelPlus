@@ -154,6 +154,19 @@ void LightPass::run(const VkCommandBuffer& cmdBuf,
 
 	LABEL_SCOPE_VK(cmdBuf);
 
+	auto area = glm::vec2(size.width, size.height);
+
+	VkViewport viewport{ static_cast<float>(0),
+						static_cast<float>(0),
+						static_cast<float>(size.width),
+						static_cast<float>(size.height),
+						0.0f,
+						1.0f };
+	VkRect2D   scissor{ {0,0}, {size.width, size.height} };
+	//VkRect2D   scissor{ renderArea.offset, {size.width, size.height} };
+	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
 	// Sending the push constant information
 	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState), &m_state);
 

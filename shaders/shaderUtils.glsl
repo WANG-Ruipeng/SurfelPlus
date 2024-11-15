@@ -60,11 +60,14 @@ vec4 rand4()
 
 vec3 WorldPosFromDepth(in vec2 uv, in float depth)
 {
-    float z = depth * 2.0 - 1.0;
+    //float z = depth * 2.0 - 1.0;
+    float z = depth;
+    //uv.y = 1.f - uv.y;
     vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, z, 1.0);
     vec4 viewSpacePosition = sceneCamera.projInverse * clipSpacePosition;
+	viewSpacePosition /= viewSpacePosition.w;
     vec4 worldSpacePosition = sceneCamera.viewInverse * viewSpacePosition;
-
+	worldSpacePosition /= worldSpacePosition.w;
     return worldSpacePosition.xyz;
 }
 

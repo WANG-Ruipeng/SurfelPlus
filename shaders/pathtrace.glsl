@@ -71,7 +71,7 @@ vec3 DebugInfo(in State state)
     case eEmissive:
       return state.mat.emission;
     case eAlpha:
-      return vec3(state.mat.alpha);
+      return vec3(state.position);
     case eRoughness:
       return vec3(state.mat.roughness);
     case eTexcoord:
