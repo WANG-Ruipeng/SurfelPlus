@@ -23,34 +23,86 @@ layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuff
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
+layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycleInfo[]; };
 
 // cell buffer
 layout(set = 1, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
 layout(set = 1, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 layout(set = 1, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
 
+// scene buffers
+layout(set = 2, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
+
 layout(push_constant) uniform _RtxState
 {
   RtxState rtxState;
 };
 
-// Compute input
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+#include "shaderUtils.glsl"
 
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
-	// Calculate offset of cell to surfel buffer.
-	if(idx > cellCounter.totalCellCount) return;
+	{
+		// Calculate how much surfels are located at cell.
+		if(idx > surfelCounter.dirtySurfelCnt) return;
 
-	// Get the cell to process
-	CellInfo thisCell = cellBuffer[idx];
-	if(thisCell.surfelCount == 0) return;
+		uint surfelIndex = surfelDirty[idx];
+		Surfel surfel = surfelBuffer[surfelIndex];
 
-	// Calculate offsets of the surfel buffer
-	uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
-    cellBuffer[idx].surfelOffset = offset;
-	thisCell.surfelCount = 0;
+		float surfelRadius = surfel.radius;
+		SurfelRecycleInfo surfelRecycleInfo = surfelRecycleInfo[surfelIndex];
+		uint isSleeping = surfelRecycleInfo.status & 0x0001u;
+		uint lastSeen = surfelRecycleInfo.status & 0x0002u;
+
+		// Increase frame count and reduce life.
+		surfelRecycleInfo.life = uint(max(int(surfelRecycleInfo.life) - 1, 0));
+		surfelRecycleInfo.frame = uint(clamp(int(surfelRecycleInfo.frame) + 1, 0, 65535));
+
+		// Check surfel is seen at last frame.
+		// If so, reset life, and if surfel is sleeping, awake.
+		if(lastSeen != 0u){
+			surfelRecycleInfo.life = maxSurfelLife;
+			if(isSleeping != 0u){ isSleeping = 0u; }
+		}
+	}
+
+	{
+		 /// Compute offset of the cell to surfel buffer
+		if(idx > cellCounter.totalCellCount) return;
+
+		// Get the cell to process
+		CellInfo thisCell = cellBuffer[idx];
+		if(thisCell.surfelCount == 0) return;
+
+		// Calculate offsets of the surfel buffer
+		uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
+		cellBuffer[idx].surfelOffset = offset;
+		thisCell.surfelCount = 0;
+	}
+
+	{
+		// Update _CellToSurfel buffer
+		if(idx > surfelCounter.aliveSurfelCnt) return;
+
+		//Get the surfel cell position to process
+		uint surfelIndex = surfelAlive[idx];
+		Surfel surfel = surfelBuffer[surfelIndex];
+		vec3 camPos = getCameraPosition(sceneCamera);
+		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+
+		for(uint i = 0; i < 125;i++){
+		//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
+			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+				uint flattenIndex = getFlattenCellIndex(neighbourPos);
+				uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+				cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
+			}
+		}
+	}
 
 }
