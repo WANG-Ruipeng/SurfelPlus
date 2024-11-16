@@ -111,21 +111,22 @@ void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvv
 	VkDeviceSize offsets[] = { 0 };
 
 	InstanceData instanceData;
-
+	uint32_t nodeID = 0;
 	for (const auto& node : m_scene->getScene().m_nodes)
 	{
-		instanceData.id = node.primMesh;
+		instanceData.id = nodeID++;
+		uint32_t primID = node.primMesh;
 		instanceData.model = node.worldMatrix;
 
 		// Sending the push constant information
 		vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(InstanceData), &instanceData);
 
-		vkCmdBindVertexBuffers(cmdBuf, 0, 1, &vertexBuffers[instanceData.id].buffer, offsets);
+		vkCmdBindVertexBuffers(cmdBuf, 0, 1, &vertexBuffers[primID].buffer, offsets);
 
-		vkCmdBindIndexBuffer(cmdBuf, indexBuffers[instanceData.id].buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(cmdBuf, indexBuffers[primID].buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		// Drawing the object
-		vkCmdDrawIndexed(cmdBuf, indicesCount[instanceData.id], 1, 0, 0, 0);
+		vkCmdDrawIndexed(cmdBuf, indicesCount[primID], 1, 0, 0, 0);
 	}
 
 }
