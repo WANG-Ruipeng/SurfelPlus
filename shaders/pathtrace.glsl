@@ -187,6 +187,100 @@ VisibilityContribution DirectLight(in Ray r, in State state)
   return contrib;
 }
 
+//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+VisibilityContribution IBL(in Ray r, in State state)
+{
+    vec3  Li = vec3(0);
+    float lightPdf;
+    vec3  lightContrib;
+    vec3  lightDir;
+    float lightDist = 1e32;
+    bool  isLight = false;
+
+    VisibilityContribution contrib;
+    contrib.radiance = vec3(0);
+    contrib.visible = false;
+
+    // keep it simple and use either point light or environment light, each with the same
+    // probability. If the environment factor is zero, we always use the point light
+    // Note: see also miss shader
+    float p_select_light = rtxState.hdrMultiplier > 0.0f ? 0.5f : 1.0f;
+
+    // in general, you would select the light depending on the importance of it
+    // e.g. by incorporating their luminance
+
+    // Point lights
+    if (sceneCamera.nbLights != 0 && rand(prd.seed) <= p_select_light)
+    {
+        isLight = true;
+
+        // randomly select one of the lights
+        int   light_index = int(min(rand(prd.seed) * sceneCamera.nbLights, sceneCamera.nbLights));
+        Light light = lights[light_index];
+
+        vec3  pointToLight = -light.direction;
+        float rangeAttenuation = 1.0;
+        float spotAttenuation = 1.0;
+
+        if (light.type != LightType_Directional)
+        {
+            pointToLight = light.position - state.position;
+        }
+
+        lightDist = length(pointToLight);
+
+        // Compute range and spot light attenuation.
+        if (light.type != LightType_Directional)
+        {
+            rangeAttenuation = getRangeAttenuation(light.range, lightDist);
+        }
+        if (light.type == LightType_Spot)
+        {
+            spotAttenuation = getSpotAttenuation(pointToLight, light.direction, light.outerConeCos, light.innerConeCos);
+        }
+
+        vec3 intensity = rangeAttenuation * spotAttenuation * light.intensity * light.color;
+
+        lightContrib = intensity;
+        lightDir = normalize(pointToLight);
+        lightPdf = 1.0;
+    }
+    // Environment Light
+    else
+    {
+        vec4 dirPdf = EnvSample(lightContrib);
+        lightDir = dirPdf.xyz;
+        lightPdf = dirPdf.w;
+    }
+
+    if (state.isSubsurface || dot(lightDir, state.ffnormal) > 0.0)
+    {
+        // We should shoot a ray toward the environment and check if it is not
+        // occluded by an object before doing the following,
+        // but the call to traceRayEXT have to store
+        // live states (ex: sstate), which is really costly. So we will do
+        // all the computation, but adding the contribution at the end of the
+        // shader.
+        // See: https://developer.nvidia.com/blog/best-practices-using-nvidia-rtx-ray-tracing/
+        {
+            BsdfSampleRec bsdfSampleRec;
+
+            bsdfSampleRec.f = Eval(state, -r.direction, state.ffnormal, lightDir, bsdfSampleRec.pdf);
+
+            float misWeight = isLight ? 1.0 : max(0.0, powerHeuristic(lightPdf, bsdfSampleRec.pdf));
+
+            Li += misWeight * bsdfSampleRec.f * abs(dot(lightDir, state.ffnormal)) * lightContrib / lightPdf;
+        }
+
+        contrib.visible = true;
+        contrib.lightDir = state.normal;
+        contrib.lightDist = lightDist;
+        contrib.radiance = Li;
+    }
+
+    return contrib;
+}
 
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
