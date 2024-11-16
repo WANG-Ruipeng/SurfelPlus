@@ -94,12 +94,11 @@ void main()
     VertexAttributes attr2 = vertices.v[tri.z];
 
     // reconstruct world position from depth
-//    vec3 clipPos = vec3(uvCoords.x * 2.0 - 1.0, 1.0 - uvCoords.y * 2.0, texture(gbufferDepth, uvCoords).r);
-//    vec3 worldPos = (sceneCamera.viewInverse * sceneCamera.projInverse * vec4(clipPos, 1.0)).xyz;
     float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
     vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
 
-
+    // decompress normal
+    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r) * 2.0 - 1.0;
     
     // Compute barycentric coordinates
     vec3 attr0_world = vec3(worldMat * vec4(attr0.position, 1.0));
@@ -121,19 +120,19 @@ void main()
     float w2 = (d00 * d21 - d01 * d20) / denom;
     float w0 = 1.0 - w1 - w2;
 
-//    // Tangent and Binormal
-//    float h0 = (floatBitsToInt(attr0.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // Handiness stored in the less
-//    float h1 = (floatBitsToInt(attr1.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // significative bit of the
-//    float h2 = (floatBitsToInt(attr2.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // texture coord V
-//
-//    const vec4 tng0     = vec4(decompress_unit_vec(attr0.tangent.x), h0);
-//    const vec4 tng1     = vec4(decompress_unit_vec(attr1.tangent.x), h1);
-//    const vec4 tng2     = vec4(decompress_unit_vec(attr2.tangent.x), h2);
-//    vec3       tangent  = (tng0.xyz * w0 + tng1.xyz * w1 + tng2.xyz * w2);
-//    tangent.xyz         = normalize(tangent.xyz);
-//    vec3 world_tangent  = normalize(vec3(mat4(hstate.objectToWorld) * vec4(tangent.xyz, 0)));
-//    world_tangent       = normalize(world_tangent - dot(world_tangent, world_normal) * world_normal);
-//    vec3 world_binormal = cross(world_normal, world_tangent) * tng0.w;
+    // Tangent and Binormal
+    float h0 = (floatBitsToInt(attr0.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // Handiness stored in the less
+    float h1 = (floatBitsToInt(attr1.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // significative bit of the
+    float h2 = (floatBitsToInt(attr2.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // texture coord V
+
+    const vec4 tng0     = vec4(decompress_unit_vec(attr0.tangent.x), h0);
+    const vec4 tng1     = vec4(decompress_unit_vec(attr1.tangent.x), h1);
+    const vec4 tng2     = vec4(decompress_unit_vec(attr2.tangent.x), h2);
+    vec3       tangent  = (tng0.xyz * w0 + tng1.xyz * w1 + tng2.xyz * w2);
+    tangent.xyz         = normalize(tangent.xyz);
+    vec3 world_tangent  = normalize(vec3(mat4(worldMat) * vec4(tangent.xyz, 0)));
+    world_tangent       = normalize(world_tangent - dot(world_tangent, normal) * normal);
+    vec3 world_binormal = cross(normal, world_tangent) * tng0.w;
 
 
     // TexCoord
@@ -146,23 +145,27 @@ void main()
     // Getting the material index on this geometry
     const uint matIndex = max(0, pinfo.materialIndex);  // material of primitive mesh
     GltfShadeMaterial mat = materials[matIndex];
-    //uv = (vec4(uv.xy, 1, 1) * mat.uvTransform).xy;
-
-    // decompress normal
-    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r) * 2.0 - 1.0;
 
     // shading
     State state;
-    state.depth = 0;
-    state.eta = 1.0;
-    state.position = worldPos;
-    state.normal = normal;
-    state.ffnormal = normal;
-    state.texCoord = uv;
-    state.isEmitter = false;
+    state.position       = worldPos;
+    state.normal         = normal;
+    state.tangent        = world_tangent;
+    state.bitangent      = world_binormal;
+    state.texCoord       = uv;
+    state.matID          = matIndex;
+    state.isEmitter      = false;
     state.specularBounce = false;
-    state.isSubsurface = false;
+    state.isSubsurface   = false;
+    state.ffnormal       = normal;
 
+    // Filling material structures
+    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+    GetMaterialsAndTextures(state, camRay);
+
+    // Direct lighting
+    VisibilityContribution directLight = IBL(Ray(worldPos, normal), state);
 
 
     vec3 col = textureLod(texturesMap[nonuniformEXT(mat.pbrBaseColorTexture)], state.texCoord, 0).rgb;
@@ -170,7 +173,7 @@ void main()
     bool hit = AnyHit(Ray(worldPos, normal), 1000.0);
 
     
-    fragColor.xyz = vec3(col);
+    fragColor.xyz = vec3(directLight.lightDir);
     //fragColor.xyz = hash3u1(nodeID);
     //fragColor.xyz = vec3(w0, w1, w2);
     //fragColor.xyz = worldPos - attr0_world;

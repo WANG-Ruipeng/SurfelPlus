@@ -293,7 +293,8 @@ void SampleExample::createSurfelResources()
 	m_surfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, {
         m_surfel.getSurfelBuffersDescLayout(),
         m_surfel.getCellBufferDescLayout(),
-        m_scene.getDescLayout()
+        m_scene.getDescLayout(),
+        m_surfel.getGbufferSamplerDescLayout(),
         }, &m_scene);
 
 	createLightPass();
@@ -530,6 +531,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getSurfelBuffersDescSet(),
 		m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
+        m_surfel.getGbufferSamplerDescSet()
         });
 }
 
