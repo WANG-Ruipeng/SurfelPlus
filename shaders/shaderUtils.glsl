@@ -83,8 +83,20 @@ vec3 getCameraPosition(SceneCamera camera)
     return vec3(camera.viewInverse[3]); 
 }
 
-const float cellSize = 0.05f;
+const float surfelSize = 1.0f;
+const float cellSize = 2.0f;
 const uint kCellDimension = 64;
+const uint kMaxLife = 240u;
+const uint kSleepingMaxLife = 60u;
+
+float calcRadiusApprox(float area, float distance, float fovy, vec2 resolution) {
+    float angle = sqrt(area / 3.14159265359) * fovy / max(resolution.x, resolution.y);
+    return distance * tan(angle);
+}
+
+float calcSurfelRadius(float distance, float fovy, vec2 resolution) {
+    return min(calcRadiusApprox(surfelSize, distance, fovy, resolution), cellSize * 2.0) * 3.0;
+}
 
 bool isCellValid(vec3 cellPos)
 {

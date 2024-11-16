@@ -33,6 +33,11 @@ layout(set = 1, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel
 // scene buffers
 layout(set = 2, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
 
+// gbuffers
+layout(set = 3, binding = 0)	uniform usampler2D primObjIDMap;
+layout(set = 3, binding = 1)	uniform usampler2D normalMap;
+layout(set = 3, binding = 2)	uniform sampler2D depthMap;
+
 layout(push_constant) uniform _RtxState
 {
   RtxState rtxState;
@@ -68,10 +73,36 @@ void main()
 			surfelRecycleInfo.life = maxSurfelLife;
 			if(isSleeping != 0u){ isSleeping = 0u; }
 		}
-	}
 
+		// TODO: Check surfel is sleeping and have enough light pointing towards it,
+		// If yes, set to sleepMaxLife
+		/*if(isSleeping != 0u){
+			surfelRecycleInfo.life = kSleepingMaxLife;
+		}*/
+
+		// Check if surfel valid
+		if(surfelRadius > 0 && surfelRecycleInfo.life > 0){
+			uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
+			surfelAlive[validSurfelCount] = surfelIndex;
+
+			// Get surfel position & normal and reset it to current frame's position
+			// Since we are only doing static mesh, this is not necessary
+			// And it also saves the space of mapping surfel to triangle
+
+			// Reset surfel radius
+			float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
+			float fov = sceneCamera.fov;
+			ivec2 imageRes = rtxState.size;
+			vec2 resolution = vec2(imageRes.x, imageRes.y);
+			float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
+			surfel.radius = newRadius;
+		}else{
+			
+		}
+	}
+	return;
 	{
-		 /// Compute offset of the cell to surfel buffer
+		 // Compute offset of the cell to surfel buffer
 		if(idx > cellCounter.totalCellCount) return;
 
 		// Get the cell to process
@@ -94,7 +125,7 @@ void main()
 		vec3 camPos = getCameraPosition(sceneCamera);
 		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
 
-		for(uint i = 0; i < 125;i++){
+		for(uint i = 0; i < 125; i++){
 		//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
 			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
 			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){

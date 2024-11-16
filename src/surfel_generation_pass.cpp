@@ -61,7 +61,7 @@ void SurfelGenerationPass::create(const VkExtent2D& size, const std::vector<VkDe
 
 	vkCreateComputePipelines(m_device, {}, 1, &computePipelineCreateInfo, nullptr, &m_pipeline);
 
-	m_debug.setObjectName(m_pipeline, "Surfel Prepare Pass");
+	m_debug.setObjectName(m_pipeline, "Surfel Generation Pass");
 	vkDestroyShaderModule(m_device, computePipelineCreateInfo.stage.module, nullptr);
 }
 

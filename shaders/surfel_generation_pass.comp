@@ -138,7 +138,7 @@ void main()
 		imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
-	imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
+	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 
 	if ((rtxState.frame & 0x0000ffff) != 0) return;
 
@@ -184,12 +184,12 @@ void main()
 					surfelAlive[surfelAliveIndex] = surfelID;
 
 					// const radius tmp
-					float radius = 0.02f;
 					Surfel newSurfel;
 					newSurfel.position = worldPos;
 					newSurfel.normal = compressedNor;
 					newSurfel.radiance = vec3(0.f);
-					newSurfel.radius = radius;
+					float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
+					newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
 
 					surfelBuffer[surfelID] = newSurfel;
 				}
