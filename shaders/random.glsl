@@ -106,4 +106,9 @@ vec2 rand2(inout uint prev)
   return vec2(rand(prev), rand(prev));
 }
 
+vec3 rand3(inout uint prev)
+{
+    return vec3(rand(prev), rand(prev), rand(prev));
+}
+
 #endif  // RANDOM_GLSL

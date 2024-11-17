@@ -44,7 +44,7 @@ void LightPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSet
 	//createRenderPass();
 
 	std::vector<VkPushConstantRange> push_constants;
-	push_constants.push_back({ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState) }); 
+	push_constants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(RtxState) }); 
 
 	VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 	layout_info.pushConstantRangeCount = static_cast<uint32_t>(push_constants.size());
@@ -168,7 +168,7 @@ void LightPass::run(const VkCommandBuffer& cmdBuf,
 	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
 
 	// Sending the push constant information
-	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState), &m_state);
+	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(RtxState), &m_state);
 
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, static_cast<uint32_t>(descSets.size()), descSets.data(), 0, nullptr);

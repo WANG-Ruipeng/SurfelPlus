@@ -16,7 +16,7 @@ void SurfelGI::setup(const VkDevice& device, const VkPhysicalDevice& physicalDev
 
 void SurfelGI::createResources(const VkExtent2D& size)
 {
-	nvvk::CommandPool cmdBufGet(m_device, m_queues[eGraphics].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eGraphics].queue);
+	nvvk::CommandPool cmdBufGet(m_device, m_queues[eGraphics].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
 	VkCommandBuffer   cmdBuf = cmdBufGet.createCommandBuffer();
 
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
@@ -47,6 +47,9 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<SurfelRecycleInfo> surfelRecycleBuffer(maxSurfelCnt);
 	m_surfelRecycleBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRecycleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
+	std::vector<SurfelRay> surfelRayBuffer(maxSurfelCnt * 32);
+	m_surfelRayBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRayBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
 	const uint32_t cellCountX = (size.width + cellSize - 1) / cellSize;
 	const uint32_t cellCountY = (size.height + cellSize - 1) / cellSize;
 	const uint32_t totalCellCount = cellCountX * cellCountY;
@@ -66,6 +69,8 @@ void SurfelGI::createResources(const VkExtent2D& size)
 
 	// create indirect lighting map
 	createIndirectLightingMap(size);
+	// create irradiance and depth maps
+	createIrradianceDepthMap();
 
 	// Create the surfel descriptor set layout
 	{
@@ -76,19 +81,21 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 
 		m_surfelBuffersDescSetLayout = bind.createLayout(m_device);
 
 		// Create the edscriptor set
 		m_surfelBuffersDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_surfelBuffersDescSetLayout);
 
-		std::array<VkDescriptorBufferInfo, 6> dbi;
+		std::array<VkDescriptorBufferInfo, 7> dbi;
 		dbi[0] = VkDescriptorBufferInfo{ m_surfelCounterBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[1] = VkDescriptorBufferInfo{ m_surfelBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[2] = VkDescriptorBufferInfo{ m_surfelAliveBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[3] = VkDescriptorBufferInfo{ m_surfelDeadBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[4] = VkDescriptorBufferInfo{ m_surfelDirtyBuffer.buffer, 0, VK_WHOLE_SIZE };
 		dbi[5] = VkDescriptorBufferInfo{ m_surfelRecycleBuffer.buffer, 0, VK_WHOLE_SIZE };
+		dbi[6] = VkDescriptorBufferInfo{ m_surfelRayBuffer.buffer, 0, VK_WHOLE_SIZE };
 
 		std::vector<VkWriteDescriptorSet> writes;
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 0, &dbi[0]));
@@ -97,6 +104,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 3, &dbi[3]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 4, &dbi[4]));
 		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 5, &dbi[5]));
+		writes.emplace_back(bind.makeWrite(m_surfelBuffersDescSet, 6, &dbi[6]));
 
 		// Writing the information
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
@@ -309,6 +317,87 @@ void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCn
 			vkCreateFramebuffer(m_device, &framebufferCreateInfo, nullptr, &m_gbufferResources.m_frameBuffers[i]);
 		}
 	}
+}
+
+void SurfelGI::createIrradianceDepthMap()
+{
+	const VkExtent2D size = { 3840, 2160 };
+
+	if (m_surfelIrradianceMap.image != VK_NULL_HANDLE)
+	{
+		m_pAlloc->destroy(m_surfelIrradianceMap);
+	}
+
+	if (m_surfelDepthMap.image != VK_NULL_HANDLE)
+	{
+		m_pAlloc->destroy(m_surfelDepthMap);
+	}
+
+	// Creating irradiance image
+	{
+		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+			size, VK_FORMAT_R8_UNORM,
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+
+		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+		NAME_VK(image.image);
+		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		sampler.maxLod = FLT_MAX;
+		sampler.minFilter = VK_FILTER_LINEAR;
+		sampler.magFilter = VK_FILTER_LINEAR;
+		m_surfelIrradianceMap = m_pAlloc->createTexture(image, ivInfo, sampler);
+		m_surfelIrradianceMap.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+
+	// Creating depth image
+	{
+		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+			size, VK_FORMAT_R8G8_UNORM,
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+
+		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+		NAME_VK(image.image);
+		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		sampler.maxLod = FLT_MAX;
+		sampler.minFilter = VK_FILTER_LINEAR;
+		sampler.magFilter = VK_FILTER_LINEAR;
+		m_surfelDepthMap = m_pAlloc->createTexture(image, ivInfo, sampler);
+		m_surfelDepthMap.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+
+	// Setting the image layout
+	{
+		nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
+		auto              cmdBuf = cmdBufGet.createCommandBuffer();
+		nvvk::cmdBarrierImageLayout(cmdBuf, m_surfelIrradianceMap.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		nvvk::cmdBarrierImageLayout(cmdBuf, m_surfelDepthMap.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+		cmdBufGet.submitAndWait(cmdBuf);
+	}
+
+	nvvk::DescriptorSetBindings bind;
+
+	vkDestroyDescriptorSetLayout(m_device, m_surfelDataMapsDescSetLayout, nullptr);
+
+	bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+					 VK_SHADER_STAGE_COMPUTE_BIT });
+	bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+					 VK_SHADER_STAGE_COMPUTE_BIT });
+	m_surfelDataMapsDescSetLayout = bind.createLayout(m_device);
+	m_surfelDataMapsDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_surfelDataMapsDescSetLayout);
+
+	std::vector<VkWriteDescriptorSet> writes;
+	writes.emplace_back(bind.makeWrite(m_surfelDataMapsDescSet, 0, &m_surfelIrradianceMap.descriptor));
+	writes.emplace_back(bind.makeWrite(m_surfelDataMapsDescSet, 1, &m_surfelIrradianceMap.descriptor));
+	writes.emplace_back(bind.makeWrite(m_surfelDataMapsDescSet, 2, &m_surfelDepthMap.descriptor));
+	writes.emplace_back(bind.makeWrite(m_surfelDataMapsDescSet, 3, &m_surfelDepthMap.descriptor));
+	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 void SurfelGI::gbufferLayoutTransition(VkCommandBuffer cmdBuf)

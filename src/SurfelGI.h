@@ -44,6 +44,7 @@ public:
 	void createResources(const VkExtent2D& size);
 	void createIndirectLightingMap(const VkExtent2D& size);
 	void createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
+	void createIrradianceDepthMap();
 	VkFramebuffer			getGbufferFramebuffer(uint32_t currFrame) { return m_gbufferResources.m_frameBuffers[currFrame]; }
 	VkDescriptorSetLayout	getGbufferSamplerDescLayout() { return m_gbufferResources.m_samplerDescSetLayout; }
 	VkDescriptorSet			getGbufferSamplerDescSet() { return m_gbufferResources.m_samplerDescSet; }
@@ -93,6 +94,7 @@ private:
 	nvvk::Buffer				m_surfelDeadBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelDirtyBuffer{ VK_NULL_HANDLE };
 	nvvk::Buffer				m_surfelRecycleBuffer{ VK_NULL_HANDLE };
+	nvvk::Buffer				m_surfelRayBuffer{ VK_NULL_HANDLE };
 	
 	// Cell Resources
 	nvvk::Buffer 				m_cellInfoBuffer{ VK_NULL_HANDLE };
@@ -100,6 +102,8 @@ private:
 	nvvk::Buffer 			    m_cellToSurfelBuffer{ VK_NULL_HANDLE };
 
 	nvvk::Texture				m_indirectLightingMap;
+	nvvk::Texture				m_surfelIrradianceMap;
+	nvvk::Texture				m_surfelDepthMap;
 
 	VkDescriptorSetLayout       m_surfelBuffersDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet             m_surfelBuffersDescSet{ VK_NULL_HANDLE };
@@ -107,6 +111,8 @@ private:
 	VkDescriptorSet             m_indirectLightDescSet{ VK_NULL_HANDLE };
 	VkDescriptorSetLayout		m_cellBufferDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet				m_cellBufferDescSet{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout		m_surfelDataMapsDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet				m_surfelDataMapsDescSet{ VK_NULL_HANDLE };
 
 	// Basic Cell Info
 	const uint32_t cellSize = 32;

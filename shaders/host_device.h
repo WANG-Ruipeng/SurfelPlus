@@ -110,6 +110,7 @@ struct SurfelCounter
 	uint aliveSurfelCnt;
 	uint deadSurfelCnt;
 	uint dirtySurfelCnt;
+	uint surfelRayCnt;
 };
 
 struct Surfel 
@@ -126,7 +127,7 @@ struct Surfel
 	uint objID;
 	uint rayOffset;
 	uint rayCount;
-	uint pad;
+	uint irradiance;
 };
 
 // [status]
@@ -139,6 +140,16 @@ struct SurfelRecycleInfo
 	uint status;
 };
 const int maxSurfelLife = 255;
+
+struct SurfelRay
+{
+	vec3 dir_w;
+	float pdf;
+	vec3 radiance;
+	float t;
+	vec3 dir_o;
+	uint surfelID;
+};
 
 struct CellInfo
 {

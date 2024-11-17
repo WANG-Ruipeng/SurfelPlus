@@ -37,6 +37,10 @@ layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
+	if (idx == 0)
+	{
+		surfelCounter.surfelRayCnt = 0;
+	}
 
 	// tmp value
 	const uint maxSurfelCount = 10000;

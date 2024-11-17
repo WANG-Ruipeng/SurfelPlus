@@ -47,6 +47,7 @@ layout(push_constant) uniform _RtxState
 };
 
 #include "shaderUtils.glsl"
+#include "random.glsl"
 
 shared uint groupShareMinCoverage;
 shared uint groupShareMaxContribution;
@@ -56,8 +57,6 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main()
 {
-
-	
 
 	ivec2 imageRes    = rtxState.size;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
@@ -74,7 +73,7 @@ void main()
 		return;
 	}
 
-	rng_initialize(imageCoords, rtxState.totalFrames);
+	uint randSeed = initRandom(imageRes, imageCoords, rtxState.totalFrames);
 
 	// get the normal
 	uint compressedNor = texelFetch(normalMap, imageCoords, 0).r;
@@ -145,7 +144,7 @@ void main()
 
 	uint coverageData = 0;
     coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
-    coverageData |= ((uint(255 * rand3()) & 0x000000FF) << 8);
+    coverageData |= ((uint(255 * rand3(randSeed)) & 0x000000FF) << 8);
     coverageData |= ((gl_LocalInvocationID.x & 0x0000000F) << 4);
     coverageData |= ((gl_LocalInvocationID.y & 0x0000000F) << 0);
 
@@ -175,7 +174,7 @@ void main()
 	{
 		if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
 		{
-			if (coverage < 1.f && rand() < depth * 0.2f)
+			if (coverage < 1.f && rand(randSeed) < depth * 0.2f)
 			{
 			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 				if (surfelAliveIndex < surfelMaxCount)
