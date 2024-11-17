@@ -770,7 +770,7 @@ struct Material {
   NormalTextureInfo normalTexture;
   OcclusionTextureInfo occlusionTexture;
   TextureInfo emissiveTexture;
-
+  
   // For backward compatibility
   // TODO(syoyo): Remove `values` and `additionalValues` in the next release.
   ParameterMap values;

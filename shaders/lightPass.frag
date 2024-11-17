@@ -134,7 +134,6 @@ void main()
     world_tangent       = normalize(world_tangent - dot(world_tangent, normal) * normal);
     vec3 world_binormal = cross(normal, world_tangent) * tng0.w;
 
-
     // TexCoord
     const vec2 uv0       = decode_texture(attr0.texcoord);
     const vec2 uv1       = decode_texture(attr1.texcoord);
@@ -145,6 +144,7 @@ void main()
     // Getting the material index on this geometry
     const uint matIndex = max(0, pinfo.materialIndex);  // material of primitive mesh
     GltfShadeMaterial mat = materials[matIndex];
+
 
     // shading
     State state;
@@ -159,23 +159,28 @@ void main()
     state.isSubsurface   = false;
     state.ffnormal       = normal;
 
+
+    State state1 = GetState(primObjID, normal, depth);
+
+
     // Filling material structures
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
     Ray camRay = Ray(camPos, normalize(worldPos - camPos));
     GetMaterialsAndTextures(state, camRay);
 
     // Direct lighting
-    VisibilityContribution directLight = IBL(Ray(worldPos, normal), state);
-
+    VisibilityContribution directLight = IBL(camRay, state);
 
     vec3 col = textureLod(texturesMap[nonuniformEXT(mat.pbrBaseColorTexture)], state.texCoord, 0).rgb;
 
     bool hit = AnyHit(Ray(worldPos, normal), 1000.0);
 
-    
-    fragColor.xyz = vec3(directLight.lightDir);
+//    fragColor.xyz = IntegerToColor(matIndex);
+//    fragColor.xyz = vec3(directLight.radiance);
     //fragColor.xyz = hash3u1(nodeID);
     //fragColor.xyz = vec3(w0, w1, w2);
     //fragColor.xyz = worldPos - attr0_world;
+//    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
+    fragColor.xyz = state.mat.albedo;
     fragColor.a = 1.0;
 }
