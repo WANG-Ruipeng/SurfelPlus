@@ -95,9 +95,29 @@ void main()
 			ivec2 imageRes = rtxState.size;
 			vec2 resolution = vec2(imageRes.x, imageRes.y);
 			float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
-			surfel.radius = newRadius;
+			if(isSleeping != 0u) {
+				surfel.radius = max(newRadius, cellSize * 0.5f);
+			}else{
+				surfel.radius = newRadius;
+			}
+				
+			// Calculate number of surfels located at cell
+			vec3 camPos = getCameraPosition(sceneCamera);
+			vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+			for(uint i = 0; i < 125; i++){
+			//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
+			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+				uint flattenIndex = getFlattenCellIndex(neighbourPos);
+				atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+			}
+
+			//TODO: Update ray information
+
+		}
 		}else{
-			
+			uint deadSurfelCount = atomicAdd(surfelCounter.deadSurfelCnt, 1);
+			surfelDead[deadSurfelCount] = deadSurfelCount;
 		}
 	}
 	return;
@@ -134,6 +154,8 @@ void main()
 				cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
 			}
 		}
+
+
 	}
 
 }
