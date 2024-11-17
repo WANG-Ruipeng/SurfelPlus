@@ -46,6 +46,11 @@ float F_Schlick(float f0, float f90, float VdotH)
   return f0 + (f90 - f0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);
 }
 
+vec3 F_SchlickRoughness(vec3 F0, float VdotH, float roughness)
+{
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);
+}
+
 // Smith Joint GGX
 // Note: Vis = G / (4 * NdotL * NdotV)
 // see Eric Heitz. 2014. Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs. Journal of Computer Graphics Techniques, 3

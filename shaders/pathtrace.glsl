@@ -202,81 +202,44 @@ VisibilityContribution IBL(in Ray r, in State state)
     contrib.radiance = vec3(0);
     contrib.visible = false;
 
-    // keep it simple and use either point light or environment light, each with the same
-    // probability. If the environment factor is zero, we always use the point light
-    // Note: see also miss shader
-    float p_select_light = rtxState.hdrMultiplier > 0.0f ? 0.5f : 1.0f;
+    lightDir = state.normal;
+    lightPdf = 1.0;
 
-    // in general, you would select the light depending on the importance of it
-    // e.g. by incorporating their luminance
-
-    // Point lights
-    if (sceneCamera.nbLights != 0 && rand(prd.seed) <= p_select_light)
-    {
-        isLight = true;
-
-        // randomly select one of the lights
-        int   light_index = int(min(rand(prd.seed) * sceneCamera.nbLights, sceneCamera.nbLights));
-        Light light = lights[light_index];
-
-        vec3  pointToLight = -light.direction;
-        float rangeAttenuation = 1.0;
-        float spotAttenuation = 1.0;
-
-        if (light.type != LightType_Directional)
-        {
-            pointToLight = light.position - state.position;
-        }
-
-        lightDist = length(pointToLight);
-
-        // Compute range and spot light attenuation.
-        if (light.type != LightType_Directional)
-        {
-            rangeAttenuation = getRangeAttenuation(light.range, lightDist);
-        }
-        if (light.type == LightType_Spot)
-        {
-            spotAttenuation = getSpotAttenuation(pointToLight, light.direction, light.outerConeCos, light.innerConeCos);
-        }
-
-        vec3 intensity = rangeAttenuation * spotAttenuation * light.intensity * light.color;
-
-        lightContrib = intensity;
-        lightDir = normalize(pointToLight);
-        lightPdf = 1.0;
-    }
-    // Environment Light
-    else
-    {
-        vec4 dirPdf = EnvSample(lightContrib);
-        lightDir = dirPdf.xyz;
-        lightPdf = dirPdf.w;
-    }
+	lightContrib = textureLod(environmentTexture, GetSphericalUv(lightDir), 2).rgb;
 
     if (state.isSubsurface || dot(lightDir, state.ffnormal) > 0.0)
     {
-        // We should shoot a ray toward the environment and check if it is not
-        // occluded by an object before doing the following,
-        // but the call to traceRayEXT have to store
-        // live states (ex: sstate), which is really costly. So we will do
-        // all the computation, but adding the contribution at the end of the
-        // shader.
-        // See: https://developer.nvidia.com/blog/best-practices-using-nvidia-rtx-ray-tracing/
-        {
-            BsdfSampleRec bsdfSampleRec;
+        // bsdf sample
+        BsdfSampleRec bsdfSampleRec;
+        bsdfSampleRec.f = Eval(state, -r.direction, state.ffnormal, lightDir, bsdfSampleRec.pdf);
+        float misWeight = isLight ? 1.0 : max(0.0, powerHeuristic(lightPdf, bsdfSampleRec.pdf));
 
-            bsdfSampleRec.f = Eval(state, -r.direction, state.ffnormal, lightDir, bsdfSampleRec.pdf);
+        // IBL diffuse irradiance
+        vec3 F0 = vec3(mix(0.04, 1.0, state.mat.metallic));
+		vec3 albedo = state.mat.albedo;
+		float ao = 1.0;
+        float HdotV = max(0.0, dot(normalize(lightDir - r.direction), -r.direction));
+        vec3 kS = F_SchlickRoughness(F0, HdotV, state.mat.roughness);
+        vec3 kD = 1.0 - kS;
+        vec3 irradiance = lightContrib;
+        vec3 diffuse = irradiance * albedo;
+        vec3 ambient = (kD * diffuse) * ao;
 
-            float misWeight = isLight ? 1.0 : max(0.0, powerHeuristic(lightPdf, bsdfSampleRec.pdf));
+		lightContrib = ambient;
 
-            Li += misWeight * bsdfSampleRec.f * abs(dot(lightDir, state.ffnormal)) * lightContrib / lightPdf;
-        }
+		
+
+        //Li += misWeight * bsdfSampleRec.f * abs(dot(lightDir, state.ffnormal)) * lightContrib / lightPdf;
+        Li += bsdfSampleRec.f * abs(dot(lightDir, state.ffnormal)) * lightContrib;
 
         contrib.visible = true;
-        contrib.lightDir = state.normal;
+        contrib.lightDir = lightDir;
         contrib.lightDist = lightDist;
-        contrib.radiance = Li;
+        contrib.radiance = lightContrib;
+
+        
+
+        
     }
 
     return contrib;

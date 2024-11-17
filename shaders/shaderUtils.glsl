@@ -259,3 +259,99 @@ const vec3 neighborOffset[125] = vec3[125](
     vec3(2, 2, 1),
     vec3(2, 2, 2)
     );
+
+#ifdef LAYOUTS_GLSL
+    State GetState(uint primObjID, vec3 normal, float depth)
+    {
+        uint nodeID = primObjID >> 23;
+        uint instanceID = sceneNodes[nodeID].primMesh;
+        mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+        uint primID = primObjID & 0x007FFFFF;
+        InstanceData pinfo = geoInfo[instanceID];
+
+        // Primitive buffer addresses
+        Indices  indices = Indices(pinfo.indexAddress);
+        Vertices vertices = Vertices(pinfo.vertexAddress);
+
+        // Indices of this triangle primitive.
+        uvec3 tri = indices.i[primID];
+
+        // All vertex attributes of the triangle.
+        VertexAttributes attr0 = vertices.v[tri.x];
+        VertexAttributes attr1 = vertices.v[tri.y];
+        VertexAttributes attr2 = vertices.v[tri.z];
+
+        // reconstruct world position from depth
+        vec3 worldPos = WorldPosFromDepth(vec2(gl_FragCoord.xy) / vec2(rtxState.size), depth);
+
+        // decompress normal
+        //vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r) * 2.0 - 1.0;
+
+        // Compute barycentric coordinates
+        vec3 attr0_world = vec3(worldMat * vec4(attr0.position, 1.0));
+        vec3 attr1_world = vec3(worldMat * vec4(attr1.position, 1.0));
+        vec3 attr2_world = vec3(worldMat * vec4(attr2.position, 1.0));
+
+        vec3 v0 = attr1_world - attr0_world;
+        vec3 v1 = attr2_world - attr0_world;
+        vec3 v2 = worldPos - attr0_world;
+
+        float d00 = dot(v0, v0);
+        float d01 = dot(v0, v1);
+        float d11 = dot(v1, v1);
+        float d20 = dot(v2, v0);
+        float d21 = dot(v2, v1);
+        float denom = d00 * d11 - d01 * d01;
+
+        float w1 = (d11 * d20 - d01 * d21) / denom;
+        float w2 = (d00 * d21 - d01 * d20) / denom;
+        float w0 = 1.0 - w1 - w2;
+
+        // Tangent and Binormal
+        float h0 = (floatBitsToInt(attr0.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // Handiness stored in the less
+        float h1 = (floatBitsToInt(attr1.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // significative bit of the
+        float h2 = (floatBitsToInt(attr2.texcoord.y) & 1) == 1 ? 1.0f : -1.0f;  // texture coord V
+
+        const vec4 tng0 = vec4(decompress_unit_vec(attr0.tangent.x), h0);
+        const vec4 tng1 = vec4(decompress_unit_vec(attr1.tangent.x), h1);
+        const vec4 tng2 = vec4(decompress_unit_vec(attr2.tangent.x), h2);
+        vec3       tangent = (tng0.xyz * w0 + tng1.xyz * w1 + tng2.xyz * w2);
+        tangent.xyz = normalize(tangent.xyz);
+        vec3 world_tangent = normalize(vec3(mat4(worldMat) * vec4(tangent.xyz, 0)));
+        world_tangent = normalize(world_tangent - dot(world_tangent, normal) * normal);
+        vec3 world_binormal = cross(normal, world_tangent) * tng0.w;
+
+        // TexCoord
+        const vec2 uv0 = decode_texture(attr0.texcoord);
+        const vec2 uv1 = decode_texture(attr1.texcoord);
+        const vec2 uv2 = decode_texture(attr2.texcoord);
+
+        vec2 uv = w0 * uv0 + w1 * uv1 + w2 * uv2;
+
+        // Getting the material index on this geometry
+        const uint matIndex = max(0, pinfo.materialIndex);  // material of primitive mesh
+        GltfShadeMaterial mat = materials[matIndex];
+
+
+        // shading
+        State state;
+        state.position = worldPos;
+        state.normal = normal;
+        state.tangent = world_tangent;
+        state.bitangent = world_binormal;
+        state.texCoord = uv;
+        state.matID = matIndex;
+        state.isEmitter = false;
+        state.specularBounce = false;
+        state.isSubsurface = false;
+        state.ffnormal = normal;
+
+        // Filling material structures
+        vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+        Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+        GetMaterialsAndTextures(state, camRay);
+
+        return state;
+    }
+
+#endif
