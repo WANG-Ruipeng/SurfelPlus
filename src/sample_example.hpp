@@ -70,6 +70,8 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "surfel_prepare_pass.h"
 #include "surfel_generation_pass.h"
 #include "surfel_update_pass.h"
+#include "cellInfo_update_pass.h"
+#include "cellToSurfel_update_pass.h"
 #include "imgui_internal.h"
 #include "queue.hpp"
 #include "lightPass.h"
@@ -144,6 +146,8 @@ public:
   SurfelPreparePass m_surfelPreparePass;
   SurfelUpdatePass m_surfelUpdatePass;
   SurfelGenerationPass m_surfelGenerationPass;
+  CellInfoUpdatePass m_cellInfoUpdatePass;
+  CellToSurfelUpdatePass m_cellToSurfelUpdatePass;
 
   // light pass
   LightPass m_lightPass;

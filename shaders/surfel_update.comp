@@ -52,111 +52,73 @@ void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
-	{
-		// Calculate how much surfels are located at cell.
-		if(idx > surfelCounter.dirtySurfelCnt) return;
+	// Calculate how much surfels are located at cell.
+	if(idx > surfelCounter.dirtySurfelCnt) return;
 
-		uint surfelIndex = surfelDirty[idx];
-		Surfel surfel = surfelBuffer[surfelIndex];
+	uint surfelIndex = surfelDirty[idx];
+	Surfel surfel = surfelBuffer[surfelIndex];
 
-		float surfelRadius = surfel.radius;
-		SurfelRecycleInfo surfelRecycleInfo = surfelRecycleInfo[surfelIndex];
-		uint isSleeping = surfelRecycleInfo.status & 0x0001u;
-		uint lastSeen = surfelRecycleInfo.status & 0x0002u;
+	float surfelRadius = surfel.radius;
+	SurfelRecycleInfo surfelRecycleInfo = surfelRecycleInfo[surfelIndex];
+	uint isSleeping = surfelRecycleInfo.status & 0x0001u;
+	uint lastSeen = surfelRecycleInfo.status & 0x0002u;
 
-		// Increase frame count and reduce life.
-		surfelRecycleInfo.life = uint(max(int(surfelRecycleInfo.life) - 1, 0));
-		surfelRecycleInfo.frame = uint(clamp(int(surfelRecycleInfo.frame) + 1, 0, 65535));
+	// Increase frame count and reduce life.
+	surfelRecycleInfo.life = uint(max(int(surfelRecycleInfo.life) - 1, 0));
+	surfelRecycleInfo.frame = uint(clamp(int(surfelRecycleInfo.frame) + 1, 0, 65535));
 
-		// Check surfel is seen at last frame.
-		// If so, reset life, and if surfel is sleeping, awake.
-		if(lastSeen != 0u){
-			surfelRecycleInfo.life = maxSurfelLife;
-			if(isSleeping != 0u){ isSleeping = 0u; }
-		}
+	// Check surfel is seen at last frame.
+	// If so, reset life, and if surfel is sleeping, awake.
+	if(lastSeen != 0u){
+		surfelRecycleInfo.life = maxSurfelLife;
+		if(isSleeping != 0u){ isSleeping = 0u; }
+	}
 
-		// TODO: Check surfel is sleeping and have enough light pointing towards it,
-		// If yes, set to sleepMaxLife
-		/*if(isSleeping != 0u){
-			surfelRecycleInfo.life = kSleepingMaxLife;
-		}*/
+	// TODO: Check surfel is sleeping and have enough light pointing towards it,
+	// If yes, set to sleepMaxLife
+	/*if(isSleeping != 0u){
+		surfelRecycleInfo.life = kSleepingMaxLife;
+	}*/
 
-		// Check if surfel valid
-		if(surfelRadius > 0 && surfelRecycleInfo.life > 0){
-			uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-			surfelAlive[validSurfelCount] = surfelIndex;
+	// Check if surfel valid
+	if(surfelRadius > 0 && surfelRecycleInfo.life > 0){
+		uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
+		surfelAlive[validSurfelCount] = surfelIndex;
 
-			// Get surfel position & normal and reset it to current frame's position
-			// Since we are only doing static mesh, this is not necessary
-			// And it also saves the space of mapping surfel to triangle
+		// Get surfel position & normal and reset it to current frame's position
+		// Since we are only doing static mesh, this is not necessary
+		// And it also saves the space of mapping surfel to triangle
 
-			// Reset surfel radius
-			float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
-			float fov = sceneCamera.fov;
-			ivec2 imageRes = rtxState.size;
-			vec2 resolution = vec2(imageRes.x, imageRes.y);
-			float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
-			if(isSleeping != 0u) {
-				surfel.radius = max(newRadius, cellSize * 0.5f);
-			}else{
-				surfel.radius = newRadius;
-			}
-				
-			// Calculate number of surfels located at cell
-			vec3 camPos = getCameraPosition(sceneCamera);
-			vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
-			for(uint i = 0; i < 125; i++){
-			//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
-			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
-				uint flattenIndex = getFlattenCellIndex(neighbourPos);
-				atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
-			}
-
-			//TODO: Update ray information
-
-		}
+		// Reset surfel radius
+		float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
+		float fov = sceneCamera.fov;
+		ivec2 imageRes = rtxState.size;
+		vec2 resolution = vec2(imageRes.x, imageRes.y);
+		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
+		if(isSleeping != 0u) {
+			surfel.radius = max(newRadius, cellSize * 0.5f);
 		}else{
-			uint deadSurfelCount = atomicAdd(surfelCounter.deadSurfelCnt, 1);
-			surfelDead[deadSurfelCount] = deadSurfelCount;
+			surfel.radius = newRadius;
 		}
-	}
-	return;
-	{
-		 // Compute offset of the cell to surfel buffer
-		if(idx > cellCounter.totalCellCount) return;
-
-		// Get the cell to process
-		CellInfo thisCell = cellBuffer[idx];
-		if(thisCell.surfelCount == 0) return;
-
-		// Calculate offsets of the surfel buffer
-		uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
-		cellBuffer[idx].surfelOffset = offset;
-		thisCell.surfelCount = 0;
-	}
-
-	{
-		// Update _CellToSurfel buffer
-		if(idx > surfelCounter.aliveSurfelCnt) return;
-
-		//Get the surfel cell position to process
-		uint surfelIndex = surfelAlive[idx];
-		Surfel surfel = surfelBuffer[surfelIndex];
+				
+		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
 		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
-
 		for(uint i = 0; i < 125; i++){
 		//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
-			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
-				uint flattenIndex = getFlattenCellIndex(neighbourPos);
-				uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
-				cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
-			}
+		vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+		if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+			uint flattenIndex = getFlattenCellIndex(neighbourPos);
+			atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
 		}
 
+		//TODO: Update ray information
 
 	}
-
+	}else{
+		uint deadSurfelCount = atomicAdd(surfelCounter.deadSurfelCnt, 1);
+		surfelDead[deadSurfelCount] = deadSurfelCount;
+	}
+	
+	return;
 }

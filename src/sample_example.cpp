@@ -78,6 +78,8 @@ void SampleExample::setup(const VkInstance&               instance,
   m_surfelPreparePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelGenerationPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_cellInfoUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_cellToSurfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -295,6 +297,15 @@ void SampleExample::createSurfelResources()
         m_surfel.getCellBufferDescLayout(),
         m_scene.getDescLayout(),
         m_surfel.getGbufferSamplerDescLayout(),
+        }, &m_scene);
+    m_cellInfoUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, { 
+        m_surfel.getSurfelBuffersDescLayout(),
+        m_surfel.getCellBufferDescLayout()
+        }, &m_scene);
+    m_cellToSurfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, {
+        m_surfel.getSurfelBuffersDescLayout(),
+        m_surfel.getCellBufferDescLayout(),
+        m_scene.getDescLayout()
         }, &m_scene);
 
 	createLightPass();
@@ -532,6 +543,15 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 		m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
         m_surfel.getGbufferSamplerDescSet()
+        });
+    m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
+        m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getCellBufferDescSet()
+        });
+    m_cellToSurfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
+        m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getCellBufferDescSet(),
+        m_scene.getDescSet(),
         });
 }
 
