@@ -130,17 +130,17 @@ void main()
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
-		//imageStore(resultImage, imageCoords, vec4(mainNor * 0.5f + 0.5f, 1.f));
-		imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+		imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+		//imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
 	}
 	else
 	{
-		imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
+		imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 
-	if ((rtxState.frame & 0x0000ffff) != 0) return;
+	if ((rtxState.frame & 0x000fffff) != 0) return;
 
 
 	uint coverageData = 0;
@@ -175,7 +175,7 @@ void main()
 	{
 		if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
 		{
-			if (coverage < 1.f && rand() < depth * 0.3f)
+			if (coverage < 1.f && rand() < depth * 0.2f)
 			{
 			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 				if (surfelAliveIndex < surfelMaxCount)
@@ -190,7 +190,7 @@ void main()
 					newSurfel.radiance = vec3(0.f);
 					float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
 					newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
-
+					
 					surfelBuffer[surfelID] = newSurfel;
 				}
 				else

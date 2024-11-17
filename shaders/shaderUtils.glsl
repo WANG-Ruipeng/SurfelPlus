@@ -95,7 +95,7 @@ float calcRadiusApprox(float area, float distance, float fovy, vec2 resolution) 
 }
 
 float calcSurfelRadius(float distance, float fovy, vec2 resolution) {
-    return min(calcRadiusApprox(surfelSize, distance, fovy, resolution), cellSize * 2.0) * 3.0;
+    return min(calcRadiusApprox(surfelSize, distance, fovy, resolution), cellSize * 0.5);
 }
 
 bool isCellValid(vec3 cellPos)
