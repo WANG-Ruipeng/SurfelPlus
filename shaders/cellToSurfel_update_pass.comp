@@ -23,6 +23,8 @@ layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuff
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
+layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycle[]; };
+layout(set = 0, binding = 6,  scalar)		buffer _SurfelRayBuffer		{ SurfelRay surfelRayBuffer[]; };
 
 // cell buffer
 layout(set = 1, binding = 0, scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
