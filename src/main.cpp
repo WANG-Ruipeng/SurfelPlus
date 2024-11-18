@@ -258,7 +258,8 @@ int main(int argc, char** argv)
 	if (!sample.m_busy)
 	{
 		auto sec = profiler.timeRecurring("Light", cmdBuf);
-		sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
+        sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
+		//sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize(), sample.getFramebuffers()[sample.getCurFrame()]);
 		sample.m_lightPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, { sample.m_accelStruct.getDescSet(), sample.m_offscreen.getDescSet(), sample.m_scene.getDescSet(), sample.m_descSet, sample.m_surfel.getGbufferImageDescSet() });
 		sample.m_lightPass.endRenderPass(cmdBuf);
 	}
@@ -271,8 +272,6 @@ int main(int argc, char** argv)
       // Render the UI
       ImGui::Render();
       ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
-
-      vkCmdEndRenderPass(cmdBuf);
     }
 
     // end of frame 
