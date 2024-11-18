@@ -260,6 +260,7 @@ int main(int argc, char** argv)
 		auto sec = profiler.timeRecurring("Light", cmdBuf);
         sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
 		//sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize(), sample.getFramebuffers()[sample.getCurFrame()]);
+        sample.m_lightPass.setPushContants(sample.m_rtxState);
 		sample.m_lightPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, { sample.m_accelStruct.getDescSet(), sample.m_offscreen.getDescSet(), sample.m_scene.getDescSet(), sample.m_descSet, sample.m_surfel.getGbufferImageDescSet() });
 		sample.m_lightPass.endRenderPass(cmdBuf);
 	}

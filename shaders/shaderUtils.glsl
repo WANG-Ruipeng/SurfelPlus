@@ -101,6 +101,9 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
         const uint matIndex = max(0, pinfo.materialIndex);  // material of primitive mesh
         GltfShadeMaterial mat = materials[matIndex];
 
+		// Camera ray
+        vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+        Ray camRay = Ray(camPos, normalize(worldPos - camPos));
 
         // shading
         State state;
@@ -113,11 +116,10 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
         state.isEmitter = false;
         state.specularBounce = false;
         state.isSubsurface = false;
-        state.ffnormal = normal;
+        state.ffnormal = dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal;
 
         // Filling material structures
-        vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
-        Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+        
         GetMaterialsAndTextures(state, camRay);
 
         return state;

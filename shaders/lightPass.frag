@@ -97,30 +97,44 @@ void main()
     float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
     vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
 
+    // camera ray
+    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+
+    // Hitting the environment
+    if(distance(worldPos, camPos) > 400.0)
+    {
+      vec3 env;
+      if(_sunAndSky.in_use == 1)
+        env = sun_and_sky(_sunAndSky, camRay.direction);
+      else
+      {
+        vec2 uv = GetSphericalUv(camRay.direction);  // See sampling.glsl
+        env     = texture(environmentTexture, uv).rgb;
+      }
+      // Done sampling return
+      fragColor = vec4(env * rtxState.hdrMultiplier, 1.0);
+      return;
+    }
+
     // decompress normal
-    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r) * 2.0 - 1.0;
+    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r);
 
     State state = GetState(primObjID, normal, depth, uvCoords);
 
-
-    // Filling material structures
-    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
-    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
-    GetMaterialsAndTextures(state, camRay);
-
     // Direct lighting
-    VisibilityContribution directLight = IBL(camRay, state);
+    VisibilityContribution directLight = DirectLight(camRay, state);
 
 //    vec3 col = textureLod(texturesMap[nonuniformEXT(mat.pbrBaseColorTexture)], state.texCoord, 0).rgb;
 
-    bool hit = AnyHit(Ray(worldPos, normal), 1000.0);
+    bool hit = AnyHit(Ray(worldPos, directLight.lightDir), 1000.0);
 
 //    fragColor.xyz = IntegerToColor(matIndex);
-//    fragColor.xyz = vec3(directLight.radiance);
+//    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
     //fragColor.xyz = hash3u1(nodeID);
     //fragColor.xyz = vec3(w0, w1, w2);
     //fragColor.xyz = worldPos - attr0_world;
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
-    fragColor.xyz = state.mat.albedo;
+    fragColor.xyz = hit ? vec3(0) : directLight.radiance;
     fragColor.a = 1.0;
 }

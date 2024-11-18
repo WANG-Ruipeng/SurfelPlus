@@ -211,7 +211,7 @@ VisibilityContribution IBL(in Ray r, in State state)
     {
         // bsdf sample
         BsdfSampleRec bsdfSampleRec;
-        bsdfSampleRec.f = Eval(state, -r.direction, state.ffnormal, lightDir, bsdfSampleRec.pdf);
+        bsdfSampleRec.f = Eval(state, -r.direction, state.ffnormal, vec3(0, 1, 0), bsdfSampleRec.pdf);
         float misWeight = isLight ? 1.0 : max(0.0, powerHeuristic(lightPdf, bsdfSampleRec.pdf));
 
         // IBL diffuse irradiance
@@ -235,7 +235,7 @@ VisibilityContribution IBL(in Ray r, in State state)
         contrib.visible = true;
         contrib.lightDir = lightDir;
         contrib.lightDist = lightDist;
-        contrib.radiance = lightContrib;
+        contrib.radiance = Li;
 
         
 
