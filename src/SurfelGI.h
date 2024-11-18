@@ -58,6 +58,8 @@ public:
 	VkDescriptorSet                  getIndirectLightDescSet() { return m_indirectLightDescSet; }
 	VkDescriptorSetLayout			 getCellBufferDescLayout() { return m_cellBufferDescSetLayout;}
 	VkDescriptorSet					 getCellBufferDescSet() { return m_cellBufferDescSet; }
+	VkDescriptorSetLayout			 getSurfelDataMapsDescLayout() { return m_surfelDataMapsDescSetLayout; }
+	VkDescriptorSet					 getSurfelDataMapsDescSet() { return m_surfelDataMapsDescSet; }
 
 	void gbufferLayoutTransition(VkCommandBuffer cmdBuf);
 

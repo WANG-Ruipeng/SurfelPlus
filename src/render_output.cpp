@@ -182,6 +182,17 @@ void RenderOutput::run(VkCommandBuffer cmdBuf)
   vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 }
 
+void RenderOutput::run(VkCommandBuffer cmdBuf, VkDescriptorSet descSet)
+{
+    LABEL_SCOPE_VK(cmdBuf);
+
+
+    vkCmdPushConstants(cmdBuf, m_postPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Tonemapper), &m_tonemapper);
+    vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_postPipeline);
+    vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_postPipelineLayout, 0, 1, &descSet, 0, nullptr);
+    vkCmdDraw(cmdBuf, 3, 1, 0, 0);
+}
+
 //--------------------------------------------------------------------------------------------------
 // Generating all pyramid images, the highest level is used for getting the average luminance
 // of the image, which is then use to auto-expose.

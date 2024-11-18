@@ -54,6 +54,7 @@ public:
   void create(const VkExtent2D& size, const VkRenderPass& renderPass);
   void update(const VkExtent2D& size);
   void run(VkCommandBuffer cmdBuf);
+  void run(VkCommandBuffer cmdBuf, VkDescriptorSet descSet);
   void genMipmap(VkCommandBuffer cmdBuf);
   const VkFormat getOffscreenColorFormat() const {return m_offscreenColorFormat; }
   nvvk::Texture& getOffscreenColor() { return m_offscreenColor; }

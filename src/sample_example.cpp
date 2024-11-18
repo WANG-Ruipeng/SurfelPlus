@@ -316,7 +316,7 @@ void SampleExample::createSurfelResources()
 
     m_surfelRaytracePass.create({ m_surfel.maxRayBudget, 0 }, {
         m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
-        m_surfel.getSurfelBuffersDescLayout(),
+		m_surfel.getSurfelBuffersDescLayout(), m_surfel.getSurfelDataMapsDescLayout()
         }, &m_scene);
 
 	createLightPass();
@@ -451,7 +451,7 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
 
   m_offscreen.m_tonemapper.zoom           = m_descaling ? 1.0f / m_descalingLevel : 1.0f;
   m_offscreen.m_tonemapper.renderingRatio = size / area;
-  m_offscreen.run(cmdBuf);
+  m_offscreen.run(cmdBuf, m_surfel.getIndirectLightDescSet());
 
   if(m_showAxis)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);
@@ -589,7 +589,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 
 	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
 		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,
-		m_surfel.getSurfelBuffersDescSet()
+		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet()
 		});
 }
 
