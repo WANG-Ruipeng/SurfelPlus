@@ -271,6 +271,9 @@ int main(int argc, char** argv)
       // Render the UI
       ImGui::Render();
       ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
+
+      vkCmdEndRenderPass(cmdBuf);
+
     }
 
     // end of frame 

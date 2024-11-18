@@ -32,7 +32,7 @@ public:
 	VkRenderPass getRenderPass() { return m_renderPass; };
 
 	void beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size);
-	void beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkFramebuffer& framebuffer);
+	//void beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkFramebuffer& framebuffer);
 	void endRenderPass(const VkCommandBuffer& cmdBuf);
 
 	void createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat);
