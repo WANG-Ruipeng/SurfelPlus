@@ -160,6 +160,7 @@ struct CellInfo
 struct CellCounter
 {
 	uint totalCellCount;
+	uint aliveSurfelInCell;
 };
 
 // Camera of the scene

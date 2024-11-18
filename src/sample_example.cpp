@@ -286,7 +286,8 @@ void SampleExample::createSurfelResources()
     createGbufferPass();
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
 
-	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout()}, &m_scene);
+	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 },
+        { m_surfel.getSurfelBuffersDescLayout(), m_surfel.getCellBufferDescLayout()}, & m_scene);
 
 	m_surfelGenerationPass.create(m_size,
         {   m_surfel.getSurfelBuffersDescLayout(),
@@ -542,7 +543,8 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_surfelUpdatePass.setPushContants(m_rtxState);
 	m_surfelRaytracePass.setPushContants(m_rtxState);
 
-	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler, {m_surfel.getSurfelBuffersDescSet()});
+	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler,
+        {m_surfel.getSurfelBuffersDescSet(), m_surfel.getCellBufferDescSet()});
 
 	m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
@@ -568,6 +570,22 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
         });
+
+    VkBufferMemoryBarrier outbuffDependency = {};
+    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    outbuffDependency.buffer = m_surfel.getSurfelCounterBuffer().buffer;
+    outbuffDependency.size = VK_WHOLE_SIZE;
+
+    vkCmdPipelineBarrier(
+        cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        (VkDependencyFlags)0,
+        0, nullptr,
+        1, &outbuffDependency,
+        0, nullptr
+    );
 
 	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
 		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,

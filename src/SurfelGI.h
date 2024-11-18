@@ -50,6 +50,7 @@ public:
 	VkDescriptorSet			getGbufferSamplerDescSet() { return m_gbufferResources.m_samplerDescSet; }
 	VkDescriptorSetLayout	getGbufferImageDescLayout() { return m_gbufferResources.m_samplerDescSetLayout; }
 	VkDescriptorSet			getGbufferImageDescSet() { return m_gbufferResources.m_samplerDescSet; }
+	nvvk::Buffer			getSurfelCounterBuffer() { return m_surfelCounterBuffer; }
 
 	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
 	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }

@@ -40,27 +40,27 @@ layout(push_constant) uniform _RtxState
 #include "shaderUtils_surfel_cell.glsl"
 
 // Compute input
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
 {
-	uint idx = gl_GlobalInvocationID.x;
-	// Update _CellToSurfel buffer
-	if(idx > surfelCounter.aliveSurfelCnt) return;
-
-	//Get the surfel cell position to process
-	uint surfelIndex = surfelAlive[idx];
-	Surfel surfel = surfelBuffer[surfelIndex];
-	vec3 camPos = getCameraPosition(sceneCamera);
-	vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
-
-	for(uint i = 0; i < 125; i++){
-	//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
-		vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-		if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
-			uint flattenIndex = getFlattenCellIndex(neighbourPos);
-			uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
-			cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
-		}
-	}
+//	uint idx = gl_GlobalInvocationID.x;
+//	// Update _CellToSurfel buffer
+//	if(idx > surfelCounter.aliveSurfelCnt) return;
+//
+//	//Get the surfel cell position to process
+//	uint surfelIndex = surfelAlive[idx];
+//	Surfel surfel = surfelBuffer[surfelIndex];
+//	vec3 camPos = getCameraPosition(sceneCamera);
+//	vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+//
+//	for(uint i = 0; i < 125; i++){
+//	//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
+//		vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+//		if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+//			uint flattenIndex = getFlattenCellIndex(neighbourPos);
+//			uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+//			cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
+//		}
+//	}
 }

@@ -53,7 +53,7 @@ void main()
 	uint idx = gl_GlobalInvocationID.x;
 
 	// Calculate how much surfels are located at cell.
-	if(idx > surfelCounter.dirtySurfelCnt) return;
+	if(idx >= surfelCounter.dirtySurfelCnt) return;
 
 	uint surfelIndex = surfelDirty[idx];
 	Surfel surfel = surfelBuffer[surfelIndex];
@@ -80,10 +80,12 @@ void main()
 		surfelRecycleInfo.life = kSleepingMaxLife;
 	}*/
 
+	// TODO: delete
+	surfelRecycleInfo.life = 1;
 	// Check if surfel valid
 	if(surfelRadius > 0 && surfelRecycleInfo.life > 0){
-		uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-		surfelAlive[validSurfelCount] = surfelIndex;
+		//uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
+		//surfelAlive[validSurfelCount] = surfelIndex;
 
 		// Get surfel position & normal and reset it to current frame's position
 		// Since we are only doing static mesh, this is not necessary
@@ -104,12 +106,15 @@ void main()
 		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
 		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
-		for(uint i = 0; i < 125; i++){
-		//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
-		vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-		if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
-			uint flattenIndex = getFlattenCellIndex(neighbourPos);
-			atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+		for(uint i = 0; i < 125; i++)
+		{
+			//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
+			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize))
+			{
+				uint flattenIndex = getFlattenCellIndex(neighbourPos);
+				atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+			}
 		}
 
 		//TODO: Update ray information
@@ -137,9 +142,9 @@ void main()
 			atomicAdd(surfelCounter.surfelRayCnt, -rayRequestCnt);
 		}
 
-
 	}
-	}else{
+	else
+	{
 		uint deadSurfelCount = atomicAdd(surfelCounter.deadSurfelCnt, 1);
 		surfelDead[deadSurfelCount] = deadSurfelCount;
 	}

@@ -34,20 +34,21 @@ layout(push_constant) uniform _RtxState
 };
 
 // Compute input
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
+
 	// Compute offset of the cell to surfel buffer
-	if(idx > cellCounter.totalCellCount) return;
+	if(idx >= cellCounter.totalCellCount) return;
 
 	// Get the cell to process
 	CellInfo thisCell = cellBuffer[idx];
 	if(thisCell.surfelCount == 0) return;
 
 	// Calculate offsets of the surfel buffer
-	uint offset = atomicAdd(surfelCounter.aliveSurfelCnt, thisCell.surfelCount);
+	uint offset = atomicAdd(cellCounter.aliveSurfelInCell, thisCell.surfelCount);
 	cellBuffer[idx].surfelOffset = offset;
 	thisCell.surfelCount = 0;
 }

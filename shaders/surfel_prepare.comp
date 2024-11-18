@@ -26,6 +26,11 @@ layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
 layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycle[]; };
 
+// cell buffer
+layout(set = 1, binding = 0, scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 1, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
+layout(set = 1, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
+
 layout(push_constant) uniform _RtxState
 {
   RtxState rtxState;
@@ -40,6 +45,7 @@ void main()
 	if (idx == 0)
 	{
 		surfelCounter.surfelRayCnt = 0;
+		cellCounter.aliveSurfelInCell = 0;
 	}
 
 	// tmp value
