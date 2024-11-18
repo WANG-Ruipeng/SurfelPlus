@@ -30,7 +30,7 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
 
 
 #ifdef LAYOUTS_GLSL
-    State GetState(uint primObjID, vec3 normal, float depth, vec2 texCoord)
+    State GetState(in uint primObjID, in vec3 normal, in float depth, vec2 texCoord)
     {
         uint nodeID = primObjID >> 23;
         uint instanceID = sceneNodes[nodeID].primMesh;

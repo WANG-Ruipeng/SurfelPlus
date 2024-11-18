@@ -474,6 +474,9 @@ void SampleExample::execPost(const VkCommandBuffer& cmdBuf, const VkExtent2D& si
 
     // Draw the rendering result + tonemapper
     drawPost(cmdBuf);
+
+    vkCmdEndRenderPass(cmdBuf);
+
 }
 //////////////////////////////////////////////////////////////////////////
 // Ray tracing

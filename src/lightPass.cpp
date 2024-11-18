@@ -233,6 +233,22 @@ void LightPass::beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D&
 	vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+void LightPass::beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkFramebuffer& framebuffer)
+{
+
+	std::array<VkClearValue, 1> clearValues;
+	clearValues[0].color = { {0, 0, 0, 0} };
+
+	VkRenderPassBeginInfo postRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+	postRenderPassBeginInfo.clearValueCount = clearValues.size();
+	postRenderPassBeginInfo.pClearValues = clearValues.data();
+	postRenderPassBeginInfo.renderPass = m_renderPass;
+	postRenderPassBeginInfo.framebuffer = framebuffer;
+	postRenderPassBeginInfo.renderArea = { {}, size };
+
+	vkCmdBeginRenderPass(cmdBuf, &postRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
 void LightPass::endRenderPass(const VkCommandBuffer& cmdBuf)
 {
 	vkCmdEndRenderPass(cmdBuf);
