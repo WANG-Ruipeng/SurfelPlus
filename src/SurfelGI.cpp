@@ -47,7 +47,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<SurfelRecycleInfo> surfelRecycleBuffer(maxSurfelCnt);
 	m_surfelRecycleBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRecycleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-	std::vector<SurfelRay> surfelRayBuffer(maxSurfelCnt * 32);
+	std::vector<SurfelRay> surfelRayBuffer(maxRayBudget);
 	m_surfelRayBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRayBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
 	const uint32_t cellCountX = (size.width + cellSize - 1) / cellSize;

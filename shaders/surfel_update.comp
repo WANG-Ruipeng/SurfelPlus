@@ -44,7 +44,7 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
-layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 #include "shaderUtils.glsl"
 
@@ -113,6 +113,30 @@ void main()
 		}
 
 		//TODO: Update ray information
+
+		// use constant ray count (tmp)
+		uint rayRequestCnt = 16;
+
+		// allocate ray buffer
+		uint rayOffset = atomicAdd(surfelCounter.surfelRayCnt, rayRequestCnt);
+		if (rayOffset < 320000)
+        {
+            surfel.rayOffset = rayOffset;
+            surfel.rayCount = rayRequestCnt;
+
+            SurfelRay initSurfelRay;
+            initSurfelRay.surfelID = idx;
+
+            for (uint rayIndex = 0; rayIndex < rayRequestCnt; ++rayIndex)
+			{
+				surfelRayBuffer[rayOffset + rayIndex] = initSurfelRay;
+			}   
+        }
+		else
+		{
+			atomicAdd(surfelCounter.surfelRayCnt, -rayRequestCnt);
+		}
+
 
 	}
 	}else{

@@ -80,6 +80,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_surfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_cellInfoUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_cellToSurfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_surfelRaytracePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -286,26 +287,35 @@ void SampleExample::createSurfelResources()
     m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
 
 	m_surfelPreparePass.create({ m_surfel.maxSurfelCnt, 0 }, { m_surfel.getSurfelBuffersDescLayout()}, &m_scene);
+
 	m_surfelGenerationPass.create(m_size,
         {   m_surfel.getSurfelBuffersDescLayout(),
             m_surfel.getGbufferSamplerDescLayout(),
             m_scene.getDescLayout(),
             m_surfel.getIndirectLightDescLayout(),
             m_surfel.getCellBufferDescLayout()}, & m_scene);
+
 	m_surfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, {
         m_surfel.getSurfelBuffersDescLayout(),
         m_surfel.getCellBufferDescLayout(),
         m_scene.getDescLayout(),
         m_surfel.getGbufferSamplerDescLayout(),
         }, &m_scene);
+
     m_cellInfoUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, { 
         m_surfel.getSurfelBuffersDescLayout(),
         m_surfel.getCellBufferDescLayout()
         }, &m_scene);
+
     m_cellToSurfelUpdatePass.create({ m_surfel.maxSurfelCnt, 0 }, {
         m_surfel.getSurfelBuffersDescLayout(),
         m_surfel.getCellBufferDescLayout(),
         m_scene.getDescLayout()
+        }, &m_scene);
+
+    m_surfelRaytracePass.create({ m_surfel.maxRayBudget, 0 }, {
+        m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
+        m_surfel.getSurfelBuffersDescLayout(),
         }, &m_scene);
 
 	createLightPass();
@@ -394,9 +404,9 @@ void SampleExample::createRender(RndMethod method)
     m_pRender[m_rndMethod]->destroy();
   }
   m_rndMethod = method;
-
+  m_raytraceLayoutPack = { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout };
   m_pRender[m_rndMethod]->create(
-      m_size, {m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout}, &m_scene);
+      m_size, m_raytraceLayoutPack, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -530,29 +540,39 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_surfelPreparePass.setPushContants(m_rtxState);
 	m_surfelGenerationPass.setPushContants(m_rtxState);
 	m_surfelUpdatePass.setPushContants(m_rtxState);
+	m_surfelRaytracePass.setPushContants(m_rtxState);
 
 	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler, {m_surfel.getSurfelBuffersDescSet()});
+
 	m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getGbufferSamplerDescSet(),
         m_scene.getDescSet(),
         m_surfel.getIndirectLightDescSet(),
         m_surfel.getCellBufferDescSet()});
+
 	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { 
         m_surfel.getSurfelBuffersDescSet(),
 		m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
         m_surfel.getGbufferSamplerDescSet()
         });
+
     m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getCellBufferDescSet()
         });
+
     m_cellToSurfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
         });
+
+	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
+		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,
+		m_surfel.getSurfelBuffersDescSet()
+		});
 }
 
 

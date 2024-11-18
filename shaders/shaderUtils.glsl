@@ -30,7 +30,7 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
 
 
 #ifdef LAYOUTS_GLSL
-    State GetState(uint primObjID, vec3 normal, float depth)
+    State GetState(uint primObjID, vec3 normal, float depth, vec2 texCoord)
     {
         uint nodeID = primObjID >> 23;
         uint instanceID = sceneNodes[nodeID].primMesh;
@@ -51,7 +51,7 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
         VertexAttributes attr2 = vertices.v[tri.z];
 
         // reconstruct world position from depth
-        vec3 worldPos = WorldPosFromDepth(vec2(gl_FragCoord.xy) / vec2(rtxState.size), depth);
+        vec3 worldPos = WorldPosFromDepth(texCoord, depth);
 
         // decompress normal
         //vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r) * 2.0 - 1.0;

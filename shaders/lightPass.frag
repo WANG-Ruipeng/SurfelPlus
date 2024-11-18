@@ -160,7 +160,7 @@ void main()
     state.ffnormal       = normal;
 
 
-    State state1 = GetState(primObjID, normal, depth);
+    State state1 = GetState(primObjID, normal, depth, uvCoords);
 
 
     // Filling material structures

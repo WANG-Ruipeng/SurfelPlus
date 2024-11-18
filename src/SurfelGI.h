@@ -61,7 +61,8 @@ public:
 	void gbufferLayoutTransition(VkCommandBuffer cmdBuf);
 
 	// Surfel Configuration
-	uint32_t maxSurfelCnt = 10000;
+	const uint32_t maxSurfelCnt = 10000;
+	const uint32_t maxRayBudget = maxSurfelCnt * 32;
 
 private:
 

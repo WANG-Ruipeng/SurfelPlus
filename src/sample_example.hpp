@@ -70,6 +70,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "surfel_prepare_pass.h"
 #include "surfel_generation_pass.h"
 #include "surfel_update_pass.h"
+#include "surfel_raytrace_pass.h"
 #include "cellInfo_update_pass.h"
 #include "cellToSurfel_update_pass.h"
 #include "imgui_internal.h"
@@ -146,6 +147,7 @@ public:
   SurfelPreparePass m_surfelPreparePass;
   SurfelUpdatePass m_surfelUpdatePass;
   SurfelGenerationPass m_surfelGenerationPass;
+  SurfelRaytracePass m_surfelRaytracePass;
   CellInfoUpdatePass m_cellInfoUpdatePass;
   CellToSurfelUpdatePass m_cellToSurfelUpdatePass;
 
@@ -170,6 +172,8 @@ public:
 
   Allocator       m_alloc;  // Allocator for buffer, images, acceleration structures
   nvvk::DebugUtil m_debug;  // Utility to name objects
+
+  std::vector<VkDescriptorSetLayout> m_raytraceLayoutPack;
 
 
   VkRect2D m_renderRegion{};
