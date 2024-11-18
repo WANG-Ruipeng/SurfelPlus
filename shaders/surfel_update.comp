@@ -130,7 +130,7 @@ void main()
             surfel.rayCount = rayRequestCnt;
 
             SurfelRay initSurfelRay;
-            initSurfelRay.surfelID = idx;
+            initSurfelRay.surfelID = surfelIndex;
 
             for (uint rayIndex = 0; rayIndex < rayRequestCnt; ++rayIndex)
 			{

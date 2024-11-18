@@ -129,8 +129,8 @@ void main()
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
-		imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
-		//imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+		//imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+		imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
 	}
 	else
 	{
