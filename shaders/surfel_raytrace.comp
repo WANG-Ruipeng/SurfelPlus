@@ -74,13 +74,13 @@ void main()
 	vec3 dirW = normalize(dirL.x * T + dirL.y * B + dirL.z * N);
 
 
+	Ray ray = Ray(surfelBuffer[surfelRay.surfelID].position, dirW);
+	ray.origin = OffsetRay(ray.origin, N);
+
+	surfelRay.radiance = PathTrace(ray);
 	surfelRay.dir_w = dirW;
 	surfelRay.dir_o = dirL;
 	surfelRay.pdf = pdf;
-
-	Ray ray = Ray(surfelBuffer[surfelRay.surfelID].position, dirW);
-	ray.origin = OffsetRay(ray.origin, N);
-	surfelRay.radiance = PathTrace(ray);
 	surfelRay.t = prd.hitT;
 
 	surfelRayBuffer[index] = surfelRay;

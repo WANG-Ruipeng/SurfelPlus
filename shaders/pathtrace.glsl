@@ -111,8 +111,6 @@ VisibilityContribution DirectLight(in Ray r, in State state)
   // probability. If the environment factor is zero, we always use the point light
   // Note: see also miss shader
   float p_select_light = rtxState.hdrMultiplier > 0.0f ? 0.5f : 1.0f;
-  // only use env currently
-  if (sceneCamera.nbLights == 0.f) p_select_light = 0.f;
 
   // in general, you would select the light depending on the importance of it
   // e.g. by incorporating their luminance
