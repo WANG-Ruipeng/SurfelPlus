@@ -248,8 +248,6 @@ int main(int argc, char** argv)
         
         // Run surfel passes
 		sample.calculateSurfels(cmdBuf, profiler);
-        //sample.m_surfelComputePass.dispatch();
-        //sample.m_surfelComputePass.submit(sample.getDevice());
 
         isfirstFrame = false;
     }
@@ -273,6 +271,9 @@ int main(int argc, char** argv)
       // Render the UI
       ImGui::Render();
       ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
+
+      vkCmdEndRenderPass(cmdBuf);
+
     }
 
     vkCmdEndRenderPass(cmdBuf);
@@ -290,8 +291,6 @@ int main(int argc, char** argv)
     sample.submitFrame();
 
     CameraManip.updateAnim();
-
-	
   }
 
   // Cleanup

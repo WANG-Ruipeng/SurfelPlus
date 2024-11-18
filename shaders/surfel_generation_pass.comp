@@ -24,6 +24,8 @@ layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuff
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
+layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycle[]; };
+layout(set = 0, binding = 6,  scalar)		buffer _SurfelRayBuffer		{ SurfelRay surfelRayBuffer[]; };
 
 // gbuffers
 layout(set = 1, binding = 0)	uniform usampler2D primObjIDMap;
@@ -190,8 +192,13 @@ void main()
 					newSurfel.radiance = vec3(0.f);
 					float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
 					newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
-					
 					surfelBuffer[surfelID] = newSurfel;
+
+					SurfelRecycleInfo newSurfelRecycleInfo;
+					newSurfelRecycleInfo.life = kMaxLife;
+					newSurfelRecycleInfo.frame = 0;
+					newSurfelRecycleInfo.status = 0;
+					surfelRecycle[surfelID] = newSurfelRecycleInfo;
 				}
 				else
 				{
