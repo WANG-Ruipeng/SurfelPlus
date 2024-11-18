@@ -451,7 +451,7 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
 
   m_offscreen.m_tonemapper.zoom           = m_descaling ? 1.0f / m_descalingLevel : 1.0f;
   m_offscreen.m_tonemapper.renderingRatio = size / area;
-  m_offscreen.run(cmdBuf, m_surfel.getIndirectLightDescSet());
+  m_offscreen.run(cmdBuf);
 
   if(m_showAxis)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);
@@ -475,7 +475,7 @@ void SampleExample::execPost(const VkCommandBuffer& cmdBuf, const VkExtent2D& si
     // Draw the rendering result + tonemapper
     drawPost(cmdBuf);
 
-    vkCmdEndRenderPass(cmdBuf);
+    
 
 }
 //////////////////////////////////////////////////////////////////////////

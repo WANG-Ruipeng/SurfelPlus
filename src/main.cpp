@@ -275,6 +275,8 @@ int main(int argc, char** argv)
       ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
     }
 
+    vkCmdEndRenderPass(cmdBuf);
+
     // end of frame 
     if (!sample.m_busy)
     {
