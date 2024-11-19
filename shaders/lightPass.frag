@@ -70,6 +70,8 @@ layout(set = 4, binding = 0) uniform usampler2D gbufferPrim;
 layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
 layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
+layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
+
 
 void main()
 {
@@ -129,12 +131,15 @@ void main()
 
     bool hit = AnyHit(Ray(worldPos, directLight.lightDir), 1000.0);
 
+    vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy), 0).rgb;
+
 //    fragColor.xyz = IntegerToColor(matIndex);
 //    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
     //fragColor.xyz = hash3u1(nodeID);
     //fragColor.xyz = vec3(w0, w1, w2);
     //fragColor.xyz = worldPos - attr0_world;
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
-    fragColor.xyz = hit ? vec3(0) : directLight.radiance;
+    //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
+    fragColor.xyz = indirectLight;
     fragColor.a = 1.0;
 }
