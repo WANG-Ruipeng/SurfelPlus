@@ -83,10 +83,10 @@ void main()
 	ray.origin = OffsetRay(ray.origin, N);
 
 	surfelRay.radiance = PathTrace(ray);
-	surfelRay.dir_w = dirW;
-	surfelRay.dir_o = dirL;
+	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
 	surfelRay.t = prd.hitT;
+
 
 	surfelRayBuffer[index] = surfelRay;
 

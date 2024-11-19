@@ -143,12 +143,13 @@ const int maxSurfelLife = 255;
 
 struct SurfelRay
 {
-	vec3 dir_w;
+	uint surfelID;
+	uint dir_o;
 	float pdf;
+	float pad;
+
 	vec3 radiance;
 	float t;
-	vec3 dir_o;
-	uint surfelID;
 };
 
 struct CellInfo

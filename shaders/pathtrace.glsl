@@ -252,10 +252,15 @@ vec3 PathTrace(Ray r)
   vec3 radiance   = vec3(0.0);
   vec3 throughput = vec3(1.0);
   vec3 absorption = vec3(0.0);
+  float firstDepth = INFINITY;
 
   for(int depth = 0; depth < rtxState.maxDepth; depth++)
   {
     ClosestHit(r);
+	if (depth == 0)
+	{
+		firstDepth = prd.hitT;
+	}
 
     // Hitting the environment
     if(prd.hitT == INFINITY)
@@ -395,7 +400,7 @@ vec3 PathTrace(Ray r)
 #endif
   }
 
-
+  prd.hitT = firstDepth;
   return radiance;
 }
 
