@@ -172,6 +172,7 @@ public:
 
   Allocator       m_alloc;  // Allocator for buffer, images, acceleration structures
   nvvk::DebugUtil m_debug;  // Utility to name objects
+  std::vector<nvvk::Queue> m_queues;
 
   std::vector<VkDescriptorSetLayout> m_raytraceLayoutPack;
 

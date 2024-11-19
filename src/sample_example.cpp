@@ -53,7 +53,7 @@ void SampleExample::setup(const VkInstance&               instance,
                           const std::vector<nvvk::Queue>& queues)
 {
   AppBaseVk::setup(instance, device, physicalDevice, queues[eGCT0].familyIndex);
-
+  m_queues = std::vector<nvvk::Queue>{ queues.begin(), queues.end() };
   m_gui = std::make_shared<SampleGUI>(this);  // GUI of this class
 
   // Memory allocator for buffers and images
@@ -329,8 +329,9 @@ void SampleExample::createGbufferPass()
 
 void SampleExample::createLightPass()
 {
-	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat());
+	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat(), m_queues[eGCT1]);
 	m_lightPass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout, m_surfel.getGbufferImageDescLayout() }, &m_scene);
+    m_lightPass.createLightPassDescriptorSet(m_offscreen.getDescLayout());
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -451,7 +452,11 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
 
   m_offscreen.m_tonemapper.zoom           = m_descaling ? 1.0f / m_descalingLevel : 1.0f;
   m_offscreen.m_tonemapper.renderingRatio = size / area;
-  m_offscreen.run(cmdBuf);
+
+  if (m_busy)
+    m_offscreen.run(cmdBuf);
+  else
+	  m_offscreen.run(cmdBuf, m_lightPass.getDescriptorSet());
 
   if(m_showAxis)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);

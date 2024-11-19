@@ -280,6 +280,7 @@ int main(int argc, char** argv)
     if (!sample.m_busy)
     {
         sample.m_surfel.gbufferLayoutTransition(cmdBuf);
+		sample.m_lightPass.layoutTransition(cmdBuf);
     }
 
     profiler.endFrame();

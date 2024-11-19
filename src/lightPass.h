@@ -3,6 +3,7 @@
 #include "nvvk/resourceallocator_vk.hpp"
 #include "nvvk/debug_util_vk.hpp"
 #include "nvvk/descriptorsets_vk.hpp"
+#include "queue.hpp"
 
 #include "nvvk/profiler_vk.hpp"
 #include "renderer.h"
@@ -35,7 +36,10 @@ public:
 	//void beginRenderPass(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, const VkFramebuffer& framebuffer);
 	void endRenderPass(const VkCommandBuffer& cmdBuf);
 
-	void createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat);
+	void createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat, nvvk::Queue queue);
+	void createLightPassDescriptorSet(const VkDescriptorSetLayout& descSetLayout);
+	VkDescriptorSet getDescriptorSet() { return m_descSet; };
+	void layoutTransition(VkCommandBuffer cmdBuf);
 private:
 	// Setup
 	nvvk::ResourceAllocator* m_pAlloc{ nullptr };  // Allocator for buffer, images, acceleration structures
@@ -52,5 +56,7 @@ private:
 	VkFramebuffer    m_framebuffer{ VK_NULL_HANDLE };
 	VkFormat 	     m_colorFormat{ VK_FORMAT_B8G8R8A8_UNORM };
 	nvvk::Texture    m_offscreenColor;
+	VkDescriptorPool m_descPool{ VK_NULL_HANDLE };
+	VkDescriptorSet  m_descSet{ VK_NULL_HANDLE };
 };
 

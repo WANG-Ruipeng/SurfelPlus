@@ -76,7 +76,7 @@ void LightPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSet
 
 }
 
-void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat)
+void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorFormat, nvvk::Queue queue)
 {
 
 	m_colorFormat = colorFormat;
@@ -103,8 +103,13 @@ void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorF
 		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 		sampler.maxLod = FLT_MAX;
 		m_offscreenColor = m_pAlloc->createTexture(image, ivInfo, sampler);
-		m_offscreenColor.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		m_offscreenColor.descriptor.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+		nvvk::CommandPool cmdBufGet(m_device, queue.familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, queue.queue);
+		auto              cmdBuf = cmdBufGet.createCommandBuffer();
+		nvvk::cmdBarrierImageLayout(cmdBuf, m_offscreenColor.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		cmdBufGet.submitAndWait(cmdBuf);
 		//// Transition the image to general layout
 		//nvvk::CommandPool genCmdBuf(m_device, m_queueIndex);
 		//auto cmdBuf = genCmdBuf.createCommandBuffer();
@@ -146,6 +151,43 @@ void LightPass::createFrameBuffer(const VkExtent2D& size, const VkFormat& colorF
 	}
 }
 
+void LightPass::createLightPassDescriptorSet(const VkDescriptorSetLayout& descSetLayout)
+{
+	nvvk::DescriptorSetBindings bind;
+
+	vkDestroyDescriptorPool(m_device, m_descPool, nullptr);
+
+	bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+					 VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR });
+	m_descPool = bind.createPool(m_device);
+	m_descSet = nvvk::allocateDescriptorSet(m_device, m_descPool, descSetLayout);
+
+	auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+		m_size, m_colorFormat,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+	colorCreateInfo.mipLevels = 1;
+	VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(m_offscreenColor.image, colorCreateInfo);
+
+	// update the descriptor set
+	VkDescriptorImageInfo descImg[2] = {
+		m_offscreenColor.descriptor,
+		m_offscreenColor.descriptor
+	};
+	descImg[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	descImg[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	std::vector<VkWriteDescriptorSet> writes;
+	writes.emplace_back(bind.makeWrite(m_descSet, OutputBindings::eSampler, &descImg[0]));
+	writes.emplace_back(bind.makeWrite(m_descSet, OutputBindings::eStore, &descImg[1]));
+	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+
+void LightPass::layoutTransition(VkCommandBuffer cmdBuf)
+{
+	nvvk::cmdBarrierImageLayout(cmdBuf, m_offscreenColor.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
 void LightPass::run(const VkCommandBuffer& cmdBuf,
 	const VkExtent2D& size,
 	nvvk::ProfilerVK& profiler,
@@ -185,9 +227,9 @@ void LightPass::createRenderPass()
 	// Color attachment
 	attachments[0].format = m_colorFormat;  
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	VkAttachmentReference colorReference{ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -201,9 +243,9 @@ void LightPass::createRenderPass()
 	std::array<VkSubpassDependency, 1> subpassDependencies{};
 	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 	subpassDependencies[0].dstSubpass = 0;
-	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDependencies[0].srcAccessMask = 0;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	VkRenderPassCreateInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
