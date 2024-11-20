@@ -20,10 +20,10 @@ public:
 		Depth
 	};
 	std::vector<nvvk::Texture> m_images;
-	VkDescriptorSetLayout	   m_samplerDescSetLayout;
-	VkDescriptorSet			   m_samplerDescSet;
-	VkDescriptorSetLayout	   m_imageDescSetLayout;
-	VkDescriptorSet			   m_imageDescSet;
+	VkDescriptorSetLayout	   m_samplerDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet			   m_samplerDescSet{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout	   m_imageDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet			   m_imageDescSet{ VK_NULL_HANDLE };
 	std::vector<VkFramebuffer> m_frameBuffers;
 };
 

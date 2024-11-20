@@ -85,7 +85,7 @@ void main()
 		surfelRecycleInfo.life = kSleepingMaxLife;
 	}*/
 
-	// surfelRecycleInfo.life = 1;
+	//recycleInfo.life = 1;
 	// Check if surfel valid
 	if(surfelRadius > 0 && recycleInfo.life > 0){
 		//uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);

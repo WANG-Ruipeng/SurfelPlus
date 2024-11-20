@@ -188,6 +188,21 @@ void SurfelGI::createIndirectLightingMap(const VkExtent2D& size)
 
 void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass)
 {
+	// destroy previous resources
+	{
+		for (int i = 0; i < m_gbufferResources.m_images.size(); i++)
+		{
+			if (m_gbufferResources.m_images[i].image != VK_NULL_HANDLE)
+			{
+				m_pAlloc->destroy(m_gbufferResources.m_images[i]);
+			}
+		}
+
+		if (m_gbufferResources.m_samplerDescSetLayout != VK_NULL_HANDLE)
+			vkDestroyDescriptorSetLayout(m_device, m_gbufferResources.m_samplerDescSetLayout, nullptr);
+
+	}
+
 	// creating objPrimID, normal, and depth images
 	{
 		auto objprimIDCreateInfo = nvvk::makeImage2DCreateInfo(

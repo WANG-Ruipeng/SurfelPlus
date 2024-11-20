@@ -377,6 +377,9 @@ void SampleExample::destroyResources()
 void SampleExample::onResize(int /*w*/, int /*h*/)
 {
   m_offscreen.update(m_size);
+  /*m_surfel.createGbuffers(m_size, m_swapChain.getImageCount(), m_gbufferPass.getRenderPass());
+  m_surfel.createIndirectLightingMap(m_size);
+  m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat(), m_queues[eGCT1]);*/
   resetFrame();
 }
 
