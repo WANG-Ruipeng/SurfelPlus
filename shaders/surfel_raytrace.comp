@@ -64,7 +64,8 @@ void main()
 	}
 
 	SurfelRay surfelRay = surfelRayBuffer[index];
-	uint randSeed = tea(index, rtxState.totalFrames);
+	uint frameHash = lowbias32(rtxState.totalFrames);
+	uint randSeed = tea(index, frameHash);
 
 
 	// use cosine weighted sampling
@@ -86,7 +87,6 @@ void main()
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
 	surfelRay.t = prd.hitT;
-
 
 	surfelRayBuffer[index] = surfelRay;
 

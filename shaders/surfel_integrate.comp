@@ -29,17 +29,79 @@ layout(set = 0, binding = 6, scalar)		buffer _SurfelRayBuffer { SurfelRay surfel
 layout(set = 1,   binding = 0)				uniform sampler2D	surfelIrradianceSampler;
 layout(set = 1,   binding = 1)				uniform image2D		surfelIrradianceMap;
 layout(set = 1,   binding = 2)				uniform sampler2D	surfelDepthSampler;
-layout(set = 1,   binding = 3)				uniform image2D		surfelDepthImage;
+layout(set = 1,   binding = 3)				uniform image2D		surfelDepthMap;
 
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
 {
 	uint index = gl_GlobalInvocationID.x;
-	if (index >= surfelCounter.surfelRayCnt)
+	if (index >= surfelCounter.aliveSurfelCnt)
 	{
 		return;
 	}
 
-	SurfelRay surfelRay = surfelRayBuffer[index];
+    uint surfelIndex = surfelAlive[index];
+	Surfel surfel = surfelBuffer[surfelIndex];
+
+    if (surfel.rayCount == 0)
+        return;
+
+    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
+
+    ivec2 irrMapBase = ivec2(
+        surfelIndex % (IrradianceMapRes.x / 6),
+        surfelIndex / (IrradianceMapRes.x / 6)
+    );
+    irrMapBase *= ivec2(6,6);
+
+    ivec2 DepthMapRes = textureSize(surfelDepthSampler, 0);
+
+    ivec2 depthMapBase = ivec2(
+		surfelIndex % (DepthMapRes.x / 6),
+		surfelIndex / (DepthMapRes.x / 6)
+	);
+    depthMapBase *= ivec2(6,6);
+
+    vec3 totalRadiance = vec3(0.0);
+
+    for (uint i = 0; i < surfel.rayCount; i++)
+	{
+		SurfelRay rayResult = surfelRayBuffer[surfel.rayOffset + i];
+		float depth = clamp(rayResult.t, 0, surfel.radius) / surfel.radius;
+
+		vec3 norL = decompress_unit_vec(rayResult.dir_o);
+        totalRadiance += rayResult.radiance * norL.z / max(1e-12f, rayResult.pdf);
+
+        vec2 mapUV = DirToOctUV(norL);
+
+		// write to irradiance map
+		ivec2 mapOffset = 3 + ivec2(
+            sign(mapUV.x) * round(abs(mapUV.x * 3.0)),
+            sign(mapUV.y) * round(abs(mapUV.y * 3.0))
+        );
+        ivec2 mapCoord = irrMapBase + mapOffset;
+
+        float lumn = dot(rayResult.radiance, vec3(0.2126, 0.7152, 0.0722));
+        float old = texelFetch(surfelIrradianceSampler, mapCoord, 0).r;
+        float delta = lumn - old;
+        imageStore(surfelIrradianceMap, mapCoord, vec4(old + 0.1 * delta, 1, 1, 1));
+        //imageStore(surfelIrradianceMap, mapCoord, vec4(1.f));
+
+        // write to depth map
+        mapCoord = depthMapBase + mapOffset;
+        vec2 oldDepth = texelFetch(surfelDepthSampler, mapCoord, 0).rg;
+        vec2 delta2 = vec2(depth, pow(depth, 2)) - oldDepth;
+        imageStore(surfelDepthMap, mapCoord, vec4(oldDepth + 0.1 * delta2, 0, 0));
+	}
+
+    totalRadiance /= surfel.rayCount;
+    //surfel.radiance = totalRadiance;
+    float ratio = surfelRecycleInfo[surfelIndex].frame > 0 ? 
+     float(surfelRecycleInfo[surfelIndex].frame - 1) / float(surfelRecycleInfo[surfelIndex].frame) : 0.f;
+     //ratio  = min(ratio, 31.0f / 32.0f);
+    totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
+
+    surfelBuffer[surfelIndex].radiance = totalRadiance;
+    
 }

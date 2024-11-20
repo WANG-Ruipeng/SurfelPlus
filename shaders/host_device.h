@@ -138,6 +138,7 @@ struct SurfelRecycleInfo
 	uint life;
 	uint frame;
 	uint status;
+	uint pad;
 };
 const int maxSurfelLife = 255;
 

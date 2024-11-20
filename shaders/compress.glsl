@@ -179,5 +179,24 @@ vec3 decompress_unit_vec(uint packed)
   }
 }
 
+// DEVICE ONLY
+#ifndef __cplusplus
+
+vec2 DirToOctUV(in vec3 v)
+{
+    float norm = abs(v.x) + abs(v.y) + abs(v.z);
+    vec2 result = v.xy * (1.0 / norm);
+    return vec2(result.x - result.y, result.x + result.y);
+}
+
+vec3 OctUVToDir(vec2 uv)
+{
+    vec2 result = vec2((uv.x + uv.y) / 2.f, (uv.y - uv.x) / 2.f);
+    vec3 v = vec3(result.x, result.y, 1.f - abs(result.x) - abs(result.y));
+    return normalize(v);
+}
+
+#endif // END DEVICE ONLY
+
 
 #endif  // COMPRESS_GLSL

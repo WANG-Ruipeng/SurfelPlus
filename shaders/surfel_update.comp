@@ -59,20 +59,25 @@ void main()
 	Surfel surfel = surfelBuffer[surfelIndex];
 
 	float surfelRadius = surfel.radius;
-	SurfelRecycleInfo surfelRecycleInfo = surfelRecycleInfo[surfelIndex];
-	uint isSleeping = surfelRecycleInfo.status & 0x0001u;
-	uint lastSeen = surfelRecycleInfo.status & 0x0002u;
+	SurfelRecycleInfo recycleInfo = surfelRecycleInfo[surfelIndex];
+	uint isSleeping = recycleInfo.status & 0x0001u;
+	uint lastSeen = recycleInfo.status & 0x0002u;
 
 	// Increase frame count and reduce life.
-	surfelRecycleInfo.life = uint(max(int(surfelRecycleInfo.life) - 1, 0));
-	surfelRecycleInfo.frame = uint(clamp(int(surfelRecycleInfo.frame) + 1, 0, 65535));
+	recycleInfo.life = uint(max(int(recycleInfo.life) - 1, 0));
+	recycleInfo.frame = uint(clamp(int(recycleInfo.frame) + 1, 0, 65535));
 
 	// Check surfel is seen at last frame.
 	// If so, reset life, and if surfel is sleeping, awake.
 	if(lastSeen != 0u){
-		surfelRecycleInfo.life = maxSurfelLife;
+		recycleInfo.life = maxSurfelLife;
 		if(isSleeping != 0u){ isSleeping = 0u; }
 	}
+
+	// reset lastSeen
+	recycleInfo.status = recycleInfo.status & (~0x0002);
+
+	surfelRecycleInfo[surfelIndex] = recycleInfo;
 
 	// TODO: Check surfel is sleeping and have enough light pointing towards it,
 	// If yes, set to sleepMaxLife
@@ -82,7 +87,7 @@ void main()
 
 	// surfelRecycleInfo.life = 1;
 	// Check if surfel valid
-	if(surfelRadius > 0 && surfelRecycleInfo.life > 0){
+	if(surfelRadius > 0 && recycleInfo.life > 0){
 		//uint validSurfelCount = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
 		//surfelAlive[validSurfelCount] = surfelIndex;
 
@@ -119,7 +124,7 @@ void main()
 		//TODO: Update ray information
 
 		// use constant ray count (tmp)
-		uint rayRequestCnt = 16;
+		uint rayRequestCnt = 32;
 
 		// allocate ray buffer
 		uint rayOffset = atomicAdd(surfelCounter.surfelRayCnt, rayRequestCnt);
@@ -140,6 +145,9 @@ void main()
 		{
 			atomicAdd(surfelCounter.surfelRayCnt, -rayRequestCnt);
 		}
+
+		// Update surfel
+		surfelBuffer[surfelIndex] = surfel;
 
 	}
 	else

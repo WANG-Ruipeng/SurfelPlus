@@ -132,6 +132,8 @@ void main()
     bool hit = AnyHit(Ray(worldPos, directLight.lightDir), 1000.0);
 
     vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 diffuseAlbedo = state.mat.albedo;
+    vec3 directLighting = hit ? vec3(0) : directLight.radiance;
 
 //    fragColor.xyz = IntegerToColor(matIndex);
 //    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
@@ -140,6 +142,7 @@ void main()
     //fragColor.xyz = worldPos - attr0_world;
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
     //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
-    fragColor.xyz = indirectLight;
+    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
+    //fragColor.xyz = indirectLight;
     fragColor.a = 1.0;
 }

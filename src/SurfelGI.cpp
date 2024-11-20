@@ -148,7 +148,7 @@ void SurfelGI::createIndirectLightingMap(const VkExtent2D& size)
 	// Creating indirect lighting image
 	{
 		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
-			size, VK_FORMAT_R8G8B8A8_UNORM,
+			size, VK_FORMAT_R32G32B32A32_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
 		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
@@ -383,10 +383,10 @@ void SurfelGI::createIrradianceDepthMap()
 
 	vkDestroyDescriptorSetLayout(m_device, m_surfelDataMapsDescSetLayout, nullptr);
 
-	bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 	bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
 					 VK_SHADER_STAGE_COMPUTE_BIT });
-	bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 	bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
 					 VK_SHADER_STAGE_COMPUTE_BIT });
 	m_surfelDataMapsDescSetLayout = bind.createLayout(m_device);

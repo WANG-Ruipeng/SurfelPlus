@@ -52,6 +52,18 @@ uint initRandom(in uvec2 resolution, in uvec2 screenCoord, in uint frame)
   return tea(screenCoord.y * resolution.x + screenCoord.x, frame);
 }
 
+uint lowbias32(uint x)
+{
+    x ^= x >> 17;
+    x *= 0xed5ad4bbU;
+    x ^= x >> 11;
+    x *= 0xac4c1b51U;
+    x ^= x >> 15;
+    x *= 0x31848babU;
+    x ^= x >> 14;
+    return x;
+}
+
 
 //-----------------------------------------------------------------------
 // https://www.pcg-random.org/

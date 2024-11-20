@@ -13,6 +13,8 @@
 #extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_shader_atomic_float2 : require
+
 
 #include "host_device.h"
 #include "compress.glsl"
@@ -51,8 +53,8 @@ layout(push_constant) uniform _RtxState
 #include "shaderUtils.glsl"
 #include "random.glsl"
 
-shared uint groupShareMinCoverage;
-shared uint groupShareMaxContribution;
+shared float groupShareMinCoverage;
+shared float groupShareMaxContribution;
 
 // Compute input
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -83,7 +85,7 @@ void main()
 	vec3 normal = decompress_unit_vec(compressedNor);
 	vec3 worldPos = WorldPosFromDepth(uv, depth);
 
-	vec4 indirectLighting = vec4(0.f);
+	vec3 indirectLighting = vec3(0.f);
 
 	uint aliveSurfelCnt = surfelCounter.aliveSurfelCnt;
 	float coverage = 0.f;
@@ -115,7 +117,7 @@ void main()
 
                 coverage += contribution;
 
-				indirectLighting += vec4(surfel.radiance, 1.f) * contribution;
+				indirectLighting += surfel.radiance * contribution;
 
 				if (maxContribution < contribution)
 				{
@@ -124,6 +126,8 @@ void main()
 				}
             }
 
+			// update recycle lastseen
+			surfelRecycle[surfelIndex].status |= 0x0002u;
 		
 		}
 	}
@@ -142,42 +146,50 @@ void main()
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 
-	if ((rtxState.frame & 0x000fffff) != 0) return;
+	//if ((rtxState.frame & 0x000fffff) != 0) return;
 
+	coverage += rand(randSeed) * 1e-10;
+	atomicMin(groupShareMinCoverage, coverage);
 
-	uint coverageData = 0;
-    coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
-    coverageData |= ((uint(255 * rand3(randSeed)) & 0x000000FF) << 8);
-    coverageData |= ((gl_LocalInvocationID.x & 0x0000000F) << 4);
-    coverageData |= ((gl_LocalInvocationID.y & 0x0000000F) << 0);
-
-    atomicMin(groupShareMinCoverage, coverageData);
-
-    uint contributionData = 0;
-    contributionData |= floatBitsToUint(maxContribution) & 0xFFFF0000;
-    contributionData |= ((maxContributionSurfelIndex & 0x0000FFFF) << 0);
-
-	atomicMax(groupShareMaxContribution, contributionData);
+	maxContribution += rand(randSeed) * 1e-10;
+	atomicMax(groupShareMaxContribution, maxContribution);
 
 	barrier();
 
-	coverageData = groupShareMinCoverage;
-    coverage = uintBitsToFloat(coverageData & 0xFFFF0000);
-    uint x = (coverageData & 0x000000F0) >> 4;
-    uint y = (coverageData & 0x0000000F) >> 0;
-
-	contributionData = groupShareMaxContribution;
-	maxContribution = uintBitsToFloat(contributionData & 0xFFFF0000);
-	maxContributionSurfelIndex = contributionData & 0x0000FFFF;
+//	uint coverageData = 0;
+//    coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
+//    coverageData |= ((uint(255 * rand3(randSeed)) & 0x000000FF) << 8);
+//    coverageData |= ((gl_LocalInvocationID.x & 0x0000000F) << 4);
+//    coverageData |= ((gl_LocalInvocationID.y & 0x0000000F) << 0);
+//
+//    atomicMin(groupShareMinCoverage, coverageData);
+//
+//    uint contributionData = 0;
+//    contributionData |= floatBitsToUint(maxContribution) & 0xFFFF0000;
+//    contributionData |= ((maxContributionSurfelIndex & 0x0000FFFF) << 0);
+//
+//	atomicMax(groupShareMaxContribution, contributionData);
+//
+//	barrier();
+//
+//	coverageData = groupShareMinCoverage;
+//    coverage = uintBitsToFloat(coverageData & 0xFFFF0000);
+//    uint x = (coverageData & 0x000000F0) >> 4;
+//    uint y = (coverageData & 0x0000000F) >> 0;
+//
+//	contributionData = groupShareMaxContribution;
+//	maxContribution = uintBitsToFloat(contributionData & 0xFFFF0000);
+//	maxContributionSurfelIndex = contributionData & 0x0000FFFF;
 
 	// replace later
 	const uint surfelMaxCount = 10000;
 
 	if (surfelCounter.aliveSurfelCnt < 10000)
 	{
-		if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
+		//if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
+		if (coverage == groupShareMinCoverage)
 		{
-			if (coverage < 1.f && rand(randSeed) < depth * 0.2f)
+			if (coverage < 2.f && rand(randSeed) < depth * 0.2f)
 			{
 			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 				if (surfelAliveIndex < surfelMaxCount)
@@ -208,10 +220,13 @@ void main()
 		}
 	}
 
-//	Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+//imageStore(resultImage, imageCoords, vec4(mainSurfel.radiance, 1.f));
 //	vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
 //	// get the depth value
 //	imageStore(resultImage, imageCoords, vec4(vec3(mainNor * 0.5f + 0.5f), 1.f));
+//imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
+    imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 	
 
 }
