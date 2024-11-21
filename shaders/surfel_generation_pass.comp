@@ -200,16 +200,16 @@ void main()
 	float groupMaxContribution = uintBitsToFloat(groupShareMaxContribution);
 
 	
-	if ( surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
-		coverage == groupMinCoverage &&
-		coverage < 2.f && 
-		rand(randSeed) < depth * 0.2f)
-		{
-			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-			generateNewSurfel(worldPos, compressedNor, surfelToCameraDistance, vec2(imageRes.x, imageRes.y));
-		}
-
-	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+//	if ( surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
+//		coverage == groupMinCoverage &&
+//		coverage < 2.f && 
+//		rand(randSeed) < depth * 0.2f)
+//		{
+//			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
+//			generateNewSurfel(worldPos, compressedNor, surfelToCameraDistance, vec2(imageRes.x, imageRes.y));
+//		}
+//
+//	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
 //	uint coverageData = 0;
 //    coverageData |= floatBitsToUint(coverage) & 0xFFFF0000;
@@ -237,48 +237,44 @@ void main()
 //	maxContributionSurfelIndex = contributionData & 0x0000FFFF;
 
 
-	if (surfelCounter.aliveSurfelCnt < 10000)
+	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
+		coverage == groupMinCoverage &&
+		coverage < 2.f && 
+		rand(randSeed) < depth * 0.2f)
 	{
-		//if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
-		if (coverage == groupMinCoverage)
+		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
+		if (surfelAliveIndex < kMaxSurfelCount)
 		{
-			if (coverage < 2.f && rand(randSeed) < depth * 0.3f)
-			{
-			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
-				if (surfelAliveIndex < surfelMaxCount)
-				{
-					uint surfelID = surfelDead[surfelMaxCount - surfelAliveIndex - 1];
-					surfelAlive[surfelAliveIndex] = surfelID;
+			uint surfelID = surfelDead[kMaxSurfelCount - surfelAliveIndex - 1];
+			surfelAlive[surfelAliveIndex] = surfelID;
 
-					// const radius tmp
-					Surfel newSurfel;
-					newSurfel.objID = objID;
-					newSurfel.position = worldPos;
-					newSurfel.normal = compressedNor;
-					newSurfel.radiance = indirectLighting;
-					newSurfel.msmeData.mean = indirectLighting.xyz;
-                    newSurfel.msmeData.shortMean = vec3(0.f);
-					newSurfel.msmeData.vbbr = 0.f;
-					newSurfel.msmeData.variance = vec3(1.f);
-					newSurfel.msmeData.inconsistency = 1.f;
-					float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-					newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
+			// const radius tmp
+			Surfel newSurfel;
+			newSurfel.objID = objID;
+			newSurfel.position = worldPos;
+			newSurfel.normal = compressedNor;
+			newSurfel.radiance = indirectLighting;
+			newSurfel.msmeData.mean = indirectLighting.xyz;
+                  newSurfel.msmeData.shortMean = vec3(0.f);
+			newSurfel.msmeData.vbbr = 0.f;
+			newSurfel.msmeData.variance = vec3(1.f);
+			newSurfel.msmeData.inconsistency = 1.f;
+			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
+			newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
 
 
 
-					surfelBuffer[surfelID] = newSurfel;
+			surfelBuffer[surfelID] = newSurfel;
 
-					SurfelRecycleInfo newSurfelRecycleInfo;
-					newSurfelRecycleInfo.life = kMaxLife;
-					newSurfelRecycleInfo.frame = 0;
-					newSurfelRecycleInfo.status = 0;
-					surfelRecycle[surfelID] = newSurfelRecycleInfo;
-				}
-				else
-				{
-					atomicAdd(surfelCounter.aliveSurfelCnt, -1);
-				}
-			}
+			SurfelRecycleInfo newSurfelRecycleInfo;
+			newSurfelRecycleInfo.life = kMaxLife;
+			newSurfelRecycleInfo.frame = 0;
+			newSurfelRecycleInfo.status = 0;
+			surfelRecycle[surfelID] = newSurfelRecycleInfo;
+		}
+		else
+		{
+			atomicAdd(surfelCounter.aliveSurfelCnt, -1);
 		}
 	}
 
@@ -288,4 +284,5 @@ void main()
 //	// get the depth value
 //	imageStore(resultImage, imageCoords, vec4(vec3(mainNor * 0.5f + 0.5f), 1.f));
 //imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
+	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 }

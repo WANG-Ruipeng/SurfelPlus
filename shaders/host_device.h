@@ -117,7 +117,7 @@ struct MSMEData
 
 struct SurfelCounter
 {
-	uint aliveSurfelCnt = 0;
+	uint aliveSurfelCnt;
 	uint deadSurfelCnt;
 	uint dirtySurfelCnt;
 	uint surfelRayCnt;
