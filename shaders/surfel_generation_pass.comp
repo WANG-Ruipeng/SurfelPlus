@@ -179,12 +179,12 @@ void main()
 	}
 	else
 	{
-		imageStore(resultImage, imageCoords, vec4(vec3(depth), 1.f));
+		imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 
-	//if ((rtxState.frame & 0x000fffff) != 0) return;
+	//if ((rtxState.frame & 0x0000000f) != 0) return;
 
 	coverage += rand(randSeed) * 1e-10;
 	uint coverageData = floatBitsToUint(coverage);
@@ -240,7 +240,7 @@ void main()
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 2.f && 
-		rand(randSeed) < depth * 0.2f)
+		rand(randSeed) < depth * 0.3f)
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
@@ -277,6 +277,17 @@ void main()
 			atomicAdd(surfelCounter.aliveSurfelCnt, -1);
 		}
 	}
+
+//	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
+//    {
+//        if (coverage > 6.0)
+//        {
+//            if (rand(randSeed) < depth * 0.1f)
+//            {
+//                surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
+//            }
+//        }
+//    }
 
 //Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 //imageStore(resultImage, imageCoords, vec4(mainSurfel.radiance, 1.f));

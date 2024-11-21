@@ -45,9 +45,9 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
-
 #include "shaderUtils.glsl"
+
+uint randSeed = 0;
 
 void recycleSurfelInAlive(uint aliveArrayIndex) {
     // Get the actual surfelID
@@ -63,30 +63,18 @@ void recycleSurfelInAlive(uint aliveArrayIndex) {
 	// recycle to dead buffer
     uint newDeadIndex = kMaxSurfelCount - newAliveCnt - 1;
 	surfelDead[newDeadIndex] = surfelIndexToRecycle;
-
-
-
-//    // Add to dead stack
-//    surfelDead[newDeadIndex] = surfelIndexToRecycle;
-//
-//    // Move last active surfel to the current position atomically
-//    if (aliveArrayIndex < oldAliveCnt - 1) {
-//        atomicExchange(surfelAlive[aliveArrayIndex], surfelAlive[oldAliveCnt - 1]);
-//    }
 }
 
 
-bool shouldRecycleSurfel(Surfel surfel, SurfelRecycleInfo recycleInfo, float surfelToCameraDistance) {
+bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in uint lastSeen, float surfelToCameraDistance) {
 
     // base check
-    if(surfel.radius <= 0.01 || recycleInfo.life == 0) {
+    if(surfel.radius < 0.001 || recycleInfo.life == 0)
         return true;
-    }
-	else
-	{
-	    return false;
-	}
 
+	// if last seen, do not recycle
+	if (lastSeen != 0u)
+	    return false;
 
     // Distance factor - recycle if too far
     float distanceFactor = smoothstep(50.0, 100.0, surfelToCameraDistance);
@@ -97,29 +85,22 @@ bool shouldRecycleSurfel(Surfel surfel, SurfelRecycleInfo recycleInfo, float sur
     float normalFactor = 1.0 - max(0.0, dot(viewDir, surfelNormal));
     
     // Life cycle factor
-    float lifeFactor = (float(recycleInfo.frame) - float(recycleInfo.lastSeenFrame)) / float(recycleInfo.life);
+    float lifeFactor = (float(kMaxLife) - float(recycleInfo.life)) / kMaxLife;
 
     // Combine factors with weights
-    float recycleProb = 0.01 * distanceFactor +
-                       0.02 * normalFactor +
-                        0.5 * lifeFactor;
+    float recycleProb = 0.3 * distanceFactor +
+                       0.3 * normalFactor +
+                        0.8 * lifeFactor;
     
     // Scale by surfel density
     float surfelCountFactor = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
     recycleProb *= surfelCountFactor;
-
-    // Generate random number for discard
-    // Use multiple components to improve randomness
-    uint randSeed = tea(
-        floatBitsToUint(surfel.position.x) ^ 
-        floatBitsToUint(surfel.position.y) ^ 
-        floatBitsToUint(surfel.position.z), 
-        rtxState.frame
-    );
     
     // Use rand() instead of direct tea result for better distribution
     return rand(randSeed) < recycleProb;
 }
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
 {
@@ -130,6 +111,8 @@ void main()
 	// Still put it in descriptors for future use.
 
 	if(idx >= surfelCounter.aliveSurfelCnt) return;
+
+	randSeed = tea(idx, rtxState.totalFrames);
 
 	uint surfelIndex = surfelAlive[idx];
     Surfel surfel = surfelBuffer[surfelIndex];
@@ -147,22 +130,15 @@ void main()
 	// If so, reset life, and if surfel is sleeping, awake.
 	if(lastSeen != 0u){
 		//recycleInfo.lastSeenFrame = recycleInfo.frame;
-		recycleInfo.life = 100;
+		recycleInfo.life = kMaxLife;
 		if(isSleeping != 0u){ isSleeping = 0u; }
 	}
 
-	// reset lastSeen
-	recycleInfo.status = recycleInfo.status & (~0x0002);
-	// write back
-	surfelRecycleInfo[surfelIndex] = recycleInfo;
 
-	// TODO: Check surfel is sleeping and have enough light pointing towards it,
 	float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
+
 	// Check if surfel valid
-	if(!shouldRecycleSurfel(surfel, recycleInfo, surfelToCameraDistance)){
-		// Get surfel position & normal and reset it to current frame's position
-		// Since we are only doing static mesh, this is not necessary
-		// And it also saves the space of mapping surfel to triangle
+	if(!shouldRecycleSurfel(surfel, recycleInfo, lastSeen, surfelToCameraDistance)){
 
 		// Reset surfel radius
 		float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
@@ -222,6 +198,11 @@ void main()
 	{
 		recycleSurfelInAlive(idx);
 	}
+
+	// reset lastSeen
+	recycleInfo.status = recycleInfo.status & (~0x0002);
+	// write back
+	surfelRecycleInfo[surfelIndex] = recycleInfo;
 	
 	return;
 }
