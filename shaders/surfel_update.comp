@@ -73,7 +73,7 @@ bool shouldRecycleSurfel(Surfel surfel, SurfelRecycleInfo recycleInfo, float sur
     if(surfel.radius <= 0.01 || recycleInfo.life < recycleInfo.frame) {
         return true;
     }
-	return false;
+
     // Distance factor - recycle if too far
     float distanceFactor = smoothstep(50.0, 100.0, surfelToCameraDistance);
     
@@ -88,7 +88,7 @@ bool shouldRecycleSurfel(Surfel surfel, SurfelRecycleInfo recycleInfo, float sur
     // Combine factors with weights
     float recycleProb = 0.01 * distanceFactor +
                        0.02 * normalFactor +
-                        0.05 * lifeFactor;
+                        0.5 * lifeFactor;
     
     // Scale by surfel density
     float surfelCountFactor = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);

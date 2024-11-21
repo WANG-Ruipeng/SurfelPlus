@@ -3,9 +3,9 @@
 const float surfelSize = 1.0f;
 const float cellSize = 2.0f;
 const uint kCellDimension = 64;
-const uint kMaxLife = 6000u;
+const uint kMaxLife = 600u;
 const uint kSleepingMaxLife = 60u;
-const uint kMaxSurfelCount = 100u; 
+const uint kMaxSurfelCount = 1000u;  
 
 vec3 getCameraPosition(SceneCamera camera)
 {

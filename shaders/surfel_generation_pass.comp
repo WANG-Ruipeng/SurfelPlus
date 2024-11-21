@@ -59,10 +59,6 @@ shared uint groupShareMaxContribution;
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 bool generateNewSurfel(vec3 worldPos, uint compressedNor, float surfelToCameraDistance, vec2 resolution) {
-    // Check if there is any dead surfels remains
-    if (surfelCounter.deadSurfelCnt == 0 ) {
-        return false;
-    }
 
     // Get surfel index from the top of deadSurfel
     uint newSurfelIndex = surfelDead[surfelCounter.deadSurfelCnt - 1];
@@ -202,7 +198,7 @@ void main()
 	float groupMaxContribution = uintBitsToFloat(groupShareMaxContribution);
 
 	
-	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
+	if ( surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 2.f && 
 		rand(randSeed) < depth * 0.2f)

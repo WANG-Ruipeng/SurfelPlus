@@ -107,7 +107,7 @@ END_ENUM();
 
 struct SurfelCounter
 {
-	uint aliveSurfelCnt;
+	uint aliveSurfelCnt = 0;
 	uint deadSurfelCnt;
 	uint dirtySurfelCnt;
 	uint surfelRayCnt;
