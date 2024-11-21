@@ -17,7 +17,6 @@
 #include "host_device.h"
 #include "compress.glsl"
 
-
 // surfel buffers
 layout(set = 0, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter surfelCounter; };
 layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
@@ -37,6 +36,8 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
+#include "shaderUtils_surfel_cell.glsl"
+
 // Compute input
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
@@ -50,11 +51,11 @@ void main()
 	}
 
 	// tmp value
-	const uint maxSurfelCount = 10000;
-	if (rtxState.frame == 0)
+	/*
+	if (rtxState.frame > 1000)
 	{
 		surfelCounter.aliveSurfelCnt = 0;
-		surfelCounter.deadSurfelCnt = maxSurfelCount;
+		surfelCounter.deadSurfelCnt = kMaxSurfelCount;
 		surfelDead[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
 		surfelAlive[gl_GlobalInvocationID.x] = 0;
 		Surfel surfel;
@@ -63,14 +64,13 @@ void main()
 		surfel.radius = 0.0f;
 		surfel.radiance = vec3(0.0f);
 		surfelBuffer[gl_GlobalInvocationID.x] = surfel;
-	}
+	}*/
 
-	// Get last frame valid surfel -> dirty surfel
+	/*
 	surfelCounter.dirtySurfelCnt = surfelCounter.aliveSurfelCnt;
-	// Put all valid surfel into dirty Surfel
     if(idx < surfelCounter.aliveSurfelCnt) {
         surfelDirty[idx] = surfelAlive[idx];
-    }
+    }*/
 
 	// Reset alive surfel counter
 }

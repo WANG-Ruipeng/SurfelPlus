@@ -465,7 +465,8 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
   if (m_busy)
     m_offscreen.run(cmdBuf);
   else
-	  m_offscreen.run(cmdBuf, m_lightPass.getDescriptorSet());
+	m_offscreen.run(cmdBuf, m_lightPass.getDescriptorSet());
+	//m_offscreen.run(cmdBuf, m_surfel.getIndirectLightDescSet());
 
   if(m_showAxis)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);

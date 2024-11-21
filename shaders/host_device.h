@@ -117,7 +117,7 @@ struct MSMEData
 
 struct SurfelCounter
 {
-	uint aliveSurfelCnt;
+	uint aliveSurfelCnt = 0;
 	uint deadSurfelCnt;
 	uint dirtySurfelCnt;
 	uint surfelRayCnt;
@@ -150,7 +150,7 @@ struct SurfelRecycleInfo
 	uint life;
 	uint frame;
 	uint status;
-	uint pad;
+	uint lastSeenFrame;
 };
 const int maxSurfelLife = 255;
 
