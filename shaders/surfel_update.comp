@@ -53,24 +53,24 @@ void recycleSurfelInAlive(uint aliveArrayIndex) {
     // Get the actual surfelID
     uint surfelIndexToRecycle = surfelAlive[aliveArrayIndex]; 
 
-    // Update counters atomically
+    // Update alive counter atomically
     uint oldAliveCnt = atomicAdd(surfelCounter.aliveSurfelCnt, -1);
-    uint newDeadIndex = atomicAdd(surfelCounter.deadSurfelCnt, 1);
+    uint newDeadIndex = kMaxSurfelCount - oldAliveCnt;
 
     // Add to dead stack
     surfelDead[newDeadIndex] = surfelIndexToRecycle;
 
     // Move last active surfel to the current position atomically
     if (aliveArrayIndex < oldAliveCnt - 1) {
-        uint lastAliveSurfel = surfelAlive[oldAliveCnt - 1];
-        atomicExchange(surfelAlive[aliveArrayIndex], lastAliveSurfel);
+        atomicExchange(surfelAlive[aliveArrayIndex], surfelAlive[oldAliveCnt - 1]);
     }
 }
 
 
 bool shouldRecycleSurfel(Surfel surfel, SurfelRecycleInfo recycleInfo, float surfelToCameraDistance) {
+
     // base check
-    if(surfel.radius <= 0.01 || recycleInfo.life < recycleInfo.frame) {
+    if(surfel.radius <= 0.01 || recycleInfo.life <= recycleInfo.frame) {
         return true;
     }
 
@@ -159,7 +159,7 @@ void main()
 		}else{
 			surfel.radius = newRadius;
 		}
-
+		
 		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
 		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
