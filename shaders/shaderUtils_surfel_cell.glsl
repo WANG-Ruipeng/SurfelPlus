@@ -1,7 +1,7 @@
 // Surfel and cells
 
 const float surfelSize = 1.0f;
-const float cellSize = 2.0f;
+const float cellSize = 4.0f;
 const uint kCellDimension = 64;
 const uint kMaxLife = 600u;
 const uint kSleepingMaxLife = 60u;

@@ -65,7 +65,7 @@ public:
 
 	// Surfel Configuration
 	const uint32_t maxSurfelCnt = 10000;
-	const uint32_t maxRayBudget = maxSurfelCnt * 32;
+	const uint32_t maxRayBudget = maxSurfelCnt * 64;
 
 private:
 

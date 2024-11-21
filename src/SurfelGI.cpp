@@ -26,7 +26,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	};
 	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 20);
 
-	std::vector<SurfelCounter> counters = { {0, maxSurfelCnt, 0} };
+	std::vector<SurfelCounter> counters = { {0, maxSurfelCnt, 0, 0} };
 	m_surfelCounterBuffer = m_pAlloc->createBuffer(cmdBuf, counters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
 	std::vector<Surfel> surfels(maxSurfelCnt);
@@ -351,7 +351,7 @@ void SurfelGI::createIrradianceDepthMap()
 	// Creating irradiance image
 	{
 		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
-			size, VK_FORMAT_R8_UNORM,
+			size, VK_FORMAT_R16_SFLOAT,
 			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
 		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
