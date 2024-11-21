@@ -351,7 +351,7 @@ void SurfelGI::createIrradianceDepthMap()
 	// Creating irradiance image
 	{
 		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
-			size, VK_FORMAT_R8_UNORM,
+			size, VK_FORMAT_R16_SFLOAT,
 			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
 		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);

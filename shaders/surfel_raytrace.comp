@@ -66,21 +66,74 @@ void main()
 	SurfelRay surfelRay = surfelRayBuffer[index];
 	uint frameHash = lowbias32(rtxState.totalFrames);
 	uint randSeed = tea(index, frameHash);
+    uint surfelIndex = surfelRay.surfelID;
+
+	// use ray guiding
+	uint irradianceUint = surfelBuffer[surfelIndex].irradiance;
+    float surfelIrradiance = uintBitsToFloat(irradianceUint);
+	bool isFull = (irradianceUint & 0x01) > 0 && surfelIrradiance > 1e-12;
+    vec3 dirL;
+    float pdf;
+
+	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 16))
+    {
+	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
+
+        ivec2 irrMapBase = ivec2(
+            surfelIndex % (IrradianceMapRes.x / 6),
+            surfelIndex / (IrradianceMapRes.x / 6)
+        );
+        irrMapBase *= ivec2(6,6);
+
+        float threshold = rand(randSeed) * uintBitsToFloat(irradianceUint);
+        float cummulative = 0.f;
+
+        uvec2 rayCoord = uvec2(100);
+        for (uint y = 0; y < 6; ++y)
+        {
+            for (uint x = 0; x < 6; ++x)
+            {
+                float irr = texelFetch(surfelIrradianceSampler, irrMapBase + ivec2(x, y), 0).r;
+                cummulative += irr;
+                if (cummulative >= threshold)
+                {
+                    rayCoord = uvec2(x, y);
+                    pdf = irr / surfelIrradiance;
+                    break;
+                }
+            }
+
+            if (cummulative >= threshold)
+                break;
+        }
+
+        vec2 uv = vec2(rayCoord - 3) / vec2(3.0);
+        // add small noise to direction.
+        uv += rand2(randSeed) * 0.16f;
+        dirL = OctUVToDir(uv);
+    }
+    else
+    {
+        // use cosine weighted sampling
+        vec2 uv = rand2(randSeed);
+        dirL = CosineSampleHemisphere(uv.x, uv.y);
+        pdf = dirL.z * M_1_OVER_PI;
+    }
 
 
 	// use cosine weighted sampling
-	vec2 dirUV = rand2(randSeed);
-	vec3 dirL = CosineSampleHemisphere(dirUV.x, dirUV.y);
-	float pdf = dirL.z * M_1_OVER_PI;
+//	vec2 dirUV = rand2(randSeed);
+//	vec3 dirL = CosineSampleHemisphere(dirUV.x, dirUV.y);
+//	float pdf = dirL.z * M_1_OVER_PI;
 
-	vec3 N = decompress_unit_vec(surfelBuffer[surfelRay.surfelID].normal);
+    vec3 N = decompress_unit_vec(surfelBuffer[surfelIndex].normal);
+    
+    vec3 T, B;
+    CreateCoordinateSystem(N, T, B);
+    vec3 dirW = normalize(dirL.x * T + dirL.y * B + dirL.z * N);
 
-	vec3 T, B;
-	CreateCoordinateSystem(N, T, B);
-	vec3 dirW = normalize(dirL.x * T + dirL.y * B + dirL.z * N);
 
-
-	Ray ray = Ray(surfelBuffer[surfelRay.surfelID].position, dirW);
+	Ray ray = Ray(surfelBuffer[surfelIndex].position, dirW);
 	ray.origin = OffsetRay(ray.origin, N);
 
 	surfelRay.radiance = PathTrace(ray);

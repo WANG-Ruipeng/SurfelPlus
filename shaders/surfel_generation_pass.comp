@@ -77,6 +77,7 @@ void main()
 		return;
 	}
 
+	uint objID = texelFetch(primObjIDMap, imageCoords, 0).r;
 	uint randSeed = initRandom(imageRes, imageCoords, rtxState.totalFrames);
 
 	// get the normal
@@ -113,6 +114,7 @@ void main()
                 contribution *= clamp(dotN, 0.f, 1.f);
                 contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
                 contribution = smoothstep(0, 1, contribution);
+
 
                 coverage += contribution;
 
@@ -193,7 +195,7 @@ void main()
 		//if (gl_LocalInvocationID.x == x && gl_LocalInvocationID.y == y)
 		if (coverage == groupMinCoverage)
 		{
-			if (coverage < 2.f && rand(randSeed) < depth * 0.2f)
+			if (coverage < 2.f && rand(randSeed) < depth * 0.3f)
 			{
 			    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 				if (surfelAliveIndex < surfelMaxCount)
@@ -203,11 +205,20 @@ void main()
 
 					// const radius tmp
 					Surfel newSurfel;
+					newSurfel.objID = objID;
 					newSurfel.position = worldPos;
 					newSurfel.normal = compressedNor;
-					newSurfel.radiance = vec3(0.f);
+					newSurfel.radiance = indirectLighting;
+					newSurfel.msmeData.mean = indirectLighting.xyz;
+                    newSurfel.msmeData.shortMean = vec3(0.f);
+					newSurfel.msmeData.vbbr = 0.f;
+					newSurfel.msmeData.variance = vec3(1.f);
+					newSurfel.msmeData.inconsistency = 1.f;
 					float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
 					newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
+
+
+
 					surfelBuffer[surfelID] = newSurfel;
 
 					SurfelRecycleInfo newSurfelRecycleInfo;

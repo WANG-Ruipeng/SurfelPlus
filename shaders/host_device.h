@@ -105,6 +105,16 @@ END_ENUM();
 
 // Surfel data
 
+struct MSMEData
+{
+	vec3 mean;
+	float vbbr;
+	vec3 shortMean;
+	float inconsistency;
+	vec3 variance;
+	float pad;
+};
+
 struct SurfelCounter
 {
 	uint aliveSurfelCnt;
@@ -128,6 +138,8 @@ struct Surfel
 	uint rayOffset;
 	uint rayCount;
 	uint irradiance;
+
+	MSMEData msmeData;
 };
 
 // [status]

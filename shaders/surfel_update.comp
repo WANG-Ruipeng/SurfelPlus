@@ -124,7 +124,8 @@ void main()
 		//TODO: Update ray information
 
 		// use constant ray count (tmp)
-		uint rayRequestCnt = 32;
+		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 1.2f, 0.f, 1.f)));
+		if (recycleInfo.frame < 2) rayRequestCnt = 64;
 
 		// allocate ray buffer
 		uint rayOffset = atomicAdd(surfelCounter.surfelRayCnt, rayRequestCnt);
