@@ -346,7 +346,36 @@ void Scene::createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf
   if(all_lights.empty())  // Cannot be null
     all_lights.emplace_back(Light{});
   m_buffer[eLights] = m_pAlloc->createBuffer(cmdBuf, all_lights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+  m_lights = all_lights;
+
   NAME_VK(m_buffer[eLights].buffer);
+}
+
+void Scene::updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights)
+{
+    std::vector<Light> all_lights = lights;
+    if (all_lights.empty())
+    {
+        return; 
+    }
+
+	// destroy the previous light buffer
+    if (m_buffer[eLights].buffer != VK_NULL_HANDLE)
+    {
+        m_pAlloc->destroy(m_buffer[eLights]);
+        m_buffer[eLights] = {};               
+    }
+
+	// create new light buffer
+    m_buffer[eLights] = m_pAlloc->createBuffer(
+        cmdBuf,                               
+        all_lights,                           
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);  
+
+	m_lights = all_lights;
+
+    NAME_VK(m_buffer[eLights].buffer);
 }
 
 //--------------------------------------------------------------------------------------------------

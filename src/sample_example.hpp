@@ -233,6 +233,7 @@ public:
   bool        m_busy{false};
   std::string m_busyReasonText;
 
+  AdditionalLights m_additionalLights;
 
   std::shared_ptr<SampleGUI> m_gui;
 };

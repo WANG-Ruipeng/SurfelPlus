@@ -33,6 +33,12 @@
 #include "nvvk/descriptorsets_vk.hpp"
 #include "queue.hpp"
 
+struct AdditionalLights
+{
+    std::vector<Light> lights{ {} };
+    int count{ 1 };
+    int selected{ 0 };
+};
 
 class Scene
 {
@@ -63,10 +69,10 @@ public:
   void setCameraFromScene(const std::string& filename, const nvh::GltfScene& gltf);
   bool loadGltfScene(const std::string& filename, tinygltf::Model& tmodel);
   void createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
+  void updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights);
   void createMaterialBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
   void destroy();
   void updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio);
-
 
   VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
   VkDescriptorSet                  getDescSet() { return m_descSet; }
@@ -77,6 +83,9 @@ public:
   SceneCamera&                     getCamera() { return m_camera; }
   const std::vector<uint32_t>&     getIndicesCount() { return m_indicesCount; }
 
+  std::vector<Light>& getLights() { return m_lights; }
+  int& getLightCount() { return m_lightCount; }
+
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);
   void createDescriptorSet(const nvh::GltfScene& gltf);
@@ -86,7 +95,7 @@ private:
 
   std::string m_sceneName;
   SceneCamera m_camera{};
-
+  
   // Setup
   nvvk::ResourceAllocator* m_pAlloc;  // Allocator for buffer, images, acceleration structures
   nvvk::DebugUtil          m_debug;   // Utility to name objects
@@ -100,6 +109,11 @@ private:
   std::vector<std::pair<nvvk::Image, VkImageCreateInfo>> m_images;           // vector of all images of the scene
   std::vector<size_t>                                    m_defaultTextures;  // for cleanup
   std::vector<uint32_t>								     m_indicesCount;
+
+
+  // Lights
+  std::vector<Light>                                     m_lights;
+  int m_lightCount{ 0 };
 
   VkDescriptorPool      m_descPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};

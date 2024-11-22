@@ -25,8 +25,11 @@
 // This implements all graphical user interface of SampleExample.
 class SampleExample;  // Forward declaration
 
+
+
 class SampleGUI
 {
+
 public:
   SampleGUI(SampleExample* _s)
       : _se(_s)
@@ -45,6 +48,7 @@ private:
   bool guiStatistics();
   bool guiProfiler(nvvk::ProfilerVK& profiler);
   bool guiGpuMeasures();
+  bool guiAdditionalLights();
 
   SampleExample* _se{nullptr};
 };
