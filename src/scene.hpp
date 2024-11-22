@@ -33,9 +33,13 @@
 #include "nvvk/descriptorsets_vk.hpp"
 #include "queue.hpp"
 
+#define MAX_ADDITONAL_LIGHTS 10
 struct AdditionalLights
 {
-    std::vector<Light> lights{ {} };
+    std::vector<Light> lights
+    {
+        {vec3(0.0f, 0.0f, 0.0f), 10.0f, vec3(1.f, 1.f, 1.f), 1.0f, vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f, LightType_Point}
+    };
     int count{ 1 };
     int selected{ 0 };
 };
@@ -69,7 +73,8 @@ public:
   void setCameraFromScene(const std::string& filename, const nvh::GltfScene& gltf);
   bool loadGltfScene(const std::string& filename, tinygltf::Model& tmodel);
   void createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
-  void updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights);
+  void updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights, int lightCount);
+  void onLightChange();
   void createMaterialBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
   void destroy();
   void updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio);
@@ -83,8 +88,10 @@ public:
   SceneCamera&                     getCamera() { return m_camera; }
   const std::vector<uint32_t>&     getIndicesCount() { return m_indicesCount; }
 
-  std::vector<Light>& getLights() { return m_lights; }
-  int& getLightCount() { return m_lightCount; }
+  AdditionalLights& getAdditionalLights() { return m_lights; }
+  std::vector<Light>& getLights() { return m_lights.lights; }
+  int& getLightCount() { return m_lights.count; }
+  int getLightMaxCount() { return m_lightMaxCount; }
 
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);
@@ -112,8 +119,8 @@ private:
 
 
   // Lights
-  std::vector<Light>                                     m_lights;
-  int m_lightCount{ 0 };
+  int m_lightMaxCount{ MAX_ADDITONAL_LIGHTS };
+  AdditionalLights m_lights;
 
   VkDescriptorPool      m_descPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};

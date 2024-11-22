@@ -80,6 +80,8 @@ void SampleGUI::render(nvvk::ProfilerVK& profiler)
     }
 	if (ImGui::CollapsingHeader("Additional Lights"))
 		changed |= guiAdditionalLights();
+
+
     ImGui::TextWrapped("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                        ImGui::GetIO().Framerate);
 
@@ -332,33 +334,23 @@ bool SampleGUI::guiAdditionalLights()
         {
             {vec3(0.0f, 0.0f, 0.0f), 10.0f, vec3(1.f, 1.f, 1.f), 1.0f, vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f, LightType_Point}
         }, // light list
-		1,  // light count
+		1, // light count
 		0  // selected light
     };
     
+
+
+
     bool           changed{ false };
 	auto& lights = _se->m_scene.getLights();
 	auto& lightCount = _se->m_scene.getLightCount();
-	auto& m_addLights = _se->m_additionalLights;
+	auto& m_addLights = _se->m_scene.getAdditionalLights();
 
+	changed |= GuiH::Slider("Light Count", "", &lightCount, &default_AddLights.count, GuiH::Flags::Normal, 1, 10);
 
-    // check light count
-	int initialCount = lightCount;
-	changed |= GuiH::Slider("Light Count", "", &lightCount, nullptr, GuiH::Flags::Normal, 0, 10);
-	if (initialCount != lightCount) {
-		// resize the light list
-        if (initialCount > lightCount)
-		    lights.resize(lightCount);
-		else {
-			for (int i = initialCount; i < lightCount; i++) {
-				lights.emplace_back(default_AddLights.lights[0]);
-			}
-		}
-	}
-
-
-    if (ImGui::BeginCombo("Select Light", std::to_string(m_addLights.selected ).c_str())) {
-        for (int i = 0; i < lights.size(); ++i) {
+	m_addLights.selected = std::min(m_addLights.selected, lightCount - 1);
+    if (ImGui::BeginCombo("##hidden", std::to_string(m_addLights.selected).c_str())) {
+        for (int i = 0; i < lightCount; ++i) {
             const bool isSelected = (i == m_addLights.selected);
 
             if (ImGui::Selectable(std::to_string(i).c_str(), isSelected)) {
@@ -380,14 +372,20 @@ bool SampleGUI::guiAdditionalLights()
         // point light only
 		auto& light = lights[m_addLights.selected];
 
-        // range
 		changed |= GuiH::Slider("Range", "", &light.range, nullptr, GuiH::Flags::Normal, 0.0f, 100.0f);
 		changed |= GuiH::Color("Color", "", &light.color.x, nullptr, GuiH::Flags::Normal);
 		changed |= GuiH::Slider("Intensity", "", &light.intensity, nullptr, GuiH::Flags::Normal, 0.0f, 100.0f);
-        //position
 		changed |= GuiH::Custom("Position", "Light Position", [&] { return ImGui::DragFloat3("##Position", &light.position.x, 0.1f); });
     }
-    if (changed) std::cout << "light info changed" << std::endl;
+
+    if (changed)
+    {
+        
+
+		_se->m_scene.onLightChange();
+		std::cout << "Light Changed, light count: " << lightCount << std::endl;
+    }
+
 
 
     return false;  // no need to restart the renderer

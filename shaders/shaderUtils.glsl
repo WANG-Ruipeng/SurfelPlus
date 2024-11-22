@@ -125,4 +125,13 @@ vec3 WorldPosFromDepth(in vec2 uv, in float depth)
         return state;
     }
 
+    // Select light uniformly from light buffer
+    Light selectRandomLight(uint seed)
+    {
+        // uncomment this after implementing numlight uniform 
+		//int index = floor(rand(seed) * float(numLights));
+
+        int index = 0;
+		return lights[index];
+    }
 #endif
