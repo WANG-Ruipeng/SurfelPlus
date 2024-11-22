@@ -348,7 +348,7 @@ void Scene::createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf
     all_lights.emplace_back(Light{});
 
   all_lights.resize(std::max(static_cast<size_t>(10), all_lights.size()));  // Make sure we have at least 10 lights
-  m_buffer[eLights] = m_pAlloc->createBuffer(cmdBuf, all_lights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+  m_buffer[eLights] = m_pAlloc->createBuffer(cmdBuf, all_lights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   m_lights.lights = all_lights;
 
@@ -378,7 +378,7 @@ void Scene::updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& 
 
     // Schedule the host-to-device upload. (hostUBO is copied into the cmd
     // buffer so it is okay to deallocate when the function returns).
-    vkCmdUpdateBuffer(cmdBuf, deviceUBO, 0, sizeof(Light) * lightCount, lights.data());
+    vkCmdUpdateBuffer(cmdBuf, deviceUBO, 0, sizeof(Light) * lightCount, all_lights.data());
 
     // Making sure the updated UBO will be visible.
     VkBufferMemoryBarrier afterBarrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
@@ -389,23 +389,12 @@ void Scene::updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& 
     vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
         VK_DEPENDENCY_DEVICE_GROUP_BIT, 0, nullptr, 1, &afterBarrier, 0, nullptr);
-
 }
 
-void Scene::onLightChange()
+void Scene::updateLightBuffer(VkCommandBuffer cmdBuf)
 {
-    nvvk::CommandPool cmdBufGet(m_device, m_queue.familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queue.queue);
-    VkCommandBuffer   cmdBuf = cmdBufGet.createCommandBuffer();
-
-    // print light info
-    auto& light = m_lights.lights[m_lights.selected];
-    std::cout << "Light " << m_lights.selected << ":\n";
-    std::cout << "Range: " << light.range << "\n";
-    std::cout << "Color: " << light.color.x << ", " << light.color.y << ", " << light.color.z << "\n";
-    std::cout << "Intensity: " << light.intensity << "\n";
-    std::cout << "Position: " << light.position.x << ", " << light.position.y << ", " << light.position.z << "\n";
-
 	updateLightBuffer(cmdBuf, m_lights.lights, m_lights.count);
+	setDirty(false);
 }
 
 //--------------------------------------------------------------------------------------------------

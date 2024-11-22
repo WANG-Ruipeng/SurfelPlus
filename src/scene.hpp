@@ -42,6 +42,7 @@ struct AdditionalLights
     };
     int count{ 1 };
     int selected{ 0 };
+    bool dirty{ false };
 };
 
 class Scene
@@ -74,7 +75,7 @@ public:
   bool loadGltfScene(const std::string& filename, tinygltf::Model& tmodel);
   void createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
   void updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights, int lightCount);
-  void onLightChange();
+  void updateLightBuffer(VkCommandBuffer cmdBuf);
   void createMaterialBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
   void destroy();
   void updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio);
@@ -92,6 +93,8 @@ public:
   std::vector<Light>& getLights() { return m_lights.lights; }
   int& getLightCount() { return m_lights.count; }
   int getLightMaxCount() { return m_lightMaxCount; }
+  void setDirty(bool dirty) { m_lights.dirty = dirty; }
+  bool getDirty() { return m_lights.dirty; }
 
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);

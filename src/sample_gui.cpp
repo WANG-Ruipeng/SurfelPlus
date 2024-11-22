@@ -380,10 +380,7 @@ bool SampleGUI::guiAdditionalLights()
 
     if (changed)
     {
-        
-
-		_se->m_scene.onLightChange();
-		std::cout << "Light Changed, light count: " << lightCount << std::endl;
+		_se->m_scene.setDirty(true);
     }
 
 

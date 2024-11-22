@@ -186,6 +186,7 @@ void SampleExample::updateUniformBuffer(const VkCommandBuffer& cmdBuf)
   const float aspectRatio = m_renderRegion.extent.width / static_cast<float>(m_renderRegion.extent.height);
 
   m_scene.updateCamera(cmdBuf, aspectRatio);
+  if (m_scene.getDirty()) m_scene.updateLightBuffer(cmdBuf);
   vkCmdUpdateBuffer(cmdBuf, m_sunAndSkyBuffer.buffer, 0, sizeof(SunAndSky), &m_sunAndSky);
 }
 

@@ -137,7 +137,7 @@ void main()
 
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
-    fragColor.xyz = vec3(dist);
+    fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
 
 //    fragColor.xyz = IntegerToColor(matIndex);
 //    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
