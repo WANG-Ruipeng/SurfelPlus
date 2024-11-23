@@ -86,11 +86,12 @@ bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in 
     
     // Life cycle factor
     float lifeFactor = (float(kMaxLife) - float(recycleInfo.life)) / kMaxLife;
+	lifeFactor *= step(0.4, lifeFactor);
 
     // Combine factors with weights
-    float recycleProb = 0.3 * distanceFactor +
-                       0.3 * normalFactor +
-                        0.8 * lifeFactor;
+    float recycleProb = 0.1 * distanceFactor +
+                       0.05 * normalFactor +
+                        0.3 * lifeFactor;
     
     // Scale by surfel density
     float surfelCountFactor = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);

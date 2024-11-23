@@ -235,7 +235,7 @@ int main(int argc, char** argv)
     sample.updateUniformBuffer(cmdBuf);  // Updating UBOs
 
     // Rendering Scene (ray tracing)
-    sample.renderScene(cmdBuf, profiler);
+    //sample.renderScene(cmdBuf, profiler);
 
     // begin gbuffer pass
     if (!sample.m_busy)
