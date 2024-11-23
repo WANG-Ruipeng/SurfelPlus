@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2021-2023, NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,6 +78,10 @@ void SampleGUI::render(nvvk::ProfilerVK& profiler)
       Gui::Group<bool>("Profiler", false, [&] { return guiProfiler(profiler); });
       Gui::Group<bool>("Plot", false, [&] { return guiGpuMeasures(); });
     }
+	if (ImGui::CollapsingHeader("Additional Lights"))
+		changed |= guiAdditionalLights();
+
+
     ImGui::TextWrapped("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                        ImGui::GetIO().Framerate);
 
@@ -322,6 +326,66 @@ bool SampleGUI::guiEnvironment()
   }
 
   return changed;
+}
+
+bool SampleGUI::guiAdditionalLights()
+{
+    static AdditionalLights default_AddLights{
+        {
+            {vec3(0.0f, 0.0f, 0.0f), 10.0f, vec3(1.f, 1.f, 1.f), 1.0f, vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f, LightType_Point}
+        }, // light list
+		1, // light count
+		0  // selected light
+    };
+    
+
+
+
+    bool           changed{ false };
+	auto& lights = _se->m_scene.getLights();
+	auto& lightCount = _se->m_scene.getLightCount();
+	auto& m_addLights = _se->m_scene.getAdditionalLights();
+
+	changed |= GuiH::Slider("Light Count", "", &lightCount, &default_AddLights.count, GuiH::Flags::Normal, 1, 10);
+
+	m_addLights.selected = std::min(m_addLights.selected, lightCount - 1);
+    if (ImGui::BeginCombo("##hidden", std::to_string(m_addLights.selected).c_str())) {
+        for (int i = 0; i < lightCount; ++i) {
+            const bool isSelected = (i == m_addLights.selected);
+
+            if (ImGui::Selectable(std::to_string(i).c_str(), isSelected)) {
+                if (i != m_addLights.selected) {
+                    m_addLights.selected = i; 
+                    changed = true;        
+                }
+            }
+
+            if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    if (!lights.empty())
+    {
+        // point light only
+		auto& light = lights[m_addLights.selected];
+
+		changed |= GuiH::Slider("Range", "", &light.range, nullptr, GuiH::Flags::Normal, 0.0f, 100.0f);
+		changed |= GuiH::Color("Color", "", &light.color.x, nullptr, GuiH::Flags::Normal);
+		changed |= GuiH::Slider("Intensity", "", &light.intensity, nullptr, GuiH::Flags::Normal, 0.0f, 100.0f);
+		changed |= GuiH::Custom("Position", "Light Position", [&] { return ImGui::DragFloat3("##Position", &light.position.x, 0.1f); });
+    }
+
+    if (changed)
+    {
+		_se->m_scene.setDirty(true);
+    }
+
+
+
+    return false;  // no need to restart the renderer
 }
 
 //--------------------------------------------------------------------------------------------------

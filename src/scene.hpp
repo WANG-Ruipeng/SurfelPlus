@@ -33,6 +33,17 @@
 #include "nvvk/descriptorsets_vk.hpp"
 #include "queue.hpp"
 
+#define MAX_ADDITONAL_LIGHTS 10
+struct AdditionalLights
+{
+    std::vector<Light> lights
+    {
+        {vec3(0.0f, 0.0f, 0.0f), 10.0f, vec3(1.f, 1.f, 1.f), 1.0f, vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f, LightType_Point}
+    };
+    int count{ 1 };
+    int selected{ 0 };
+    bool dirty{ false };
+};
 
 class Scene
 {
@@ -63,10 +74,11 @@ public:
   void setCameraFromScene(const std::string& filename, const nvh::GltfScene& gltf);
   bool loadGltfScene(const std::string& filename, tinygltf::Model& tmodel);
   void createLightBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
+  void updateLightBuffer(VkCommandBuffer cmdBuf, const std::vector<Light>& lights, int lightCount);
+  void updateLightBuffer(VkCommandBuffer cmdBuf);
   void createMaterialBuffer(VkCommandBuffer cmdBuf, const nvh::GltfScene& gltf);
   void destroy();
   void updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio);
-
 
   VkDescriptorSetLayout            getDescLayout() { return m_descSetLayout; }
   VkDescriptorSet                  getDescSet() { return m_descSet; }
@@ -77,6 +89,13 @@ public:
   SceneCamera&                     getCamera() { return m_camera; }
   const std::vector<uint32_t>&     getIndicesCount() { return m_indicesCount; }
 
+  AdditionalLights& getAdditionalLights() { return m_lights; }
+  std::vector<Light>& getLights() { return m_lights.lights; }
+  int& getLightCount() { return m_lights.count; }
+  int getLightMaxCount() { return m_lightMaxCount; }
+  void setDirty(bool dirty) { m_lights.dirty = dirty; }
+  bool getDirty() { return m_lights.dirty; }
+
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);
   void createDescriptorSet(const nvh::GltfScene& gltf);
@@ -86,7 +105,7 @@ private:
 
   std::string m_sceneName;
   SceneCamera m_camera{};
-
+  
   // Setup
   nvvk::ResourceAllocator* m_pAlloc;  // Allocator for buffer, images, acceleration structures
   nvvk::DebugUtil          m_debug;   // Utility to name objects
@@ -100,6 +119,11 @@ private:
   std::vector<std::pair<nvvk::Image, VkImageCreateInfo>> m_images;           // vector of all images of the scene
   std::vector<size_t>                                    m_defaultTextures;  // for cleanup
   std::vector<uint32_t>								     m_indicesCount;
+
+
+  // Lights
+  int m_lightMaxCount{ MAX_ADDITONAL_LIGHTS };
+  AdditionalLights m_lights;
 
   VkDescriptorPool      m_descPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};

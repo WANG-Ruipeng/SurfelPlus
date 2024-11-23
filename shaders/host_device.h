@@ -367,4 +367,6 @@ struct SunAndSky
   int   in_use;
 };
 
+
+
 #endif  // COMMON_HOST_DEVICE
