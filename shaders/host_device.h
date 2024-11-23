@@ -152,7 +152,7 @@ struct SurfelRecycleInfo
 	uint status;
 	uint lastSeenFrame;
 };
-const int maxSurfelLife = 255;
+
 
 struct SurfelRay
 {
@@ -169,13 +169,25 @@ struct CellInfo
 {
 	uint surfelOffset;
 	uint surfelCount;
+	uint pad1;
+	uint pad2;
 };
 
 struct CellCounter
 {
 	uint totalCellCount;
 	uint aliveSurfelInCell;
+	uint pad1;
+	uint pad2;
 };
+
+const float surfelSize = 1.0f;
+const float cellSize = 4.0f;
+const uint kCellDimension = 32u;
+const uint kCellCount = kCellDimension * kCellDimension * kCellDimension;
+const uint kMaxLife = 240u;
+const uint kSleepingMaxLife = 60u;
+const uint kMaxSurfelCount = 10000u;
 
 // Camera of the scene
 struct SceneCamera

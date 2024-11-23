@@ -42,7 +42,6 @@ static void onErrorCallback(int error, const char* description)
 }
 
 #define ENABLE_GPU_PRINTF 1//   Enabling printf in shaders
-// debugPrintfEXT("");
 
 
 //////////////////////////////////////////////////////////////////////////

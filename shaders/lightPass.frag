@@ -147,6 +147,6 @@ void main()
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
     //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
 //    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
-    //fragColor.xyz = indirectLight;
+    fragColor.xyz = indirectLight;
     fragColor.a = 1.0;
 }

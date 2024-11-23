@@ -50,7 +50,21 @@ public:
 	VkDescriptorSet			getGbufferSamplerDescSet() { return m_gbufferResources.m_samplerDescSet; }
 	VkDescriptorSetLayout	getGbufferImageDescLayout() { return m_gbufferResources.m_samplerDescSetLayout; }
 	VkDescriptorSet			getGbufferImageDescSet() { return m_gbufferResources.m_samplerDescSet; }
-	nvvk::Buffer			getSurfelCounterBuffer() { return m_surfelCounterBuffer; }
+
+	// Surfel Resources Getters
+	nvvk::Buffer getSurfelCounterBuffer() const {return m_surfelCounterBuffer;}
+	nvvk::Buffer getSurfelBuffer() const {return m_surfelBuffer;}
+	nvvk::Buffer getSurfelAliveBuffer() const {return m_surfelAliveBuffer;}
+	nvvk::Buffer getSurfelDeadBuffer() const {return m_surfelDeadBuffer;}
+	nvvk::Buffer getSurfelDirtyBuffer() const {return m_surfelDirtyBuffer;}
+	nvvk::Buffer getSurfelRecycleBuffer() const {return m_surfelRecycleBuffer;}
+	nvvk::Buffer getSurfelRayBuffer() const {return m_surfelRayBuffer;}
+
+	// Cell Resources Getters
+	nvvk::Buffer getCellInfoBuffer() const {return m_cellInfoBuffer;}
+	nvvk::Buffer getCellCounterBuffer() const {return m_cellCounterBuffer;}
+	nvvk::Buffer getCellToSurfelBuffer() const {return m_cellToSurfelBuffer;}
+
 
 	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
 	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }
@@ -66,6 +80,7 @@ public:
 	// Surfel Configuration
 	const uint32_t maxSurfelCnt = 10000;
 	const uint32_t maxRayBudget = maxSurfelCnt * 64;
+	uint32_t totalCellCount = 0;
 
 private:
 
@@ -117,8 +132,4 @@ private:
 	VkDescriptorSet				m_cellBufferDescSet{ VK_NULL_HANDLE };
 	VkDescriptorSetLayout		m_surfelDataMapsDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet				m_surfelDataMapsDescSet{ VK_NULL_HANDLE };
-
-	// Basic Cell Info
-	const uint32_t cellSize = 32;
-
 };

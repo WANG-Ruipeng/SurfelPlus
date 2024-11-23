@@ -65,7 +65,6 @@ void recycleSurfelInAlive(uint aliveArrayIndex) {
 	surfelDead[newDeadIndex] = surfelIndexToRecycle;
 }
 
-
 bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in uint lastSeen, float surfelToCameraDistance) {
 
     // base check
@@ -147,22 +146,24 @@ void main()
 		vec2 resolution = vec2(imageRes.x, imageRes.y);
 		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
 		if(isSleeping != 0u) {
-			surfel.radius = max(newRadius, cellSize * 0.5f);
+			surfel.radius = max(newRadius, cellSize * 0.5f); 
 		}else{
 			surfel.radius = newRadius;
 		}
 		
 		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
-		vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+		vec3 cellPosIndex = getCellPos(surfel.position, camPos); 
 		for(uint i = 0; i < 27; i++)
 		{
 			//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
 			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-			if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize))
-			{
+			
+			if (isSurfelIntersectCell(surfel, neighbourPos, camPos))
+			{ 
 				uint flattenIndex = getFlattenCellIndex(neighbourPos);
 				atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
+				//if(idx == 40) debugPrintfEXT("surfelCount[%d]: %d\n",flattenIndex, cellBuffer[flattenIndex].surfelCount); 
 			}
 		}
 

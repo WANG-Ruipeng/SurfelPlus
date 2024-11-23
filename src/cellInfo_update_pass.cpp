@@ -39,6 +39,8 @@ void CellInfoUpdatePass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& si
 
 	// Dispatching the shader
 	vkCmdDispatch(cmdBuf, (size.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (size.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
+
+
 }
 
 void CellInfoUpdatePass::create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& descSetsLayout, Scene* _scene)

@@ -50,9 +50,7 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<SurfelRay> surfelRayBuffer(maxRayBudget);
 	m_surfelRayBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRayBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-	const uint32_t cellCountX = (size.width + cellSize - 1) / cellSize;
-	const uint32_t cellCountY = (size.height + cellSize - 1) / cellSize;
-	const uint32_t totalCellCount = cellCountX * cellCountY;
+	totalCellCount = kCellDimension * kCellDimension * kCellDimension;
 	std::vector<CellInfo> cells(totalCellCount);
 	m_cellInfoBuffer = m_pAlloc->createBuffer(cmdBuf, cells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
@@ -61,8 +59,8 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<CellCounter> cellCounters = { cellCounter };
 	m_cellCounterBuffer = m_pAlloc->createBuffer(cmdBuf, cellCounters, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-	//TODO: Size should be different! Currently is the same as maxSurfelCnt, should have something different
-	std::vector<uint32_t> cellToSurfelBuffer(maxSurfelCnt, 0);
+	//TODO: Size should be different! Currently is the 8 * maxSurfelCnt, should have something different?
+	std::vector<uint32_t> cellToSurfelBuffer(maxSurfelCnt * 8, 0);
 	m_cellToSurfelBuffer = m_pAlloc->createBuffer(cmdBuf, cellToSurfelBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
 	cmdBufGet.submitAndWait(cmdBuf);

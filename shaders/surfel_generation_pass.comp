@@ -131,11 +131,22 @@ void main()
     float maxContribution = 0.f;
     uint maxContributionSurfelIndex = 0xffffffff;
 
-	for (uint i = 0; i < aliveSurfelCnt; i++)
-	{
-		uint surfelIndex = surfelAlive[i];
-		Surfel surfel = surfelBuffer[surfelIndex];
+	vec3 camPos = getCameraPosition(sceneCamera);
+	vec3 cellPosIndex = getCellPos(worldPos, camPos);
+	uint flattenIndex = getFlattenCellIndex(cellPosIndex);
 
+	CellInfo cellInfo = cellBuffer[flattenIndex];
+	uint cellOffset = cellInfo.surfelOffset;
+	uint cellSurfelCount = cellInfo.surfelCount; 
+
+	//if(cellOffset != 0 || cellSurfelCount!= 0) debugPrintfEXT("%d, %d\n", cellOffset, cellSurfelCount); 
+
+	for (uint i = 0; i < cellSurfelCount; i++)
+	{
+		//uint surfelIndex = surfelAlive[i];
+		uint surfelIndex = cellToSurfel[cellOffset + i];
+		Surfel surfel = surfelBuffer[surfelIndex];
+		//if(imageCoords.x == 200)debugPrintfEXT("%f, %f\n", surfel.radius, surfel.position.x); 
 		vec3 bias = worldPos - surfel.position;
         float dist2 = dot(bias, bias);
 

@@ -560,16 +560,13 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_surfelUpdatePass.setPushContants(m_rtxState);
 	m_surfelRaytracePass.setPushContants(m_rtxState);
 
-	m_surfelPreparePass.run(cmdBuf, {m_surfel.maxSurfelCnt, 1}, profiler,
-        {m_surfel.getSurfelBuffersDescSet(), m_surfel.getCellBufferDescSet()});
-
 	m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getGbufferSamplerDescSet(),
         m_scene.getDescSet(),
         m_surfel.getIndirectLightDescSet(),
         m_surfel.getCellBufferDescSet()});
-
+    // need to add fence
 	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { 
         m_surfel.getSurfelBuffersDescSet(),
 		m_surfel.getCellBufferDescSet(),
@@ -577,7 +574,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getGbufferSamplerDescSet()
         });
 
-    m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
+    m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getCellBufferDescSet()
         });
@@ -586,6 +583,11 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getSurfelBuffersDescSet(),
         m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
+        });
+
+    m_surfelPreparePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler,
+        { m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getCellBufferDescSet() 
         });
 
     VkBufferMemoryBarrier outbuffDependency = {};

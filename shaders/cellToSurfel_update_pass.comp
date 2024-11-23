@@ -54,15 +54,18 @@ void main()
     uint surfelIndex = surfelAlive[idx];
     Surfel surfel = surfelBuffer[surfelIndex];
     vec3 camPos = getCameraPosition(sceneCamera);
-    vec3 cellPosIndex = getCellPos(surfel.position,camPos,cellSize);
+    vec3 cellPosIndex = getCellPos(surfel.position,camPos);
 
     for(uint i = 0; i < 27; i++){
         //iterate through 3x3x3 cell neighbours
         vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-        if (isSurfelIntersectCell(surfel, neighbourPos, camPos, cellSize)){
+        if (isSurfelIntersectCell(surfel, neighbourPos, camPos)){
             uint flattenIndex = getFlattenCellIndex(neighbourPos);
             uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
             cellToSurfel[cellBuffer[flattenIndex].surfelOffset + prevCount] = surfelIndex;
+            //debugPrintfEXT("%d\n", cellBuffer[flattenIndex].surfelCount);
         }
     }
+
+   
 }

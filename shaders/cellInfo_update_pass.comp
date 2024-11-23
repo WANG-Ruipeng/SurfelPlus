@@ -38,19 +38,25 @@ layout(push_constant) uniform _RtxState
 // Compute input
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
+#include "shaderUtils_surfel_cell.glsl"
+
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
 	// Compute offset of the cell to surfel buffer
-	if(idx >= cellCounter.totalCellCount) return;
+	// Cell Count
+	if(idx >= kCellCount) return;
 
 	// Get the cell to process
 	CellInfo thisCell = cellBuffer[idx];
-	if(thisCell.surfelCount == 0) return;
-
+	//if(thisCell.surfelOffset != 0 &&  thisCell.surfelCount != 0) 
+		//debugPrintfEXT("surfelOffset:%d, surfelCount:%d\n", thisCell.surfelOffset, thisCell.surfelCount); 
 	// Calculate offsets of the surfel buffer
 	uint offset = atomicAdd(cellCounter.aliveSurfelInCell, thisCell.surfelCount);
+	//if(idx == 40) debugPrintfEXT("surfelOffset:%d, surfelCount:%d\n", thisCell.surfelOffset, thisCell.surfelCount); 
+
 	cellBuffer[idx].surfelOffset = offset;
-	thisCell.surfelCount = 0;
+	cellBuffer[idx].surfelCount = 0;
+	
 }
