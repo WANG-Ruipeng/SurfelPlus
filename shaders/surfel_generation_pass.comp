@@ -40,7 +40,7 @@ layout(set = 2, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera scene
 layout(set = 3,   binding = 1)				uniform image2D	resultImage;
 
 // cell buffer
-layout(set = 4, binding = 0, scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 4, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
 layout(set = 4, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
 layout(set = 4, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
 
@@ -306,5 +306,6 @@ void main()
 //	// get the depth value
 //	imageStore(resultImage, imageCoords, vec4(vec3(mainNor * 0.5f + 0.5f), 1.f));
 //imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
+	//imageStore(resultImage, imageCoords, vec4(vec3(cellSurfelCount) / 500.f, 1.f));
 	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 }

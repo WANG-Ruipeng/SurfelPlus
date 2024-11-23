@@ -27,6 +27,7 @@ void SurfelIntegratePass::destroy()
 
 void SurfelIntegratePass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
+	LABEL_SCOPE_VK(cmdBuf);
 	const int GROUP_SIZE = 32;
 	// Preparing for the compute shader
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
@@ -61,7 +62,7 @@ void SurfelIntegratePass::create(const VkExtent2D& size, const std::vector<VkDes
 
 	vkCreateComputePipelines(m_device, {}, 1, &computePipelineCreateInfo, nullptr, &m_pipeline);
 
-	m_debug.setObjectName(m_pipeline, "Surfel Raytrace Pass");
+	m_debug.setObjectName(m_pipeline, "Surfel Integrate Pass");
 	vkDestroyShaderModule(m_device, computePipelineCreateInfo.stage.module, nullptr);
 }
 

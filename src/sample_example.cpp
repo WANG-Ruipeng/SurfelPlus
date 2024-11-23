@@ -559,20 +559,39 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_surfelGenerationPass.setPushContants(m_rtxState);
 	m_surfelUpdatePass.setPushContants(m_rtxState);
 	m_surfelRaytracePass.setPushContants(m_rtxState);
+	m_surfelIntegratePass.setPushContants(m_rtxState);
 
-	m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
-        m_surfel.getSurfelBuffersDescSet(),
-        m_surfel.getGbufferSamplerDescSet(),
-        m_scene.getDescSet(),
-        m_surfel.getIndirectLightDescSet(),
-        m_surfel.getCellBufferDescSet()});
-    // need to add fence
+
+    VkBufferMemoryBarrier outbuffDependency = {};
+
+
+    m_surfelPreparePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler,
+        { m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getCellBufferDescSet()
+        });
+
 	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { 
         m_surfel.getSurfelBuffersDescSet(),
 		m_surfel.getCellBufferDescSet(),
         m_scene.getDescSet(),
         m_surfel.getGbufferSamplerDescSet()
         });
+
+    outbuffDependency = {};
+    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    outbuffDependency.buffer = m_surfel.getCellInfoBuffer().buffer;
+    outbuffDependency.size = VK_WHOLE_SIZE;
+
+    vkCmdPipelineBarrier(
+        cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        (VkDependencyFlags)0,
+        0, nullptr,
+        1, &outbuffDependency,
+        0, nullptr
+    );
 
     m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
@@ -585,12 +604,31 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_scene.getDescSet(),
         });
 
-    m_surfelPreparePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler,
-        { m_surfel.getSurfelBuffersDescSet(),
-        m_surfel.getCellBufferDescSet() 
-        });
+    outbuffDependency = {};
+    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    outbuffDependency.buffer = m_surfel.getCellInfoBuffer().buffer;
+    outbuffDependency.size = VK_WHOLE_SIZE;
 
-    VkBufferMemoryBarrier outbuffDependency = {};
+    vkCmdPipelineBarrier(
+        cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        (VkDependencyFlags)0,
+        0, nullptr,
+        1, &outbuffDependency,
+        0, nullptr
+    );
+
+    m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
+        m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getGbufferSamplerDescSet(),
+        m_scene.getDescSet(),
+        m_surfel.getIndirectLightDescSet(),
+        m_surfel.getCellBufferDescSet() });
+
+
+    outbuffDependency = {};
     outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;

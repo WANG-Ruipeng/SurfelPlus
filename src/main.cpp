@@ -234,7 +234,7 @@ int main(int argc, char** argv)
     sample.updateUniformBuffer(cmdBuf);  // Updating UBOs
 
     // Rendering Scene (ray tracing)
-    sample.renderScene(cmdBuf, profiler);
+    //sample.renderScene(cmdBuf, profiler);
 
     // begin gbuffer pass
     if (!sample.m_busy)
@@ -244,6 +244,7 @@ int main(int argc, char** argv)
         sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
         sample.m_gbufferPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, {sample.m_scene.getDescSet()});
         sample.m_gbufferPass.endRenderPass(cmdBuf);
+        sec.endSection();
         
         // Run surfel passes
 		sample.calculateSurfels(cmdBuf, profiler);

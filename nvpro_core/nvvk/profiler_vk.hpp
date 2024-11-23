@@ -104,6 +104,7 @@ public:
       m_cmd = cmd;
     }
     ~Section() { m_profiler.endSection(m_id, m_cmd); }
+    void endSection() { m_profiler.endSection(m_id, m_cmd); }
 
   private:
     SectionID       m_id;

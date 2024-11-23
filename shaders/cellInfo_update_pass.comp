@@ -50,6 +50,8 @@ void main()
 
 	// Get the cell to process
 	CellInfo thisCell = cellBuffer[idx];
+	if (thisCell.surfelCount == 0) return;
+
 	//if(thisCell.surfelOffset != 0 &&  thisCell.surfelCount != 0) 
 		//debugPrintfEXT("surfelOffset:%d, surfelCount:%d\n", thisCell.surfelOffset, thisCell.surfelCount); 
 	// Calculate offsets of the surfel buffer

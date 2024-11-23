@@ -51,6 +51,7 @@ void main()
 	}
 	//clear cellBuffer
 	cellBuffer[idx].surfelCount = 0;
+	cellBuffer[idx].surfelOffset = 0;
 	// tmp value
 	/*
 	if (rtxState.frame > 1000)

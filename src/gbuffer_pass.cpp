@@ -86,7 +86,6 @@ void GbufferPass::create(const VkExtent2D& size, const std::vector<VkDescriptorS
 
 void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
-
 	LABEL_SCOPE_VK(cmdBuf);
 	auto area = glm::vec2(size.width, size.height);
 

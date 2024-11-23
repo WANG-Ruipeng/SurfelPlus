@@ -28,6 +28,7 @@ void SurfelRaytracePass::destroy()
 
 void SurfelRaytracePass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
+	LABEL_SCOPE_VK(cmdBuf);
 	const int GROUP_SIZE = 32;
 	// Preparing for the compute shader
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
