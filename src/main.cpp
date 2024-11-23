@@ -236,33 +236,33 @@ int main(int argc, char** argv)
     // Rendering Scene (ray tracing)
     //sample.renderScene(cmdBuf, profiler);
 
-    // begin gbuffer pass
     if (!sample.m_busy)
     {
 		// Run gbuffer pass
-        auto sec = profiler.timeRecurring("Gbuffer", cmdBuf);
-        sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
-        sample.m_gbufferPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, {sample.m_scene.getDescSet()});
-        sample.m_gbufferPass.endRenderPass(cmdBuf);
-        sec.endSection();
+        {
+            auto sec = profiler.timeRecurring("Gbuffer", cmdBuf);
+            sample.m_gbufferPass.beginRenderPass(cmdBuf, sample.m_surfel.getGbufferFramebuffer(curFrame), sample.getSize());
+            sample.m_gbufferPass.run(cmdBuf, sample.getRenderRegion().extent, profiler, { sample.m_scene.getDescSet() });
+            sample.m_gbufferPass.endRenderPass(cmdBuf);
+        }
         
         // Run surfel passes
 		sample.calculateSurfels(cmdBuf, profiler);
 
         isfirstFrame = false;
-    }
 
-	// begin light pass
-	if (!sample.m_busy)
-	{
-		auto sec = profiler.timeRecurring("Light", cmdBuf);
-        sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
-		//sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize(), sample.getFramebuffers()[sample.getCurFrame()]);
-        sample.m_lightPass.setPushContants(sample.m_rtxState);
-		sample.m_lightPass.run(cmdBuf, sample.getRenderRegion().extent, profiler,
-            { sample.m_accelStruct.getDescSet(), sample.m_offscreen.getDescSet(), sample.m_scene.getDescSet(), sample.m_descSet,
-            sample.m_surfel.getGbufferImageDescSet(), sample.m_surfel.getIndirectLightDescSet()});
-		sample.m_lightPass.endRenderPass(cmdBuf);
+
+		// Run light pass
+        {
+            auto sec = profiler.timeRecurring("Light", cmdBuf);
+            sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
+            //sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize(), sample.getFramebuffers()[sample.getCurFrame()]);
+            sample.m_lightPass.setPushContants(sample.m_rtxState);
+            sample.m_lightPass.run(cmdBuf, sample.getRenderRegion().extent, profiler,
+                { sample.m_accelStruct.getDescSet(), sample.m_offscreen.getDescSet(), sample.m_scene.getDescSet(), sample.m_descSet,
+                sample.m_surfel.getGbufferImageDescSet(), sample.m_surfel.getIndirectLightDescSet() });
+            sample.m_lightPass.endRenderPass(cmdBuf);
+        }
 	}
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
