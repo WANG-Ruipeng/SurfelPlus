@@ -146,7 +146,6 @@ void main()
 		//uint surfelIndex = surfelAlive[i];
 		uint surfelIndex = cellToSurfel[cellOffset + i];
 		Surfel surfel = surfelBuffer[surfelIndex];
-		//if(imageCoords.x == 200)debugPrintfEXT("%f, %f\n", surfel.radius, surfel.position.x); 
 		vec3 bias = worldPos - surfel.position;
         float dist2 = dot(bias, bias);
 
@@ -259,7 +258,6 @@ void main()
 			uint surfelID = surfelDead[kMaxSurfelCount - surfelAliveIndex - 1];
 			surfelAlive[surfelAliveIndex] = surfelID;
 
-			// const radius tmp
 			Surfel newSurfel;
 			newSurfel.objID = objID;
 			newSurfel.position = worldPos;
@@ -289,16 +287,16 @@ void main()
 		}
 	}
 
-//	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
-//    {
-//        if (coverage > 6.0)
-//        {
-//            if (rand(randSeed) < depth * 0.1f)
-//            {
-//                surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
-//            }
-//        }
-//    }
+	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
+    {
+        if (coverage > 6.0)
+        {
+            if (rand(randSeed) < depth * 0.1f)
+            {
+                surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
+            }
+        }
+    }
 
 //Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 //imageStore(resultImage, imageCoords, vec4(mainSurfel.radiance, 1.f));

@@ -148,7 +148,7 @@ void main()
 		vec2 resolution = vec2(imageRes.x, imageRes.y);
 		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
 		if(isSleeping != 0u) {
-			surfel.radius = max(newRadius, cellSize * 0.5f); 
+			surfel.radius = max(newRadius, cellSize * 2.f); 
 		}else{
 			surfel.radius = newRadius;
 		}
@@ -172,11 +172,11 @@ void main()
 		//Update ray information
 		// use constant ray count (tmp)
 		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 1.2f, 0.f, 1.f)));
-		if (recycleInfo.frame < 2) rayRequestCnt = 64;
+		//if (recycleInfo.frame < 2) rayRequestCnt = 64;
 
 		// allocate ray buffer
 		uint rayOffset = atomicAdd(surfelCounter.surfelRayCnt, rayRequestCnt);
-		if (rayOffset < 320000)
+		if (rayOffset < kMaxRayCount)
         {
             surfel.rayOffset = rayOffset;
             surfel.rayCount = rayRequestCnt;

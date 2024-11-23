@@ -137,13 +137,10 @@ void main()
 
     totalRadiance /= surfel.rayCount;
 
-    //float ratio = surfelRecycleInfo[surfelIndex].frame > 0 ? 
-    // float(surfelRecycleInfo[surfelIndex].frame - 1) / float(surfelRecycleInfo[surfelIndex].frame) : 0.f;
-    //
-    // ratio  = min(ratio, 31.0f / 32.0f);
-    //totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
-
-
+//    float ratio = surfelRecycleInfo[surfelIndex].frame > 0 ? 
+//        float(surfelRecycleInfo[surfelIndex].frame - 1) / float(surfelRecycleInfo[surfelIndex].frame) : 0.f;
+//    ratio  = min(ratio, 31.0f / 32.0f);
+//    totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
 
     vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.03);
 

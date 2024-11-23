@@ -80,7 +80,7 @@ public:
 
 	// Surfel Configuration
 	const uint32_t maxSurfelCnt = kMaxSurfelCount;
-	const uint32_t maxRayBudget = maxSurfelCnt * 64;
+	const uint32_t maxRayBudget = kMaxRayCount;
 	uint32_t totalCellCount = 0;
 
 private:
