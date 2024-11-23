@@ -1,12 +1,5 @@
 // Surfel and cells
 
-const float surfelSize = 1.0f;
-const float cellSize = 4.0f;
-const uint kCellDimension = 64;
-const uint kMaxLife = 600u;
-const uint kSleepingMaxLife = 60u;
-const uint kMaxSurfelCount = 100000u;  
-
 vec3 getCameraPosition(SceneCamera camera)
 {
     return vec3(camera.viewInverse[3]);

@@ -182,12 +182,12 @@ struct CellCounter
 };
 
 const float surfelSize = 1.0f;
-const float cellSize = 4.0f;
-const uint kCellDimension = 32u;
+const float cellSize = 2.0f;
+const uint kCellDimension = 64u;
 const uint kCellCount = kCellDimension * kCellDimension * kCellDimension;
-const uint kMaxLife = 240u;
+const uint kMaxLife = 480u;
 const uint kSleepingMaxLife = 60u;
-const uint kMaxSurfelCount = 10000u;
+const uint kMaxSurfelCount = 100000u;
 
 // Camera of the scene
 struct SceneCamera

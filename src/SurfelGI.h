@@ -2,6 +2,7 @@
 
 #include <string>
 #include <glm/glm.hpp>
+#include "shaders/host_device.h"
 
 #include "nvh/gltfscene.hpp"
 #include "nvvk/resourceallocator_vk.hpp"
@@ -78,7 +79,7 @@ public:
 	void gbufferLayoutTransition(VkCommandBuffer cmdBuf);
 
 	// Surfel Configuration
-	const uint32_t maxSurfelCnt = 100000;
+	const uint32_t maxSurfelCnt = kMaxSurfelCount;
 	const uint32_t maxRayBudget = maxSurfelCnt * 64;
 	uint32_t totalCellCount = 0;
 
