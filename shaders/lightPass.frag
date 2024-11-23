@@ -137,7 +137,7 @@ void main()
 
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
-    fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
+    //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
 
 //    fragColor.xyz = IntegerToColor(matIndex);
 //    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
@@ -146,7 +146,7 @@ void main()
     //fragColor.xyz = worldPos - attr0_world;
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
     //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
-//    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
-    fragColor.xyz = indirectLight;
+    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
+    //fragColor.xyz = indirectLight;
     fragColor.a = 1.0;
 }
