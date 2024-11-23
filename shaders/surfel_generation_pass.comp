@@ -266,7 +266,7 @@ void main()
 			newSurfel.normal = compressedNor;
 			newSurfel.radiance = indirectLighting;
 			newSurfel.msmeData.mean = indirectLighting.xyz;
-                  newSurfel.msmeData.shortMean = vec3(0.f);
+            newSurfel.msmeData.shortMean = indirectLighting.xyz;
 			newSurfel.msmeData.vbbr = 0.f;
 			newSurfel.msmeData.variance = vec3(1.f);
 			newSurfel.msmeData.inconsistency = 1.f;
