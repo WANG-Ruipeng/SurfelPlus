@@ -166,9 +166,9 @@ bool SampleGUI::guiRayTracing()
                                    "TexCoord",
                                    "Tangent",
                                    "Radiance",
-                                   "Weight",
-                                   "RayDir",
-                                   "HeatMap",
+                                   "Surfel ID",
+                                   "Variance",
+                                   "Radius",
                                });
 
     if(rtxState.debugging_mode == eHeatmap)

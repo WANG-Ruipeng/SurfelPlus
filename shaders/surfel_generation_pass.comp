@@ -194,7 +194,18 @@ void main()
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
-	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+	if(rtxState.debugging_mode != eNoDebug)
+	{
+		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+		if(rtxState.debugging_mode == eRadiance)
+			imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+		else if(rtxState.debugging_mode == esSurfelID && maxContributionSurfelIndex != 0xffffffff) 
+			imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+		else if (rtxState.debugging_mode == esVariance && maxContributionSurfelIndex != 0xffffffff)
+			imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
+		else if (rtxState.debugging_mode == esRadius && maxContributionSurfelIndex != 0xffffffff)
+			imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+	} else imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
 	//if ((rtxState.totalFrames & 0x000000ff) != 0) return;
 

@@ -148,5 +148,20 @@ void main()
     //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
     fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
     //fragColor.xyz = indirectLight;
+
+    if(rtxState.debugging_mode != eNoDebug)
+    {
+        if(rtxState.debugging_mode == eBaseColor)
+            fragColor.xyz = state.mat.albedo;
+        else if(rtxState.debugging_mode == eNormal)
+            fragColor.xyz = state.normal;
+        else if(rtxState.debugging_mode == eMetallic)
+            fragColor.xyz = vec3(state.mat.metallic);
+        else if (rtxState.debugging_mode == eRoughness)
+            fragColor.xyz = vec3(state.mat.roughness);
+        else
+            fragColor.xyz = indirectLight;
+    }
+
     fragColor.a = 1.0;
 }
