@@ -157,6 +157,10 @@ bool SampleGUI::guiRayTracing()
     changed |= GuiH::Selection("Debug Mode", "Display unique values of material", &rtxState.debugging_mode, nullptr, Normal,
                                {
                                    "No Debug",
+                                   "Radiance",
+                                   "Surfel ID",
+                                   "Variance",
+                                   "Radius",
                                    "BaseColor",
                                    "Normal",
                                    "Metallic",
@@ -165,10 +169,6 @@ bool SampleGUI::guiRayTracing()
                                    "Roughness",
                                    "TexCoord",
                                    "Tangent",
-                                   "Radiance",
-                                   "Surfel ID",
-                                   "Variance",
-                                   "Radius",
                                });
 
     if(rtxState.debugging_mode == eHeatmap)

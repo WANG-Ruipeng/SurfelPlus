@@ -151,13 +151,13 @@ void main()
 
     if(rtxState.debugging_mode != eNoDebug)
     {
-        if(rtxState.debugging_mode == eBaseColor)
+        if(rtxState.debugging_mode == esBaseColor)
             fragColor.xyz = state.mat.albedo;
-        else if(rtxState.debugging_mode == eNormal)
+        else if(rtxState.debugging_mode == esNormal)
             fragColor.xyz = state.normal;
-        else if(rtxState.debugging_mode == eMetallic)
+        else if(rtxState.debugging_mode == esMetallic)
             fragColor.xyz = vec3(state.mat.metallic);
-        else if (rtxState.debugging_mode == eRoughness)
+        else if (rtxState.debugging_mode == esRoughness)
             fragColor.xyz = vec3(state.mat.roughness);
         else
             fragColor.xyz = indirectLight;

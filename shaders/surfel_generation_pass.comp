@@ -197,7 +197,7 @@ void main()
 	if(rtxState.debugging_mode != eNoDebug)
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
-		if(rtxState.debugging_mode == eRadiance)
+		if(rtxState.debugging_mode == esRadiance)
 			imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 		else if(rtxState.debugging_mode == esSurfelID && maxContributionSurfelIndex != 0xffffffff) 
 			imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));

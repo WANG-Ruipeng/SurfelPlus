@@ -105,18 +105,18 @@ END_ENUM();
 
 START_ENUM(SurfelDebugMode)
 esNoDebug = 0,
-esBaseColor = 1,
-esNormal = 2,
-esMetallic = 3,
-esEmissive = 4,
-esAlpha = 5,
-esRoughness = 6,
-esTexcoord = 7,
-esTangent = 8,
-esRadiance = 9,
-esSurfelID = 10,
-esVariance = 11,
-esRadius = 12
+esRadiance = 1,
+esSurfelID = 2,
+esVariance = 3,
+esRadius = 4,
+esBaseColor = 5,
+esNormal = 6,
+esMetallic = 7,
+esEmissive = 8,
+esAlpha = 9,
+esRoughness = 10,
+esTexcoord = 11,
+esTangent = 12
 END_ENUM();
 
 // Surfel data
