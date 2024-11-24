@@ -32,6 +32,19 @@ layout(set = 1,   binding = 1)				uniform image2D		surfelIrradianceMap;
 layout(set = 1,   binding = 2)				uniform sampler2D	surfelDepthSampler;
 layout(set = 1,   binding = 3)				uniform image2D		surfelDepthMap;
 
+// cell buffer
+layout(set = 2, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 2, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
+layout(set = 2, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
+
+// scene buffers
+layout(set = 3, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
+
+
+#include "shaderUtils.glsl"
+#include "random.glsl"
+
+
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 void main()
@@ -136,6 +149,59 @@ void main()
     surfel.irradiance |= uint(isFull);
 
     totalRadiance /= surfel.rayCount;
+
+    vec3 camPos = getCameraPosition(sceneCamera);
+	vec3 cellPosIndex = getCellPos(surfel.position, camPos);
+    vec4 sharedRadiance = vec4(0.0);
+    if (isCellValid(cellPosIndex))
+	{
+	    uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+        vec3 normal = decompress_unit_vec(surfel.normal);
+
+	    CellInfo cellInfo = cellBuffer[flattenIndex];
+	    uint cellOffset = cellInfo.surfelOffset;
+	    uint cellSurfelCount = cellInfo.surfelCount;
+
+        for (uint i = 0; i < cellSurfelCount; i++)
+	    {
+		    uint surfelIndex = cellToSurfel[cellOffset + i];
+		    Surfel neiSurfel = surfelBuffer[surfelIndex];
+		    vec3 distV = surfel.position - neiSurfel.position;
+            float dist2 = dot(distV, distV);
+            float cellRadius = cellSize * sqrt(2.0);
+
+		    if (dist2 < cellRadius * cellRadius)
+            {
+                vec3 surfelNor = decompress_unit_vec(neiSurfel.normal);
+                float dotN = dot(normal, surfelNor);
+                if (dotN > 0.f)
+                {
+                    float dist = sqrt(dist2);
+                    float contribution = 1.f;
+
+                    contribution *= clamp(dotN, 0.f, 1.f);
+                    contribution *= clamp(1.f - dist / cellRadius, 0.f, 1.f);
+                    contribution = smoothstep(0, 1, contribution);
+
+
+                    sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
+                }
+		
+		    }
+	    }
+
+
+        if (sharedRadiance.w > 0)
+        {
+            sharedRadiance.xyz /= sharedRadiance.w;
+            totalRadiance = mix(
+                totalRadiance,
+                sharedRadiance.xyz,
+                clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)
+            );
+        }
+
+    }
 
 //    float ratio = surfelRecycleInfo[surfelIndex].frame > 0 ? 
 //        float(surfelRecycleInfo[surfelIndex].frame - 1) / float(surfelRecycleInfo[surfelIndex].frame) : 0.f;

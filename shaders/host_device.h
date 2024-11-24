@@ -169,16 +169,16 @@ struct CellInfo
 {
 	uint surfelOffset;
 	uint surfelCount;
-	uint pad1;
-	uint pad2;
+	//uint pad1;
+	//uint pad2;
 };
 
 struct CellCounter
 {
 	uint totalCellCount;
 	uint aliveSurfelInCell;
-	uint pad1;
-	uint pad2;
+	//uint pad1;
+	//uint pad2;
 };
 
 const float surfelSize = 1.0f;

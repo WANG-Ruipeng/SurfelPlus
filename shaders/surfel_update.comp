@@ -79,22 +79,22 @@ bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in 
     float distanceFactor = smoothstep(50.0, 100.0, surfelToCameraDistance);
     
     // Normal factor - recycle if facing away from camera
-    vec3 viewDir = normalize(getCameraPosition(sceneCamera) - surfel.position);
-    vec3 surfelNormal = decompress_unit_vec(surfel.normal);
-    float normalFactor = 1.0 - max(0.0, dot(viewDir, surfelNormal));
+//    vec3 viewDir = normalize(getCameraPosition(sceneCamera) - surfel.position);
+//    vec3 surfelNormal = decompress_unit_vec(surfel.normal);
+//    float normalFactor = 1.0 - max(0.0, dot(viewDir, surfelNormal));
     
     // Life cycle factor
     float lifeFactor = (float(kMaxLife) - float(recycleInfo.life)) / float(kMaxLife);
 	lifeFactor *= step(0.3, lifeFactor);
 
     // Combine factors with weights
-    float recycleProb = 0.05 * distanceFactor +
-                       0.05 * normalFactor +
+    float recycleProb = 0.01 * distanceFactor +
+                       //0.05 * normalFactor +
                         0.3 * lifeFactor;
     
     // Scale by surfel density
     float surfelCountFactor = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
-	surfelCountFactor *= step(0.4, surfelCountFactor);
+	surfelCountFactor *= step(0.8, surfelCountFactor);
     recycleProb *= surfelCountFactor;
     
     // Use rand() instead of direct tea result for better distribution
@@ -171,7 +171,7 @@ void main()
 
 		//Update ray information
 		// use constant ray count (tmp)
-		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 1.2f, 0.f, 1.f)));
+		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
 		//if (recycleInfo.frame < 2) rayRequestCnt = 64;
 
 		// allocate ray buffer

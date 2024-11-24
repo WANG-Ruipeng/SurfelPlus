@@ -165,7 +165,7 @@ void main()
 
                 coverage += contribution;
 
-				indirectLighting += surfel.radiance * contribution;
+				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 200.f, float(surfelRecycle[surfelIndex].frame));
 
 				if (maxContribution < contribution)
 				{
@@ -185,16 +185,18 @@ void main()
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
 		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
 		//imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
-		imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+		//imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+		//imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
 	}
 	else
 	{
-		imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
+		//imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
 	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
+	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
-	//if ((rtxState.frame & 0x0000000f) != 0) return;
+	//if ((rtxState.totalFrames & 0x000000ff) != 0) return;
 
 	coverage += rand(randSeed) * 1e-10;
 	uint coverageData = floatBitsToUint(coverage);
@@ -289,7 +291,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
     {
-        if (coverage > 6.0)
+        if (coverage > 4.0)
         {
             if (rand(randSeed) < depth * 0.1f)
             {
@@ -305,5 +307,5 @@ void main()
 //	imageStore(resultImage, imageCoords, vec4(vec3(mainNor * 0.5f + 0.5f), 1.f));
 //imageStore(resultImage, imageCoords, vec4(vec3(coverage), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(vec3(cellSurfelCount) / 500.f, 1.f));
-	imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+	
 }

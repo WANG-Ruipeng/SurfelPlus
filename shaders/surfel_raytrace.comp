@@ -75,7 +75,7 @@ void main()
     vec3 dirL;
     float pdf;
 
-	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 16))
+	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 64))
     {
 	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
 
@@ -85,7 +85,7 @@ void main()
         );
         irrMapBase *= ivec2(6,6);
 
-        float threshold = rand(randSeed) * uintBitsToFloat(irradianceUint);
+        float threshold = rand(randSeed) * surfelIrradiance;
         float cummulative = 0.f;
 
         uvec2 rayCoord = uvec2(100);
@@ -109,7 +109,7 @@ void main()
 
         vec2 uv = vec2(rayCoord - 3) / vec2(3.0);
         // add small noise to direction.
-        uv += rand2(randSeed) * 0.16f;
+        uv += rand2(randSeed) * 0.1f;
         dirL = OctUVToDir(uv);
     }
     else
