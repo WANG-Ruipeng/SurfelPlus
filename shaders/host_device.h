@@ -103,6 +103,22 @@ START_ENUM(DebugMode)
 END_ENUM();
 // clang-format on
 
+START_ENUM(SurfelDebugMode)
+esNoDebug = 0,
+esBaseColor = 1,
+esNormal = 2,
+esMetallic = 3,
+esEmissive = 4,
+esAlpha = 5,
+esRoughness = 6,
+esTexcoord = 7,
+esTangent = 8,
+esRadiance = 9,
+esSurfelID = 10,
+esVariance = 11,
+esRadius = 12
+END_ENUM();
+
 // Surfel data
 
 struct MSMEData
