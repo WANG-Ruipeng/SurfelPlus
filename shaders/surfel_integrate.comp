@@ -40,7 +40,7 @@ layout(set = 2, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel
 // scene buffers
 layout(set = 3, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
 
-
+#include "shaderUtils_surfel_cell.glsl"
 #include "shaderUtils.glsl"
 #include "random.glsl"
 
@@ -148,7 +148,7 @@ void main()
     surfel.irradiance = floatBitsToUint(irradianceSum);
     surfel.irradiance |= uint(isFull);
 
-    totalRadiance /= surfel.rayCount;
+    if (surfel.rayCount > 0) totalRadiance /= surfel.rayCount;
 
     vec3 camPos = getCameraPosition(sceneCamera);
 	vec3 cellPosIndex = getCellPos(surfel.position, camPos);
@@ -208,7 +208,7 @@ void main()
 //    ratio  = min(ratio, 31.0f / 32.0f);
 //    totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
 
-    vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.03);
+    vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.09);
 
     surfelBuffer[surfelIndex].radiance = mean;
     surfelBuffer[surfelIndex].msmeData = surfel.msmeData;

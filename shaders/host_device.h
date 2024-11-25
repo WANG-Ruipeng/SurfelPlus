@@ -202,8 +202,7 @@ const float cellSize = 2.0f;
 const uint kCellDimension = 64u;
 const uint kCellCount = kCellDimension * kCellDimension * kCellDimension;
 const uint kMaxLife = 1200u;
-const uint kSleepingMaxLife = 60u;
-const uint kMaxSurfelCount = 100000u;
+const uint kMaxSurfelCount = 150000u;
 const uint kMaxRayCount = kMaxSurfelCount * 64;
 
 // Camera of the scene

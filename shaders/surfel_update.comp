@@ -45,7 +45,9 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
+#include "shaderUtils_surfel_cell.glsl"
 #include "shaderUtils.glsl"
+
 
 uint randSeed = 0;
 
@@ -65,14 +67,14 @@ void recycleSurfelInAlive(uint aliveArrayIndex) {
 	surfelDead[newDeadIndex] = surfelIndexToRecycle;
 }
 
-bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in uint lastSeen, float surfelToCameraDistance) {
+bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in bool lastSeen, float surfelToCameraDistance) {
 
     // base check
     if(surfel.radius < 0.001 || recycleInfo.life == 0)
         return true;
 
 	// if last seen, do not recycle
-	if (lastSeen != 0u)
+	if (lastSeen)
 	    return false;
 
     // Distance factor - recycle if too far
@@ -88,9 +90,9 @@ bool shouldRecycleSurfel(in Surfel surfel, in SurfelRecycleInfo recycleInfo, in 
 	lifeFactor *= step(0.3, lifeFactor);
 
     // Combine factors with weights
-    float recycleProb = 0.01 * distanceFactor +
+    float recycleProb = 0.05 * distanceFactor +
                        //0.05 * normalFactor +
-                        0.3 * lifeFactor;
+                        0.1 * lifeFactor;
     
     // Scale by surfel density
     float surfelCountFactor = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
@@ -120,20 +122,25 @@ void main()
 
 	float surfelRadius = surfel.radius;
 	SurfelRecycleInfo recycleInfo = surfelRecycleInfo[surfelIndex];
-	uint isSleeping = recycleInfo.status & 0x0001u;
-	uint lastSeen = recycleInfo.status & 0x0002u;
+	bool isSleeping = (recycleInfo.status & 0x0001u) != 0u;
+	bool lastSeen = (recycleInfo.status & 0x0002u) != 0u;
 
 	// Increase frame count
 	recycleInfo.life = max(recycleInfo.life - 1, 0);
 	recycleInfo.frame = uint(clamp(int(recycleInfo.frame) + 1, 0, 65535));
 
-	// Check surfel is seen at last frame.
-	// If so, reset life, and if surfel is sleeping, awake.
-	if(lastSeen != 0u){
+	// update sleep surfel life
+	if (isSleeping && (recycleInfo.status & 0x0004u) != 0)
+        recycleInfo.life = kMaxLife / 2;
+
+
+	if(lastSeen){
 		//recycleInfo.lastSeenFrame = recycleInfo.frame;
 		recycleInfo.life = kMaxLife;
-		if(isSleeping != 0u){ isSleeping = 0u; }
+		if(isSleeping){ isSleeping = false; }
 	}
+
+	
 
 
 	float surfelToCameraDistance = distance(surfel.position, getCameraPosition(sceneCamera));
@@ -147,10 +154,10 @@ void main()
 		ivec2 imageRes = rtxState.size;
 		vec2 resolution = vec2(imageRes.x, imageRes.y);
 		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
-		if(isSleeping != 0u) {
-			surfel.radius = max(newRadius, cellSize * 2.f); 
+		if(isSleeping) {
+			surfel.radius = min(newRadius, cellSize); 
 		}else{
-			surfel.radius = newRadius;
+			surfel.radius = min(newRadius, cellSize * 0.5f);
 		}
 		
 		// Calculate number of surfels located at cell
@@ -171,7 +178,8 @@ void main()
 
 		//Update ray information
 		// use constant ray count (tmp)
-		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
+		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.6f, 0.f, 1.f)));
+		if (isSleeping) rayRequestCnt = rayRequestCnt / 4;
 		//if (recycleInfo.frame < 2) rayRequestCnt = 64;
 
 		// allocate ray buffer
@@ -203,7 +211,7 @@ void main()
 	}
 
 	// reset lastSeen
-	recycleInfo.status = recycleInfo.status & (~0x0002);
+	recycleInfo.status = isSleeping ? 0x0001 : 0x0000;
 	// write back
 	surfelRecycleInfo[surfelIndex] = recycleInfo;
 	

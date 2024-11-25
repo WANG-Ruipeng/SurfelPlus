@@ -1,5 +1,3 @@
-#include "shaderUtils_surfel_cell.glsl"
-
 float hash13(vec3 p3)
 {
     p3 = fract(p3 * .1031);

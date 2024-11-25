@@ -32,10 +32,10 @@ ShadowHitPayload shadow_payload;
 #include "layouts.glsl"
 #include "random.glsl"
 #include "common.glsl"
+#include "compress.glsl"
 #include "traceray_rq.glsl"
 
 #include "pathtrace.glsl"
-#include "shaderUtils.glsl"
 
 // surfel buffers
 layout(set = 4, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter surfelCounter; };
@@ -51,6 +51,13 @@ layout(set = 5,   binding = 1)				uniform image2D		surfelIrradianceMap;
 layout(set = 5,   binding = 2)				uniform sampler2D	surfelDepthSampler;
 layout(set = 5,   binding = 3)				uniform image2D		surfelDepthImage;
 
+// cell buffer
+layout(set = 6, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 6, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
+layout(set = 6, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
+
+#include "shaderUtils_surfel_cell.glsl"
+#include "shaderUtils.glsl"
 
 
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
@@ -67,6 +74,7 @@ void main()
 	uint frameHash = lowbias32(rtxState.totalFrames);
 	uint randSeed = tea(index, frameHash);
     uint surfelIndex = surfelRay.surfelID;
+	bool isSleeping = (surfelRecycleInfo[surfelIndex].status & 0x0001u) != 0u;
 
 	// use ray guiding
 	uint irradianceUint = surfelBuffer[surfelIndex].irradiance;
@@ -75,7 +83,7 @@ void main()
     vec3 dirL;
     float pdf;
 
-	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 64))
+	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 116))
     {
 	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
 
@@ -136,10 +144,12 @@ void main()
 	Ray ray = Ray(surfelBuffer[surfelIndex].position, dirW);
 	ray.origin = OffsetRay(ray.origin, N);
 
-	surfelRay.radiance = PathTrace(ray);
+	//surfelRay.radiance = PathTrace(ray);
+    int maxDepth = isSleeping ? 9 : 6;
+    surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelRay.t);
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
-	surfelRay.t = prd.hitT;
+	//surfelRay.t = prd.hitT;
 
 	surfelRayBuffer[index] = surfelRay;
 

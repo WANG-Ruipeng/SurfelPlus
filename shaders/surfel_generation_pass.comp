@@ -25,7 +25,7 @@ layout(set = 0, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuff
 layout(set = 0, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
 layout(set = 0, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
 layout(set = 0, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
-layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycle[]; };
+layout(set = 0, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycleInfo[]; };
 layout(set = 0, binding = 6,  scalar)		buffer _SurfelRayBuffer		{ SurfelRay surfelRayBuffer[]; };
 
 // gbuffers
@@ -49,8 +49,10 @@ layout(push_constant) uniform _RtxState
   RtxState rtxState;
 };
 
-#include "shaderUtils.glsl"
 #include "random.glsl"
+#include "shaderUtils_surfel_cell.glsl"
+#include "shaderUtils.glsl"
+
 
 shared uint groupShareMinCoverage;
 shared uint groupShareMaxContribution;
@@ -58,42 +60,42 @@ shared uint groupShareMaxContribution;
 // Compute input
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-bool generateNewSurfel(vec3 worldPos, uint compressedNor, float surfelToCameraDistance, vec2 resolution) {
-
-    // Get surfel index from the top of deadSurfel
-    uint newSurfelIndex = surfelDead[surfelCounter.deadSurfelCnt - 1];
-    
-    // Update Counter
-    uint newAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-    atomicAdd(surfelCounter.deadSurfelCnt, -1);
-
-    // Calculate life based on current surfel count
-    float surfelRatio = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
-    uint initialLife = kMaxLife;
-    
-    if(surfelRatio > 0.95) {
-        // Linear interpolation between kMaxLife at 0.95 and 0 at 1.0
-        float t = (surfelRatio - 0.95) / 0.05; // normalize to [0,1]
-        initialLife = uint(kMaxLife * (1.0 - t));
-    }
-
-    // new surfel info
-    surfelBuffer[newSurfelIndex].position = worldPos;
-    surfelBuffer[newSurfelIndex].normal = compressedNor;
-    surfelBuffer[newSurfelIndex].radiance = vec3(0.f);
-    surfelBuffer[newSurfelIndex].radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, resolution);
-
-    // Initialize corresponding recycleInfo with new structure
-    surfelRecycle[newSurfelIndex].life = initialLife;
-    surfelRecycle[newSurfelIndex].frame = 0;
-    surfelRecycle[newSurfelIndex].status = 0;
-    surfelRecycle[newSurfelIndex].lastSeenFrame = 0;
-
-    // add index to surfelAliveBuffer
-    surfelAlive[newAliveIndex] = newSurfelIndex;
-
-    return true;
-}
+//bool generateNewSurfel(vec3 worldPos, uint compressedNor, float surfelToCameraDistance, vec2 resolution) {
+//
+//    // Get surfel index from the top of deadSurfel
+//    uint newSurfelIndex = surfelDead[surfelCounter.deadSurfelCnt - 1];
+//    
+//    // Update Counter
+//    uint newAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
+//    atomicAdd(surfelCounter.deadSurfelCnt, -1);
+//
+//    // Calculate life based on current surfel count
+//    float surfelRatio = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
+//    uint initialLife = kMaxLife;
+//    
+//    if(surfelRatio > 0.95) {
+//        // Linear interpolation between kMaxLife at 0.95 and 0 at 1.0
+//        float t = (surfelRatio - 0.95) / 0.05; // normalize to [0,1]
+//        initialLife = uint(kMaxLife * (1.0 - t));
+//    }
+//
+//    // new surfel info
+//    surfelBuffer[newSurfelIndex].position = worldPos;
+//    surfelBuffer[newSurfelIndex].normal = compressedNor;
+//    surfelBuffer[newSurfelIndex].radiance = vec3(0.f);
+//    surfelBuffer[newSurfelIndex].radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, resolution);
+//
+//    // Initialize corresponding recycleInfo with new structure
+//    surfelRecycle[newSurfelIndex].life = initialLife;
+//    surfelRecycle[newSurfelIndex].frame = 0;
+//    surfelRecycle[newSurfelIndex].status = 0;
+//    surfelRecycle[newSurfelIndex].lastSeenFrame = 0;
+//
+//    // add index to surfelAliveBuffer
+//    surfelAlive[newAliveIndex] = newSurfelIndex;
+//
+//    return true;
+//}
 
 void main()
 {
@@ -165,7 +167,7 @@ void main()
 
                 coverage += contribution;
 
-				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 200.f, float(surfelRecycle[surfelIndex].frame));
+				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 200.f, float(surfelRecycleInfo[surfelIndex].frame));
 
 				if (maxContribution < contribution)
 				{
@@ -175,7 +177,7 @@ void main()
             }
 
 			// update recycle lastseen
-			surfelRecycle[surfelIndex].status |= 0x0002u;
+			surfelRecycleInfo[surfelIndex].status |= 0x0002u;
 		
 		}
 	}
@@ -205,6 +207,7 @@ void main()
 			imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
 		else if (rtxState.debugging_mode == esRadius && maxContributionSurfelIndex != 0xffffffff)
 			imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+		else imageStore(resultImage, imageCoords, vec4(vec3(0), 1.f));
 	} else imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
 	//if ((rtxState.totalFrames & 0x000000ff) != 0) return;
@@ -282,7 +285,7 @@ void main()
 			newSurfel.msmeData.variance = vec3(1.f);
 			newSurfel.msmeData.inconsistency = 1.f;
 			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-			newSurfel.radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y));
+			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y)), cellSize * 0.5f);
 
 
 
@@ -292,7 +295,7 @@ void main()
 			newSurfelRecycleInfo.life = kMaxLife;
 			newSurfelRecycleInfo.frame = 0;
 			newSurfelRecycleInfo.status = 0;
-			surfelRecycle[surfelID] = newSurfelRecycleInfo;
+			surfelRecycleInfo[surfelID] = newSurfelRecycleInfo;
 		}
 		else
 		{
@@ -304,7 +307,7 @@ void main()
     {
         if (coverage > 4.0)
         {
-            if (rand(randSeed) < depth * 0.1f)
+            if (rand(randSeed) < depth * 0.3f)
             {
                 surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
             }

@@ -318,7 +318,7 @@ void SampleExample::createSurfelResources()
 
     m_surfelRaytracePass.create({ m_surfel.maxRayBudget, 0 }, {
         m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
-		m_surfel.getSurfelBuffersDescLayout(), m_surfel.getSurfelDataMapsDescLayout()
+		m_surfel.getSurfelBuffersDescLayout(), m_surfel.getSurfelDataMapsDescLayout(), m_surfel.getCellBufferDescLayout()
         }, &m_scene);
 
 	m_surfelIntegratePass.create({ m_surfel.maxSurfelCnt, 0 }, {
@@ -649,8 +649,34 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 
 	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
 		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,
-		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet()
+		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet()
 		});
+
+    std::vector<VkBufferMemoryBarrier> outbuffDependencies = {};
+
+    outbuffDependency = {};
+    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	outbuffDependency.buffer = m_surfel.getSurfelCounterBuffer().buffer;
+    outbuffDependency.size = VK_WHOLE_SIZE;
+	outbuffDependencies.push_back(outbuffDependency);
+
+    outbuffDependency = {};
+    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    outbuffDependency.buffer = m_surfel.getSurfelRayBuffer().buffer;
+    outbuffDependency.size = VK_WHOLE_SIZE;
+
+    vkCmdPipelineBarrier(
+        cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        (VkDependencyFlags)0,
+        0, nullptr,
+        outbuffDependencies.size(), outbuffDependencies.data(),
+        0, nullptr
+    );
 
 	m_surfelIntegratePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
 		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet(), m_scene.getDescSet()
