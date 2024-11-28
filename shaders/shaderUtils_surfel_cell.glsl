@@ -1,3 +1,4 @@
+#include "shaderUtil_grid.glsl"
 // Surfel and cells
 
 vec3 getCameraPosition(SceneCamera camera)
@@ -5,24 +6,6 @@ vec3 getCameraPosition(SceneCamera camera)
     return vec3(camera.viewInverse[3]);
 }
 
-uint getFlattenCellIndex(vec3 cellPos)
-{
-
-    uvec3 unsignedPos = uvec3(cellPos + ivec3(kCellDimension / 2));
-
-    uint result = (unsignedPos.z * kCellDimension * kCellDimension) +
-        (unsignedPos.y * kCellDimension) +
-        unsignedPos.x;
-
-    return result;
-}
-
-vec3 getCellPos(vec3 posW, vec3 cameraPosW)
-{
-    vec3 posC = posW - cameraPosW;
-    posC /= cellSize;
-    return round(posC);
-}
 
 bool isCellValid(vec3 cellPos)
 {
@@ -63,6 +46,9 @@ vec3 calcCellIndirectLighting(vec3 camPos, vec3 worldPos, vec3 worldNor)
 {
     vec3 cellPosIndex = getCellPos(worldPos, camPos);
     uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+
+    //ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
+    //uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
 
     CellInfo cellInfo = cellBuffer[flattenIndex];
     uint cellOffset = cellInfo.surfelOffset;

@@ -60,43 +60,6 @@ shared uint groupShareMaxContribution;
 // Compute input
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-//bool generateNewSurfel(vec3 worldPos, uint compressedNor, float surfelToCameraDistance, vec2 resolution) {
-//
-//    // Get surfel index from the top of deadSurfel
-//    uint newSurfelIndex = surfelDead[surfelCounter.deadSurfelCnt - 1];
-//    
-//    // Update Counter
-//    uint newAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-//    atomicAdd(surfelCounter.deadSurfelCnt, -1);
-//
-//    // Calculate life based on current surfel count
-//    float surfelRatio = float(surfelCounter.aliveSurfelCnt) / float(kMaxSurfelCount);
-//    uint initialLife = kMaxLife;
-//    
-//    if(surfelRatio > 0.95) {
-//        // Linear interpolation between kMaxLife at 0.95 and 0 at 1.0
-//        float t = (surfelRatio - 0.95) / 0.05; // normalize to [0,1]
-//        initialLife = uint(kMaxLife * (1.0 - t));
-//    }
-//
-//    // new surfel info
-//    surfelBuffer[newSurfelIndex].position = worldPos;
-//    surfelBuffer[newSurfelIndex].normal = compressedNor;
-//    surfelBuffer[newSurfelIndex].radiance = vec3(0.f);
-//    surfelBuffer[newSurfelIndex].radius = calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, resolution);
-//
-//    // Initialize corresponding recycleInfo with new structure
-//    surfelRecycle[newSurfelIndex].life = initialLife;
-//    surfelRecycle[newSurfelIndex].frame = 0;
-//    surfelRecycle[newSurfelIndex].status = 0;
-//    surfelRecycle[newSurfelIndex].lastSeenFrame = 0;
-//
-//    // add index to surfelAliveBuffer
-//    surfelAlive[newAliveIndex] = newSurfelIndex;
-//
-//    return true;
-//}
-
 void main()
 {
 
@@ -136,6 +99,8 @@ void main()
 	vec3 camPos = getCameraPosition(sceneCamera);
 	vec3 cellPosIndex = getCellPos(worldPos, camPos);
 	uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+//	ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
+//	uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
 
 	CellInfo cellInfo = cellBuffer[flattenIndex];
 	uint cellOffset = cellInfo.surfelOffset;
