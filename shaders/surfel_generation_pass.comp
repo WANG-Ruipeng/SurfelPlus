@@ -251,7 +251,7 @@ void main()
 			newSurfel.msmeData.variance = vec3(1.f);
 			newSurfel.msmeData.inconsistency = 1.f;
 			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y)), cellSize * 0.5f);
+			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y)), getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
 
 
 

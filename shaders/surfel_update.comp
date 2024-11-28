@@ -159,9 +159,9 @@ void main()
 		{
 			float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
 			if(isSleeping) {
-				surfel.radius = min(newRadius, cellSize); 
+				surfel.radius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance)); 
 			}else{
-				surfel.radius = min(newRadius, cellSize * 0.5f);
+				surfel.radius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
 			}
 		}
 		

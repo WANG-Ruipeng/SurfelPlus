@@ -222,3 +222,15 @@ bool isCellValid(ivec4 cellPos)
         return true;
     }
 }
+
+
+float getSurfelMaxSize(float distance) {
+    if (distance < d / 2.0) {
+		return d / float(n);
+    }
+    else {
+		float s = distance - d / 2.0;
+        int k = int(log(1 - n * s * (1 - p) / d) / log(p));
+		return d / float(n) * pow(p, float(k));
+    }
+}
