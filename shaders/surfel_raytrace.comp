@@ -83,7 +83,7 @@ void main()
     vec3 dirL;
     float pdf;
 
-	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 116))
+	if (isFull && (surfelBuffer[surfelIndex].rayCount >= 8))
     {
 	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
 
@@ -145,7 +145,7 @@ void main()
 	ray.origin = OffsetRay(ray.origin, N);
 
 	//surfelRay.radiance = PathTrace(ray);
-    int maxDepth = isSleeping ? 9 : 6;
+    int maxDepth = isSleeping ? 6 : 3;
     surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelRay.t);
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;

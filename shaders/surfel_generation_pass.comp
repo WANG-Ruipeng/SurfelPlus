@@ -167,7 +167,7 @@ void main()
 
                 coverage += contribution;
 
-				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 200.f, float(surfelRecycleInfo[surfelIndex].frame));
+				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
 
 				if (maxContribution < contribution)
 				{
@@ -175,6 +175,7 @@ void main()
 				    maxContributionSurfelIndex = surfelIndex;
 				}
             }
+			// TODO: try to treat surfels as sub light sources
 
 			// update recycle lastseen
 			surfelRecycleInfo[surfelIndex].status |= 0x0002u;

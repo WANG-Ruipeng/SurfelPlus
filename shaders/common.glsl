@@ -97,7 +97,7 @@ void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
 //-----------------------------------------------------------------------
 vec3 OffsetRay(in vec3 p, in vec3 n)
 {
-  const float intScale   = 256.0f;
+  const float intScale   = 512.0f;
   const float floatScale = 1.0f / 65536.0f;
   const float origin     = 1.0f / 32.0f;
 

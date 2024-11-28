@@ -2,3 +2,4 @@
 /build/*
 /bin_x64/*
 .vs/*
+/downloaded_resources/*

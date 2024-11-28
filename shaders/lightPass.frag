@@ -129,7 +129,10 @@ void main()
 
 //    vec3 col = textureLod(texturesMap[nonuniformEXT(mat.pbrBaseColorTexture)], state.texCoord, 0).rgb;
 
-    bool hit = AnyHit(Ray(worldPos, directLight.lightDir), 1000.0);
+    Ray ray = Ray(worldPos, directLight.lightDir);
+    //ray.origin = OffsetRay(ray.origin, normal);
+    ray.origin += 1e-4 * normal;
+    bool hit = AnyHit(ray, 100.0);
 
     vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy), 0).rgb;
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - state.mat.metallic);
@@ -141,13 +144,10 @@ void main()
 
 //    fragColor.xyz = IntegerToColor(matIndex);
 //    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
-    //fragColor.xyz = hash3u1(nodeID);
-    //fragColor.xyz = vec3(w0, w1, w2);
     //fragColor.xyz = worldPos - attr0_world;
 //    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
     //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
-    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight;
-    //fragColor.xyz = indirectLight;
+    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
 
     if(rtxState.debugging_mode != eNoDebug)
     {
@@ -159,6 +159,8 @@ void main()
             fragColor.xyz = vec3(state.mat.metallic);
         else if (rtxState.debugging_mode == esRoughness)
             fragColor.xyz = vec3(state.mat.roughness);
+        else if (rtxState.debugging_mode == esEmissive)
+            fragColor.xyz = state.mat.emission;
         else
             fragColor.xyz = indirectLight;
     }

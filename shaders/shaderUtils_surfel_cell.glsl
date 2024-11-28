@@ -155,7 +155,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     float maxContribution = 0.f;
     uint maxContributionSleepingSurfelIndex = 0xffffffff;
 
-    const uint searchRange = min(64, cellInfo.surfelCount);
+    const uint searchRange = min(32, cellInfo.surfelCount);
 
     for (uint i = 0; i < searchRange; i++)
     {
