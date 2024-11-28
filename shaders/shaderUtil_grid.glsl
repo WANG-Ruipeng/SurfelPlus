@@ -17,8 +17,8 @@ uint getFlattenCellIndex(vec3 cellPos)
     return result;
 }
 
-const float d = 64.0;     // Size of the uniform cube
-const int n = 32; // Split count of the uniform cube & non-unifrom frustum 
+const float d = 128.0;     // Size of the uniform cube
+const int n = 64; // Split count of the uniform cube & non-unifrom frustum 
 const float p = 1.3; // Split ratio of the non-uniform frustum
 const int m = 16; // Layers of the non-uniform frustum
 
@@ -97,4 +97,127 @@ uint getFlattenCellIndexNonUniform(ivec4 cellPos)
     }
 
     return 0;
+}
+
+bool isSurfelIntersectCellNonUniform(Surfel surfel, ivec4 cellPos, vec3 cameraPosW)
+{
+    int region = cellPos.w;
+    vec3 minPos;
+    vec3 maxPos;
+    float half_d = d / 2.0;
+    float delta = d / float(n);
+
+    if (region == 0)
+    {
+        // Inside the cube
+        
+        int x_index = cellPos.x;
+        int y_index = cellPos.y;
+        int z_index = cellPos.z;
+
+        minPos.x = -half_d + x_index * delta;
+        maxPos.x = minPos.x + delta;
+
+        minPos.y = -half_d + y_index * delta;
+        maxPos.y = minPos.y + delta;
+
+        minPos.z = -half_d + z_index * delta;
+        maxPos.z = minPos.z + delta;
+    }
+    else
+    {
+        // Inside the frustum
+        int s = region;
+        int k = cellPos.x;
+        int u = cellPos.y;
+        int v = cellPos.z;
+
+        // Compute s0 and s1
+        float s0 = delta * (1.0 - pow(p, float(k))) / (1.0 - p);
+        float s1 = delta * (1.0 - pow(p, float(k + 1))) / (1.0 - p);
+
+        float main_axis_min = half_d + s0;
+        float main_axis_max = half_d + s1;
+
+        if (region % 2 == 0) // Negative direction
+        {
+            main_axis_min = -(half_d + s1);
+            main_axis_max = -(half_d + s0);
+        }
+
+        float main_axis_length = main_axis_max - main_axis_min;
+
+        // Other axes
+        float other_axis_min_1 = -main_axis_length / 2.0 + float(u) * (main_axis_length / float(n));
+        float other_axis_max_1 = other_axis_min_1 + main_axis_length / float(n);
+
+        float other_axis_min_2 = -main_axis_length / 2.0 + float(v) * (main_axis_length / float(n));
+        float other_axis_max_2 = other_axis_min_2 + main_axis_length / float(n);
+
+        // Assign minPos and maxPos based on region
+        if (region == 1 || region == 2) // X-axis frustums
+        {
+            minPos.x = main_axis_min;
+            maxPos.x = main_axis_max;
+            minPos.y = other_axis_min_1;
+            maxPos.y = other_axis_max_1;
+            minPos.z = other_axis_min_2;
+            maxPos.z = other_axis_max_2;
+        }
+        else if (region == 3 || region == 4) // Y-axis frustums
+        {
+            minPos.y = main_axis_min;
+            maxPos.y = main_axis_max;
+            minPos.x = other_axis_min_1;
+            maxPos.x = other_axis_max_1;
+            minPos.z = other_axis_min_2;
+            maxPos.z = other_axis_max_2;
+        }
+        else if (region == 5 || region == 6) // Z-axis frustums
+        {
+            minPos.z = main_axis_min;
+            maxPos.z = main_axis_max;
+            minPos.x = other_axis_min_1;
+            maxPos.x = other_axis_max_1;
+            minPos.y = other_axis_min_2;
+            maxPos.y = other_axis_max_2;
+        }
+    }
+
+    // Convert to world coordinates
+    minPos += cameraPosW;
+    maxPos += cameraPosW;
+
+    // AABB-Sphere intersection test
+    vec3 closestPoint = clamp(surfel.position, minPos, maxPos);
+    float distanceSquared = dot(closestPoint - surfel.position, closestPoint - surfel.position);
+    return distanceSquared <= surfel.radius * surfel.radius;
+}
+
+bool isCellValid(ivec4 cellPos)
+{
+    int k = cellPos.x;
+    int u = cellPos.y;
+    int v = cellPos.z;
+    int region = cellPos.w;
+
+    if (region < 0 || region > 6)
+    {
+        return false;
+    }
+
+    if (region == 0)
+    {
+        if (k < 0 || k >= n) return false;
+        if (u < 0 || u >= n) return false;
+        if (v < 0 || v >= n) return false;
+        return true;
+    }
+    else
+    {
+        if (k < 0 || k >= m) return false;
+        if (u < 0 || u >= n) return false;
+        if (v < 0 || v >= n) return false;
+        return true;
+    }
 }

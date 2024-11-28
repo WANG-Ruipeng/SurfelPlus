@@ -44,11 +44,11 @@ float calcSurfelRadius(float distance, float fovy, vec2 resolution) {
 
 vec3 calcCellIndirectLighting(vec3 camPos, vec3 worldPos, vec3 worldNor)
 {
-    vec3 cellPosIndex = getCellPos(worldPos, camPos);
-    uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+    //vec3 cellPosIndex = getCellPos(worldPos, camPos);
+    //uint flattenIndex = getFlattenCellIndex(cellPosIndex);
 
-    //ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
-    //uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
+    ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
+    uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
 
     CellInfo cellInfo = cellBuffer[flattenIndex];
     uint cellOffset = cellInfo.surfelOffset;
@@ -127,7 +127,8 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 {
     irradiance = vec4(0.0f);
     vec3 camPos = getCameraPosition(sceneCamera);
-    vec3 cellPosIndex = getCellPos(worldPos, camPos);
+    //vec3 cellPosIndex = getCellPos(worldPos, camPos);
+    ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
     if (!isCellValid(cellPosIndex))
         return false;
 

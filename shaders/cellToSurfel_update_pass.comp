@@ -63,7 +63,7 @@ void main()
         vec3 neighbourPos3 = cellPosIndex.xyz + neighborOffset[i];
 		ivec4 neighbourPos = ivec4(neighbourPos3, cellPosIndex.w);
 
-        if (isSurfelIntersectCell(surfel, neighbourPos3, camPos)){
+        if (isSurfelIntersectCellNonUniform(surfel, neighbourPos, camPos)){
             //uint flattenIndex = getFlattenCellIndex(neighbourPos);
             uint flattenIndex = getFlattenCellIndexNonUniform(neighbourPos);
             uint prevCount = atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);

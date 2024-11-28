@@ -97,10 +97,10 @@ void main()
     uint maxContributionSurfelIndex = 0xffffffff;
 
 	vec3 camPos = getCameraPosition(sceneCamera);
-	vec3 cellPosIndex = getCellPos(worldPos, camPos);
-	uint flattenIndex = getFlattenCellIndex(cellPosIndex);
-//	ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
-//	uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
+	//vec3 cellPosIndex = getCellPos(worldPos, camPos);
+	//uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+	ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
+	uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
 
 	CellInfo cellInfo = cellBuffer[flattenIndex];
 	uint cellOffset = cellInfo.surfelOffset;

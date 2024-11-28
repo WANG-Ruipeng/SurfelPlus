@@ -162,19 +162,19 @@ void main()
 		
 		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
-		vec3 cellPosIndex = getCellPos(surfel.position, camPos); 
-		//ivec4 cellPosIndex = getCellPosNonUniform(worldPos, camPos);
+		//vec3 cellPosIndex = getCellPos(surfel.position, camPos); 
+		ivec4 cellPosIndex = getCellPosNonUniform(surfel.position, camPos);
 		for(uint i = 0; i < 27; i++)
 		{
 			//iterate through 3x3x3 cell neighbours, put surfel into all neighbours cells
-			vec3 neighbourPos = cellPosIndex + neighborOffset[i];
-//			vec3 neighbourpos3 = cellposindex.xyz + neighboroffset;
-//			ivec4 neighbourpos = ivec4(neighbourpos3, cellposindex.w);
+			// vec3 neighbourPos = cellPosIndex + neighborOffset[i];
+			vec3 neighbourPos3 = cellPosIndex.xyz + neighborOffset[i];
+			ivec4 neighbourPos = ivec4(neighbourPos3, cellPosIndex.w);
 			
-			if (isSurfelIntersectCell(surfel, neighbourPos, camPos))
+			if (isSurfelIntersectCellNonUniform(surfel, neighbourPos, camPos))
 			{ 
-				uint flattenIndex = getFlattenCellIndex(neighbourPos);
-				//uint flattenIndex = getFlattenCellIndexNonUniform(neighbourPos);
+				//uint flattenIndex = getFlattenCellIndex(neighbourPos);
+				uint flattenIndex = getFlattenCellIndexNonUniform(neighbourPos);
 				atomicAdd(cellBuffer[flattenIndex].surfelCount, 1);
 				//if(idx == 40) debugPrintfEXT("surfelCount[%d]: %d\n",flattenIndex, cellBuffer[flattenIndex].surfelCount); 
 			}
