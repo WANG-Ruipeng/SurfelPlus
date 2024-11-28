@@ -132,7 +132,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     if (!isCellValid(cellPosIndex))
         return false;
 
-    uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+    uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
 
     CellInfo cellInfo = cellBuffer[flattenIndex];
     uint cellOffset = cellInfo.surfelOffset;

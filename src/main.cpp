@@ -62,8 +62,8 @@ int main(int argc, char** argv)
 #endif
 
   InputParser parser(argc, argv);
-  //std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
-  std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
+  std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
+  //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
   // Setup GLFW window

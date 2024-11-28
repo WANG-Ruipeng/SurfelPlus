@@ -212,7 +212,7 @@ void main()
             totalRadiance = mix(
                 totalRadiance,
                 sharedRadiance.xyz,
-                clamp(length(surfel.msmeData.variance) * 18.f, 0.4f, 1.0f)
+                clamp(length(surfel.msmeData.variance) * 5.f, 0.4f, 1.0f)
                 //0.8f
             );
         }

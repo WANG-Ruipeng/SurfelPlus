@@ -120,11 +120,11 @@ void main()
         {
             vec3 surfelNor = decompress_unit_vec(surfel.normal);
             float dotN = dot(normal, surfelNor);
+			float contribution = 1.f;
             if (dotN > 0.f)
             {
                 float dist = sqrt(dist2);
-                float contribution = 1.f;
-
+                
                 contribution *= clamp(dotN, 0.f, 1.f);
                 contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
                 contribution = smoothstep(0, 1, contribution);
@@ -139,11 +139,11 @@ void main()
 				    maxContribution = contribution;
 				    maxContributionSurfelIndex = surfelIndex;
 				}
+
+				// update recycle lastseen
+				surfelRecycleInfo[surfelIndex].status |= 0x0002u;
             }
 			// TODO: try to treat surfels as sub light sources
-
-			// update recycle lastseen
-			surfelRecycleInfo[surfelIndex].status |= 0x0002u;
 		
 		}
 	}
