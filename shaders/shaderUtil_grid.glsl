@@ -138,21 +138,22 @@ bool isSurfelIntersectCellNonUniform(Surfel surfel, ivec4 cellPos, vec3 cameraPo
 
         float main_axis_min = half_d + s0;
         float main_axis_max = half_d + s1;
-
+        float kCoefficient = 1.0;
         if (region % 2 == 0) // Negative direction
         {
             main_axis_min = -(half_d + s1);
             main_axis_max = -(half_d + s0);
+			kCoefficient = -1.0;
         }
 
         float main_axis_length = main_axis_max - main_axis_min;
 
         // Other axes
-        float other_axis_min_1 = -main_axis_length / 2.0 + float(u) * (main_axis_length / float(n));
-        float other_axis_max_1 = other_axis_min_1 + main_axis_length / float(n);
+        float other_axis_min_1 = kCoefficient * 2.0 * u / n * (half_d + main_axis_min);
+        float other_axis_max_1 = kCoefficient * 2.0 * (u + kCoefficient * 1.0) / n * (half_d + main_axis_max);
 
-        float other_axis_min_2 = -main_axis_length / 2.0 + float(v) * (main_axis_length / float(n));
-        float other_axis_max_2 = other_axis_min_2 + main_axis_length / float(n);
+        float other_axis_min_2 = kCoefficient * 2.0 * v / n * (half_d + main_axis_min);
+        float other_axis_max_2 = kCoefficient * 2.0 * (v + kCoefficient * 1.0) / n * (half_d + main_axis_max);
 
         // Assign minPos and maxPos based on region
         if (region == 1 || region == 2) // X-axis frustums
