@@ -162,11 +162,14 @@ void main()
     if (surfel.rayCount > 0) totalRadiance /= surfel.rayCount;
 
     vec3 camPos = getCameraPosition(sceneCamera);
-	vec3 cellPosIndex = getCellPos(surfel.position, camPos);
+	//vec3 cellPosIndex = getCellPos(surfel.position, camPos);
+    ivec4 cellPosIndex = getCellPosNonUniform(surfel.position, camPos);
+    
     vec4 sharedRadiance = vec4(0.0);
     if (isCellValid(cellPosIndex))
 	{
-	    uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+	    //uint flattenIndex = getFlattenCellIndex(cellPosIndex);
+        uint flattenIndex = getFlattenCellIndexNonUniform(cellPosIndex);
         vec3 normal = decompress_unit_vec(surfel.normal);
 
 	    CellInfo cellInfo = cellBuffer[flattenIndex];

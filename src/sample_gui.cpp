@@ -169,6 +169,8 @@ bool SampleGUI::guiRayTracing()
                                    "Roughness",
                                    "TexCoord",
                                    "Tangent",
+                                   "UniformGrid",
+								   "NonUniformGrid",
                                });
 
     if(rtxState.debugging_mode == eHeatmap)

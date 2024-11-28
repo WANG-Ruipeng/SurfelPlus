@@ -116,7 +116,9 @@ esEmissive = 8,
 esAlpha = 9,
 esRoughness = 10,
 esTexcoord = 11,
-esTangent = 12
+esTangent = 12,
+esUniformGrid = 13,
+esNonUniformGrid = 14
 END_ENUM();
 
 // Surfel data

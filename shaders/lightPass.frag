@@ -60,6 +60,7 @@ ShadowHitPayload shadow_payload;
 
 #include "pathtrace.glsl"
 #include "shaderUtils.glsl"
+#include "shaderUtil_grid.glsl"
 
 #define FIREFLIES 1
 
@@ -71,7 +72,6 @@ layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
 layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
-
 
 void main()
 {
@@ -159,6 +159,16 @@ void main()
             fragColor.xyz = vec3(state.mat.metallic);
         else if (rtxState.debugging_mode == esRoughness)
             fragColor.xyz = vec3(state.mat.roughness);
+        else if (rtxState.debugging_mode == esUniformGrid){
+            vec3 cellPos = getCellPos(worldPos, camPos);
+            fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
+        }    
+        else if (rtxState.debugging_mode == esNonUniformGrid){
+            ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos);
+            vec3 cellPos = cellPos4.xyz;
+            int index = cellPos4.w;
+            fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898 + index, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
+        }    
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
         else
