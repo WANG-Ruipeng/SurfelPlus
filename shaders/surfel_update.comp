@@ -119,7 +119,7 @@ void main()
 
 	uint surfelIndex = surfelAlive[idx];
     Surfel surfel = surfelBuffer[surfelIndex];
-	surfel.radiance = surfel.msmeData.mean;
+	//surfel.radiance = surfel.msmeData.mean;
 
 	float surfelRadius = surfel.radius;
 	SurfelRecycleInfo recycleInfo = surfelRecycleInfo[surfelIndex];
@@ -158,12 +158,12 @@ void main()
 
 		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
 		if(isSleeping) {
-			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance)); 
+			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance) * 2.f); 
 		}else{
-			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
+			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance));
 		}
 
-		if (lastSeen) newRadius = mix(surfel.radius, newRadius, 0.05f);
+		if (lastSeen) newRadius = mix(surfel.radius, newRadius, 0.1f);
 
 		surfel.radius = newRadius;
 		
@@ -190,6 +190,7 @@ void main()
 		//Update ray information
 		// use constant ray count (tmp)
 		uint rayRequestCnt = uint(mix(8.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
+		//uint rayRequestCnt = 32;
 		if (isSleeping) rayRequestCnt = rayRequestCnt / 4;
 		if (recycleInfo.frame < 20) rayRequestCnt = 64;
 

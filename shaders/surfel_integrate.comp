@@ -114,7 +114,7 @@ void main()
         );
         ivec2 mapCoord = irrMapBase + mapOffset;
 
-        float lumn = dot(rayResult.radiance, vec3(0.2126, 0.7152, 0.0722));
+        float lumn = max(1e-12, dot(rayResult.radiance, vec3(0.2126, 0.7152, 0.0722)));
         float old;
         float delta;
         if (newSurfel)
@@ -168,7 +168,6 @@ void main()
     if (surfel.rayCount > 0) totalRadiance /= surfel.rayCount;
 
     vec3 camPos = getCameraPosition(sceneCamera);
-	//vec3 cellPosIndex = getCellPos(surfel.position, camPos);
     ivec4 cellPosIndex = getCellPosNonUniform(surfel.position, camPos);
     
     vec4 sharedRadiance = vec4(0.0);
@@ -201,8 +200,8 @@ void main()
 
                     contribution *= min(dotN, 1.f);
                     contribution *= clamp(1.f - dist / cellRadius, 0.f, 1.f);
-                    contribution = smoothstep(0, 1, contribution);
-                    contribution *= smoothstep(0.f, 20.f, float(surfelRecycleInfo[surfelIndex].frame));
+                    //contribution = smoothstep(0, 1, contribution);
+                    contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
 
 
                     sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
@@ -219,7 +218,7 @@ void main()
             totalRadiance = mix(
                 totalRadiance,
                 sharedRadiance.xyz,
-                clamp(length(surfel.msmeData.variance) * 10.f, 0.1f, 1.0f)
+                clamp(length(surfel.msmeData.variance) * 20.f, 0.4f, 1.0f)
                 //0.8f
             );
         }
@@ -231,9 +230,9 @@ void main()
 //    ratio  = min(ratio, 31.0f / 32.0f);
 //    totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
 
-    vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.08);
+    vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.03);
 
-    //surfelBuffer[surfelIndex].radiance = mean;
+    surfelBuffer[surfelIndex].radiance = mean;
     surfelBuffer[surfelIndex].msmeData = surfel.msmeData;
     
 }

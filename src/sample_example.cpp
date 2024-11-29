@@ -650,7 +650,8 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getIndirectLightDescSet(),
         m_surfel.getCellBufferDescSet() });
 
-    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelBuffer().buffer, m_surfel.getSurfelCounterBuffer().buffer });
+	nvvk::cmdBarrierImageLayout(cmdBuf, m_surfel.getIndirectLightingMap().image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+    
 }
 
 

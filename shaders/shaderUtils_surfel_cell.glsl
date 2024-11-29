@@ -167,7 +167,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 
                 irradiance += vec4(surfel.radiance, 1.f) * contribution;
 				coverage += contribution;
-                if (maxContribution < contribution)
+                if (maxContribution < contribution && isSleeping)
                 {
                     maxContribution = contribution;
                     maxContributionSleepingSurfelIndex = surfelIndex;
@@ -190,12 +190,15 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 
     }
 
+    uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
+        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
+
     // spawn sleeping surfel if coverage is low.
     if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
-        coverage < 2.f && cellInfo.surfelCount < 32)
+        coverage < 1.f && cellInfo.surfelCount < 0)
     {
         uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-        if (surfelAliveIndex < kMaxSurfelCount)
+        if (surfelAliveIndex < kMaxSurfelCount && rand(randSeed) < 0.2)
         {
             uint surfelID = surfelDead[kMaxSurfelCount - surfelAliveIndex - 1];
             surfelAlive[surfelAliveIndex] = surfelID;
@@ -212,7 +215,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
             newSurfel.msmeData.variance = vec3(1.f);
             newSurfel.msmeData.inconsistency = 1.f;
             float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-            newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), cellSize);
+            newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), getSurfelMaxSize(surfelToCameraDistance) * 2.f);
 
             surfelBuffer[surfelID] = newSurfel;
 
@@ -228,14 +231,14 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
         }
     }
 
-    //if (maxContributionSleepingSurfelIndex != 0xffffffff && coverage > 4.f)
-    //{
-    //    uint s = lowbias32(rtxState.totalFrames) ^ lowbias32(maxContributionSleepingSurfelIndex);
-    //    if (rand(s) < 0.1f)
-    //    {
-    //        surfelBuffer[maxContributionSleepingSurfelIndex].radius = 0.f;
-    //    }
-    //}
+    if (maxContributionSleepingSurfelIndex != 0xffffffff && coverage > 4.f)
+    {
+        
+        if (rand(randSeed) < 0.2)
+        {
+            surfelBuffer[maxContributionSleepingSurfelIndex].radius = 0.f;
+        }
+    }
 
     return true;
 

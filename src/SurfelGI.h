@@ -65,6 +65,7 @@ public:
 	nvvk::Buffer getCellInfoBuffer() const {return m_cellInfoBuffer;}
 	nvvk::Buffer getCellCounterBuffer() const {return m_cellCounterBuffer;}
 	nvvk::Buffer getCellToSurfelBuffer() const {return m_cellToSurfelBuffer;}
+	nvvk::Texture getIndirectLightingMap() const { return m_indirectLightingMap; }
 
 
 	VkDescriptorSetLayout            getSurfelBuffersDescLayout() { return m_surfelBuffersDescSetLayout; }
