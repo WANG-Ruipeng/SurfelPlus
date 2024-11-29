@@ -165,6 +165,9 @@ void main()
 	if(rtxState.debugging_mode != eNoDebug)
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+		vec3 bias = worldPos - mainSurfel.position;
+        float dist2 = dot(bias, bias);
+		if (dist2 > 0.04) maxContributionSurfelIndex = 0xffffffff;
 		if(rtxState.debugging_mode == esRadiance)
 			imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 		else if(rtxState.debugging_mode == esSurfelID && maxContributionSurfelIndex != 0xffffffff) 
@@ -231,7 +234,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
-		coverage < 2.f && 
+		coverage < 1.0f && 
 		rand(randSeed) < depth * 0.3f)
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
@@ -271,9 +274,9 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
     {
-        if (coverage > 4.0)
+        if (coverage > 3.0)
         {
-            if (rand(randSeed) < depth * 0.3f)
+            if (rand(randSeed) < depth * 0.1f)
             {
                 surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
             }

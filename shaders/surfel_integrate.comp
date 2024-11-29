@@ -18,6 +18,11 @@
 #include "compress.glsl"
 #include "msme.glsl"
 
+layout(push_constant) uniform _RtxState
+{
+  RtxState rtxState;
+};
+
 // surfel buffers
 layout(set = 0, binding = 0, scalar)		buffer _SurfelCounter { SurfelCounter surfelCounter; };
 layout(set = 0, binding = 1, scalar)		buffer _SurfelBuffer { Surfel surfelBuffer[]; };
@@ -54,7 +59,8 @@ void main()
 	{
 		return;
 	}
-
+    uint frameHash = lowbias32(rtxState.totalFrames);
+	uint randSeed = tea(index, frameHash);
     uint surfelIndex = surfelAlive[index];
 	Surfel surfel = surfelBuffer[surfelIndex];
 
@@ -213,7 +219,7 @@ void main()
             totalRadiance = mix(
                 totalRadiance,
                 sharedRadiance.xyz,
-                clamp(length(surfel.msmeData.variance) * 5.f, 0.4f, 1.0f)
+                clamp(length(surfel.msmeData.variance) * 10.f, 0.1f, 1.0f)
                 //0.8f
             );
         }

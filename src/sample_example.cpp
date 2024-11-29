@@ -604,6 +604,8 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getCellBufferDescSet()
         });
 
+	insertMemoryBarriers(cmdBuf, { m_surfel.getCellInfoBuffer().buffer, m_surfel.getCellCounterBuffer().buffer });
+
 	m_surfelUpdatePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, { 
         m_surfel.getSurfelBuffersDescSet(),
 		m_surfel.getCellBufferDescSet(),
@@ -611,21 +613,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getGbufferSamplerDescSet()
         });
 
-    outbuffDependency = {};
-    outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    outbuffDependency.buffer = m_surfel.getCellInfoBuffer().buffer;
-    outbuffDependency.size = VK_WHOLE_SIZE;
-
-    vkCmdPipelineBarrier(
-        cmdBuf,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        (VkDependencyFlags)0,
-        0, nullptr,
-        1, &outbuffDependency,
-        0, nullptr
-    );
+    insertMemoryBarriers(cmdBuf, { m_surfel.getCellInfoBuffer().buffer, m_surfel.getSurfelCounterBuffer().buffer });
 
     m_cellInfoUpdatePass.run(cmdBuf, { m_surfel.totalCellCount, 1 }, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
@@ -640,7 +628,20 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_scene.getDescSet(),
         });
 
-    insertMemoryBarriers(cmdBuf, { m_surfel.getCellInfoBuffer().buffer, m_surfel.getCellCounterBuffer().buffer });
+    insertMemoryBarriers(cmdBuf, { m_surfel.getCellInfoBuffer().buffer, m_surfel.getCellToSurfelBuffer().buffer });
+
+	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
+		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,
+		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet()
+		});
+
+    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelCounterBuffer().buffer, m_surfel.getSurfelRayBuffer().buffer, m_surfel.getSurfelBuffer().buffer });
+
+	m_surfelIntegratePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
+		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet(), m_scene.getDescSet()
+		});
+
+    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelBuffer().buffer});
 
     m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
@@ -649,18 +650,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
         m_surfel.getIndirectLightDescSet(),
         m_surfel.getCellBufferDescSet() });
 
-    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelCounterBuffer().buffer });
-
-	m_surfelRaytracePass.run(cmdBuf, { m_surfel.maxRayBudget, 1 }, profiler, {
-		m_accelStruct.getDescSet(), m_offscreen.getDescSet(), m_scene.getDescSet(), m_descSet,
-		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet()
-		});
-
-    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelCounterBuffer().buffer, m_surfel.getSurfelRayBuffer().buffer });
-
-	m_surfelIntegratePass.run(cmdBuf, { m_surfel.maxSurfelCnt, 1 }, profiler, {
-		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet(), m_scene.getDescSet()
-		});
+    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelBuffer().buffer, m_surfel.getSurfelCounterBuffer().buffer });
 }
 
 
