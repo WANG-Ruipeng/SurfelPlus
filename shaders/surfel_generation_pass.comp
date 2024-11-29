@@ -63,7 +63,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 void main()
 {
 
-	ivec2 imageRes    = rtxState.size;
+	ivec2 imageRes    = rtxState.size / 2;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
 	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
 
@@ -71,7 +71,7 @@ void main()
 	{
 		return;
 	}
-	float depth = texelFetch(depthMap, imageCoords, 0).r;
+	float depth = texelFetch(depthMap, imageCoords * 2, 0).r;
 
 	if (depth == 1.f)
 	{
@@ -79,11 +79,11 @@ void main()
 		return;
 	}
 
-	uint objID = texelFetch(primObjIDMap, imageCoords, 0).r;
+	uint objID = texelFetch(primObjIDMap, imageCoords * 2, 0).r;
 	uint randSeed = initRandom(imageRes, imageCoords, rtxState.totalFrames);
 
 	// get the normal
-	uint compressedNor = texelFetch(normalMap, imageCoords, 0).r;
+	uint compressedNor = texelFetch(normalMap, imageCoords * 2, 0).r;
 	vec3 normal = decompress_unit_vec(compressedNor);
 	vec3 worldPos = WorldPosFromDepth(uv, depth);
 
@@ -251,7 +251,7 @@ void main()
 			newSurfel.msmeData.variance = vec3(1.f);
 			newSurfel.msmeData.inconsistency = 1.f;
 			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(imageRes.x, imageRes.y)), getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
+			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
 
 
 

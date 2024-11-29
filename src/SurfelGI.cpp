@@ -138,50 +138,101 @@ void SurfelGI::createResources(const VkExtent2D& size)
 
 void SurfelGI::createIndirectLightingMap(const VkExtent2D& size)
 {
-	if (m_indirectLightingMap.image != VK_NULL_HANDLE)
 	{
-		m_pAlloc->destroy(m_indirectLightingMap);
+		if (m_indirectLightingMap.image != VK_NULL_HANDLE)
+		{
+			m_pAlloc->destroy(m_indirectLightingMap);
+		}
+
+		// Creating indirect lighting image
+		{
+			auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+				size, VK_FORMAT_R32G32B32A32_SFLOAT,
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+
+			nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+			NAME_VK(image.image);
+			VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+			VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+			sampler.maxLod = FLT_MAX;
+			m_indirectLightingMap = m_pAlloc->createTexture(image, ivInfo, sampler);
+			m_indirectLightingMap.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		}
+
+		// Setting the image layout
+		{
+			nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
+			auto              cmdBuf = cmdBufGet.createCommandBuffer();
+			nvvk::cmdBarrierImageLayout(cmdBuf, m_indirectLightingMap.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+			cmdBufGet.submitAndWait(cmdBuf);
+		}
+
+		nvvk::DescriptorSetBindings bind;
+
+		vkDestroyDescriptorSetLayout(m_device, m_indirectLightDescSetLayout, nullptr);
+
+		bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+		bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+						 VK_SHADER_STAGE_COMPUTE_BIT });
+		m_indirectLightDescSetLayout = bind.createLayout(m_device);
+		m_indirectLightDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_indirectLightDescSetLayout);
+
+		std::vector<VkWriteDescriptorSet> writes;
+		writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eSampler, &m_indirectLightingMap.descriptor));
+		writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eStore, &m_indirectLightingMap.descriptor));
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}
 
-	// Creating indirect lighting image
+	// create half res map
 	{
-		auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
-			size, VK_FORMAT_R32G32B32A32_SFLOAT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+		auto size_half = VkExtent2D{ size.width / 2, size.height / 2 };
+		if (m_indirectLightingMapHalfRes.image != VK_NULL_HANDLE)
+		{
+			m_pAlloc->destroy(m_indirectLightingMapHalfRes);
+		}
 
-		nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
-		NAME_VK(image.image);
-		VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+		// Creating indirect lighting image
+		{
+			auto colorCreateInfo = nvvk::makeImage2DCreateInfo(
+				size_half, VK_FORMAT_R32G32B32A32_SFLOAT,
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
-		VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-		sampler.maxLod = FLT_MAX;
-		m_indirectLightingMap = m_pAlloc->createTexture(image, ivInfo, sampler);
-		m_indirectLightingMap.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			nvvk::Image image = m_pAlloc->createImage(colorCreateInfo);
+			NAME_VK(image.image);
+			VkImageViewCreateInfo ivInfo = nvvk::makeImageViewCreateInfo(image.image, colorCreateInfo);
+
+			VkSamplerCreateInfo sampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+			sampler.maxLod = FLT_MAX;
+			m_indirectLightingMapHalfRes = m_pAlloc->createTexture(image, ivInfo, sampler);
+			m_indirectLightingMapHalfRes.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		}
+
+		// Setting the image layout
+		{
+			nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
+			auto              cmdBuf = cmdBufGet.createCommandBuffer();
+			nvvk::cmdBarrierImageLayout(cmdBuf, m_indirectLightingMapHalfRes.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+			cmdBufGet.submitAndWait(cmdBuf);
+		}
+
+		nvvk::DescriptorSetBindings bind;
+
+		vkDestroyDescriptorSetLayout(m_device, m_indirectLightHalfResDescSetLayout, nullptr);
+
+		bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+		bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+						 VK_SHADER_STAGE_COMPUTE_BIT });
+		m_indirectLightHalfResDescSetLayout = bind.createLayout(m_device);
+		m_indirectLightHalfResDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_indirectLightHalfResDescSetLayout);
+
+		std::vector<VkWriteDescriptorSet> writes;
+		writes.emplace_back(bind.makeWrite(m_indirectLightHalfResDescSet, OutputBindings::eSampler, &m_indirectLightingMapHalfRes.descriptor));
+		writes.emplace_back(bind.makeWrite(m_indirectLightHalfResDescSet, OutputBindings::eStore, &m_indirectLightingMapHalfRes.descriptor));
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}
-
-	// Setting the image layout
-	{
-		nvvk::CommandPool cmdBufGet(m_device, m_queues[eLoading].familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queues[eLoading].queue);
-		auto              cmdBuf = cmdBufGet.createCommandBuffer();
-		nvvk::cmdBarrierImageLayout(cmdBuf, m_indirectLightingMap.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-
-		cmdBufGet.submitAndWait(cmdBuf);
-	}
-
-	nvvk::DescriptorSetBindings bind;
-
-	vkDestroyDescriptorSetLayout(m_device, m_indirectLightDescSetLayout, nullptr);
-
-	bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
-	bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-					 VK_SHADER_STAGE_COMPUTE_BIT});
-	m_indirectLightDescSetLayout = bind.createLayout(m_device);
-	m_indirectLightDescSet = nvvk::allocateDescriptorSet(m_device, m_descPool, m_indirectLightDescSetLayout);
-
-	std::vector<VkWriteDescriptorSet> writes;
-	writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eSampler, &m_indirectLightingMap.descriptor));
-	writes.emplace_back(bind.makeWrite(m_indirectLightDescSet, OutputBindings::eStore, &m_indirectLightingMap.descriptor));
-	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 void SurfelGI::createGbuffers(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass)

@@ -71,6 +71,8 @@ public:
 	VkDescriptorSet                  getSurfelBuffersDescSet() { return m_surfelBuffersDescSet; }
 	VkDescriptorSetLayout            getIndirectLightDescLayout() { return m_indirectLightDescSetLayout; }
 	VkDescriptorSet                  getIndirectLightDescSet() { return m_indirectLightDescSet; }
+	VkDescriptorSetLayout            getIndirectLightHalfResDescLayout() { return m_indirectLightHalfResDescSetLayout; }
+	VkDescriptorSet                  getIndirectLightHalfResDescSet() { return m_indirectLightHalfResDescSet; }
 	VkDescriptorSetLayout			 getCellBufferDescLayout() { return m_cellBufferDescSetLayout;}
 	VkDescriptorSet					 getCellBufferDescSet() { return m_cellBufferDescSet; }
 	VkDescriptorSetLayout			 getSurfelDataMapsDescLayout() { return m_surfelDataMapsDescSetLayout; }
@@ -122,6 +124,7 @@ private:
 	nvvk::Buffer 			    m_cellToSurfelBuffer{ VK_NULL_HANDLE };
 
 	nvvk::Texture				m_indirectLightingMap;
+	nvvk::Texture				m_indirectLightingMapHalfRes;
 	nvvk::Texture				m_surfelIrradianceMap;
 	nvvk::Texture				m_surfelDepthMap;
 
@@ -129,6 +132,8 @@ private:
 	VkDescriptorSet             m_surfelBuffersDescSet{ VK_NULL_HANDLE };
 	VkDescriptorSetLayout       m_indirectLightDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet             m_indirectLightDescSet{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout       m_indirectLightHalfResDescSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSet             m_indirectLightHalfResDescSet{ VK_NULL_HANDLE };
 	VkDescriptorSetLayout		m_cellBufferDescSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorSet				m_cellBufferDescSet{ VK_NULL_HANDLE };
 	VkDescriptorSetLayout		m_surfelDataMapsDescSetLayout{ VK_NULL_HANDLE };

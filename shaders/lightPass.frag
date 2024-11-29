@@ -76,6 +76,8 @@ layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
 void main()
 {
     uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
+    vec2 uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(indirectLightMap,0));
+    uv *= 0.5f;
 
     uint nodeID = primObjID >> 23;
     uint instanceID = sceneNodes[nodeID].primMesh;
@@ -134,7 +136,8 @@ void main()
     ray.origin += 1e-4 * normal;
     bool hit = AnyHit(ray, 100.0);
 
-    vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy), 0).rgb;
+    //vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy) / 2, 0).rgb;
+    vec3 indirectLight = texture(indirectLightMap, uv).rgb;
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - state.mat.metallic);
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
 

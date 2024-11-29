@@ -29,6 +29,7 @@ void SurfelGenerationPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& 
 {
 	LABEL_SCOPE_VK(cmdBuf);
 	const int GROUP_SIZE = 16;
+	auto halfSize = VkExtent2D(size.width * 0.5, size.height * 0.5);
 	// Preparing for the compute shader
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
 	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayout, 0,
@@ -38,7 +39,7 @@ void SurfelGenerationPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& 
 	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState), &m_state);
 
 	// Dispatching the shader
-	vkCmdDispatch(cmdBuf, (size.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (size.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
+	vkCmdDispatch(cmdBuf, (halfSize.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (halfSize.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
 }
 
 void SurfelGenerationPass::create(const VkExtent2D& size, const std::vector<VkDescriptorSetLayout>& extraDescSetsLayout, Scene* _scene)
