@@ -23,6 +23,7 @@ vec3 MSME(vec3 y, inout MSMEData data, float shortWindowBlend)
 
     float varianceBlend = shortWindowBlend * 0.5;
     variance = mix(variance, delta * delta2, varianceBlend);
+    variance = max(vec3(1e-5), variance);
     vec3 dev = sqrt(max(vec3(1e-5), variance));
 
     vec3 shortDiff = mean - shortMean;

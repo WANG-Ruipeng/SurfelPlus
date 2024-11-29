@@ -202,7 +202,7 @@ void main()
                     contribution *= min(dotN, 1.f);
                     contribution *= clamp(1.f - dist / cellRadius, 0.f, 1.f);
                     contribution = smoothstep(0, 1, contribution);
-                    contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
+                    contribution *= smoothstep(0.f, 20.f, float(surfelRecycleInfo[surfelIndex].frame));
 
 
                     sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;

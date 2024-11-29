@@ -155,15 +155,17 @@ void main()
 		float fov = sceneCamera.fov;
 		ivec2 imageRes = rtxState.size;
 		vec2 resolution = vec2(imageRes.x, imageRes.y);
-		if (!lastSeen)
-		{
-			float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
-			if(isSleeping) {
-				surfel.radius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance)); 
-			}else{
-				surfel.radius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
-			}
+
+		float newRadius =  calcSurfelRadius(surfelToCameraDistance, fov, resolution);
+		if(isSleeping) {
+			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance)); 
+		}else{
+			newRadius = min(newRadius, getSurfelMaxSize(surfelToCameraDistance) * 0.5f);
 		}
+
+		if (lastSeen) newRadius = mix(surfel.radius, newRadius, 0.05f);
+
+		surfel.radius = newRadius;
 		
 		// Calculate number of surfels located at cell
 		vec3 camPos = getCameraPosition(sceneCamera);
@@ -187,7 +189,7 @@ void main()
 
 		//Update ray information
 		// use constant ray count (tmp)
-		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
+		uint rayRequestCnt = uint(mix(8.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
 		if (isSleeping) rayRequestCnt = rayRequestCnt / 4;
 		if (recycleInfo.frame < 20) rayRequestCnt = 64;
 
