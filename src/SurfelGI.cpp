@@ -50,7 +50,8 @@ void SurfelGI::createResources(const VkExtent2D& size)
 	std::vector<SurfelRay> surfelRayBuffer(maxRayBudget);
 	m_surfelRayBuffer = m_pAlloc->createBuffer(cmdBuf, surfelRayBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-	totalCellCount = kCellDimension * kCellDimension * kCellDimension;
+	//totalCellCount = kCellDimension * kCellDimension * kCellDimension;
+	totalCellCount = n * n * n + 6 * n * n * m;
 	std::vector<CellInfo> cells(totalCellCount);
 	m_cellInfoBuffer = m_pAlloc->createBuffer(cmdBuf, cells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 

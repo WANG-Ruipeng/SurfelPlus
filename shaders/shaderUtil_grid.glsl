@@ -17,11 +17,6 @@ uint getFlattenCellIndex(vec3 cellPos)
     return result;
 }
 
-const float d = 128.0;     // Size of the uniform cube
-const int n = 64; // Split count of the uniform cube & non-unifrom frustum 
-const float p = 1.3; // Split ratio of the non-uniform frustum
-const int m = 16; // Layers of the non-uniform frustum
-
 ivec4 getCellPosNonUniform(vec3 posW, vec3 cameraPosW)
 {
     vec3 posC = posW - cameraPosW;
