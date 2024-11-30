@@ -83,7 +83,7 @@ void main()
     vec3 dirL;
     float pdf;
 
-	//if (false && (surfelBuffer[surfelIndex].rayCount >= 16))
+	//if (isFull && (surfelBuffer[surfelIndex].rayCount >= 4))
     if (isFull)
     {
 	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);

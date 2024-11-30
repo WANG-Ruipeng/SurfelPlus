@@ -202,51 +202,51 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
         uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
 
     // spawn sleeping surfel if coverage is low.
-    if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
-        coverage < 1.f && cellInfo.surfelCount < 0)
-    {
-        uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
-        if (surfelAliveIndex < kMaxSurfelCount && rand(randSeed) < 0.2)
-        {
-            uint surfelID = surfelDead[kMaxSurfelCount - surfelAliveIndex - 1];
-            surfelAlive[surfelAliveIndex] = surfelID;
+    //if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
+    //    coverage < 1.f && cellInfo.surfelCount < 32)
+    //{
+    //    uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt, 1);
+    //    if (surfelAliveIndex < kMaxSurfelCount && rand(randSeed) < 0.2)
+    //    {
+    //        uint surfelID = surfelDead[kMaxSurfelCount - surfelAliveIndex - 1];
+    //        surfelAlive[surfelAliveIndex] = surfelID;
 
-            Surfel newSurfel;
-            //newSurfel.objID = objID;
-            newSurfel.position = worldPos;
-            newSurfel.normal = compress_unit_vec(worldNor);
-            newSurfel.radiance = irradiance.xyz;
-            newSurfel.rayCount = 0;
-            newSurfel.msmeData.mean = irradiance.xyz;
-            newSurfel.msmeData.shortMean = irradiance.xyz;
-            newSurfel.msmeData.vbbr = 0.f;
-            newSurfel.msmeData.variance = vec3(1.f);
-            newSurfel.msmeData.inconsistency = 1.f;
-            float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-            newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), getSurfelMaxSize(surfelToCameraDistance) * 2.f);
+    //        Surfel newSurfel;
+    //        //newSurfel.objID = objID;
+    //        newSurfel.position = worldPos;
+    //        newSurfel.normal = compress_unit_vec(worldNor);
+    //        newSurfel.radiance = irradiance.xyz;
+    //        newSurfel.rayCount = 0;
+    //        newSurfel.msmeData.mean = irradiance.xyz;
+    //        newSurfel.msmeData.shortMean = irradiance.xyz;
+    //        newSurfel.msmeData.vbbr = 0.f;
+    //        newSurfel.msmeData.variance = vec3(1.f);
+    //        newSurfel.msmeData.inconsistency = 1.f;
+    //        float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
+    //        newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), getSurfelMaxSize(surfelToCameraDistance) * 2.f);
 
-            surfelBuffer[surfelID] = newSurfel;
+    //        surfelBuffer[surfelID] = newSurfel;
 
-            SurfelRecycleInfo newSurfelRecycleInfo;
-            newSurfelRecycleInfo.life = kMaxLife / 2;
-            newSurfelRecycleInfo.frame = 0;
-            newSurfelRecycleInfo.status = 1u;
-            surfelRecycleInfo[surfelID] = newSurfelRecycleInfo;
-        }
-        else
-        {
-            atomicAdd(surfelCounter.aliveSurfelCnt, -1);
-        }
-    }
+    //        SurfelRecycleInfo newSurfelRecycleInfo;
+    //        newSurfelRecycleInfo.life = kMaxLife / 2;
+    //        newSurfelRecycleInfo.frame = 0;
+    //        newSurfelRecycleInfo.status = 1u;
+    //        surfelRecycleInfo[surfelID] = newSurfelRecycleInfo;
+    //    }
+    //    else
+    //    {
+    //        atomicAdd(surfelCounter.aliveSurfelCnt, -1);
+    //    }
+    //}
 
-    if (maxContributionSleepingSurfelIndex != 0xffffffff && coverage > 4.f)
-    {
-        
-        if (rand(randSeed) < 0.2)
-        {
-            surfelBuffer[maxContributionSleepingSurfelIndex].radius = 0.f;
-        }
-    }
+    //if (maxContributionSleepingSurfelIndex != 0xffffffff && coverage > 3.f)
+    //{
+    //    
+    //    if (rand(randSeed) < 0.2)
+    //    {
+    //        surfelBuffer[maxContributionSleepingSurfelIndex].radius = 0.f;
+    //    }
+    //}
 
     return true;
 

@@ -80,7 +80,7 @@ void main()
 	}
 
 	uint objID = texelFetch(primObjIDMap, imageCoords * 2, 0).r;
-	uint randSeed = initRandom(imageRes, imageCoords, rtxState.totalFrames);
+	uint randSeed = initRandom(imageRes, imageCoords, lowbias32(rtxState.totalFrames));
 
 	// get the normal
 	uint compressedNor = texelFetch(normalMap, imageCoords * 2, 0).r;
@@ -116,8 +116,8 @@ void main()
 		vec3 bias = surfel.position - worldPos;
 		float dist = length(bias);
 		float cosineTheta = dot(bias, normal) / dist;
-		if (cosineTheta < -0.5)
-				continue;
+		//if (cosineTheta < -0.5)
+		//		continue;
 
 		if (dist < surfel.radius)
         {
@@ -155,33 +155,26 @@ void main()
 		
 	}
 
-	if (maxContributionSurfelIndex != 0xffffffff)
-	{
-		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
-		vec3 mainNor = decompress_unit_vec(mainSurfel.normal);
-		//imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
-		//imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
-		//imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
-	}
-	else
-	{
-		//imageStore(resultImage, imageCoords, vec4(vec3(0.f), 1.f));
-	}
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
 	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 	if(rtxState.debugging_mode != eNoDebug)
 	{
-		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
-		//float dist  = distance(worldPos, mainSurfel.position);
-		//if (dist > 0.1 * mainSurfel.radius) maxContributionSurfelIndex = 0xffffffff;
-		if(rtxState.debugging_mode == esRadiance)
-			imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
-		else if(rtxState.debugging_mode == esSurfelID && maxContributionSurfelIndex != 0xffffffff) 
-			imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
-		else if (rtxState.debugging_mode == esVariance && maxContributionSurfelIndex != 0xffffffff)
-			imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
-		else if (rtxState.debugging_mode == esRadius && maxContributionSurfelIndex != 0xffffffff)
-			imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+	    if (maxContributionSurfelIndex != 0xffffffff)
+		{
+			Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+			//float dist  = distance(worldPos, mainSurfel.position);
+			//if (dist > 0.1 * mainSurfel.radius) maxContributionSurfelIndex = 0xffffffff;
+			if(rtxState.debugging_mode == esRadiance)
+				imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+			else if(rtxState.debugging_mode == esSurfelID) 
+				imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
+			else if (rtxState.debugging_mode == esVariance)
+				imageStore(resultImage, imageCoords, vec4(mainSurfel.msmeData.variance, 1.f));
+			else if (rtxState.debugging_mode == esRadius)
+				imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
+			else
+			    imageStore(resultImage, imageCoords, vec4(vec3(0), 1.f));
+		}
 		else imageStore(resultImage, imageCoords, vec4(vec3(0), 1.f));
 	} else imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
@@ -241,7 +234,7 @@ void main()
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 1.2f && 
-		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
+		rand(randSeed) < depth * 0.3f * max(0.0, 2.0 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
