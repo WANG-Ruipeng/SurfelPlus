@@ -62,6 +62,11 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main()
 {
+	if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0)
+	{
+		groupShareMinCoverage = floatBitsToUint(10.f);
+		groupShareMaxContribution = 0;
+	}
 
 	ivec2 imageRes    = rtxState.size / 2;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
@@ -91,8 +96,6 @@ void main()
 
 	uint aliveSurfelCnt = surfelCounter.aliveSurfelCnt;
 	float coverage = 0.f;
-    float variance = 0.f;
-    float maxVariance = 0.f;
     float maxContribution = 0.f;
     uint maxContributionSurfelIndex = 0xffffffff;
 
@@ -234,7 +237,7 @@ void main()
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 1.2f && 
-		rand(randSeed) < depth * 0.3f * max(0.0, 2.0 - coverage))
+		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
