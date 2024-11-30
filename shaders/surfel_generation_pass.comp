@@ -232,6 +232,7 @@ void main()
 //	contributionData = groupShareMaxContribution;
 //	maxContribution = uintBitsToFloat(contributionData & 0xFFFF0000);
 //	maxContributionSurfelIndex = contributionData & 0x0000FFFF;
+// sleep
 
 
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
