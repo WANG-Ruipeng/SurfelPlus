@@ -113,17 +113,19 @@ void main()
 		//uint surfelIndex = surfelAlive[i];
 		uint surfelIndex = cellToSurfel[cellOffset + i];
 		Surfel surfel = surfelBuffer[surfelIndex];
-		vec3 bias = worldPos - surfel.position;
-        float dist2 = dot(bias, bias);
+		vec3 bias = surfel.position - worldPos;
+		float dist = length(bias);
+		float cosineTheta = dot(bias, normal) / dist;
+		if (cosineTheta < -0.5)
+				continue;
 
-		if (dist2 < surfel.radius * surfel.radius)
+		if (dist < surfel.radius)
         {
             vec3 surfelNor = decompress_unit_vec(surfel.normal);
             float dotN = dot(normal, surfelNor);
 			float contribution = 1.f;
             if (dotN > 0.f)
             {
-                float dist = sqrt(dist2);
                 
                 contribution *= clamp(dotN, 0.f, 1.f);
                 contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
@@ -143,9 +145,14 @@ void main()
 				// update recycle lastseen
 				surfelRecycleInfo[surfelIndex].status |= 0x0002u;
             }
-			// TODO: try to treat surfels as sub light sources
-		
+			else
+			{
+				contribution *= max(cosineTheta, 0.f);
+			    contribution *= pow(1.f - dist / surfel.radius, 2.0);
+				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
+			}
 		}
+		
 	}
 
 	if (maxContributionSurfelIndex != 0xffffffff)
@@ -165,6 +172,8 @@ void main()
 	if(rtxState.debugging_mode != eNoDebug)
 	{
 		Surfel mainSurfel = surfelBuffer[maxContributionSurfelIndex];
+		//float dist  = distance(worldPos, mainSurfel.position);
+		//if (dist > 0.1 * mainSurfel.radius) maxContributionSurfelIndex = 0xffffffff;
 		if(rtxState.debugging_mode == esRadiance)
 			imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 		else if(rtxState.debugging_mode == esSurfelID && maxContributionSurfelIndex != 0xffffffff) 
@@ -232,7 +241,7 @@ void main()
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 1.2f && 
-		rand(randSeed) < depth * 0.3f)
+		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
@@ -251,7 +260,9 @@ void main()
 			newSurfel.msmeData.variance = vec3(1.f);
 			newSurfel.msmeData.inconsistency = 1.f;
 			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
-			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), getSurfelMaxSize(surfelToCameraDistance));
+			float surfelMaxSize = getSurfelMaxSize(surfelToCameraDistance);
+			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), surfelMaxSize);
+			newSurfel.radius = max(newSurfel.radius, surfelMaxSize * 0.1f);
 
 
 
@@ -273,7 +284,7 @@ void main()
     {
         if (coverage > 3.0)
         {
-            if (rand(randSeed) < depth * 0.1f)
+            if (rand(randSeed) < depth * 0.2f)
             {
                 surfelBuffer[maxContributionSurfelIndex].radius = 0.f;
             }

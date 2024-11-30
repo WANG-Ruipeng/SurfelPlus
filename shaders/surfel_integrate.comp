@@ -97,6 +97,9 @@ void main()
         }
     }
 
+    uint samplePack = max(1u, surfel.rayCount / 4);
+    uint packCounter = 0;
+    vec3 meanRadiance = vec3(0.0);
     for (uint i = 0; i < surfel.rayCount; i++)
 	{
 		SurfelRay rayResult = surfelRayBuffer[surfel.rayOffset + i];
@@ -104,6 +107,15 @@ void main()
 
 		vec3 norL = decompress_unit_vec(rayResult.dir_o);
         totalRadiance += rayResult.radiance * norL.z / max(1e-12f, rayResult.pdf);
+
+        packCounter++;
+        if (packCounter == samplePack)
+        {
+			packCounter = 0;
+			totalRadiance /= samplePack;
+            MSME(totalRadiance, surfel.msmeData, 0.02);
+            totalRadiance = vec3(0.0);
+		}
 
         vec2 mapUV = DirToOctUV(norL);
 
@@ -185,42 +197,54 @@ void main()
 	    {
 		    uint surfelIndex = cellToSurfel[cellOffset + i];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];
-		    vec3 distV = surfel.position - neiSurfel.position;
-            float dist2 = dot(distV, distV);
-            float cellRadius = cellSize * sqrt(2.0);
+		    vec3 distV = neiSurfel.position - surfel.position;
+            float dist = length(distV);
+            float cosineTheta = dot(distV, normal) / dist;
 
-		    if (dist2 < cellRadius * cellRadius)
+            // skip surfels on the backside
+            if (cosineTheta < -0.5)
+				continue;
+
+            //float cellRadius = 1.0 * cellSize * sqrt(3.0);
+            float surfelRad = surfel.radius + neiSurfel.radius;
+
+		    if (dist < surfelRad)
             {
                 vec3 surfelNor = decompress_unit_vec(neiSurfel.normal);
                 float dotN = dot(normal, surfelNor);
+                float contribution = 1.f;
                 if (dotN > 0.f)
                 {
-                    float dist = sqrt(dist2);
-                    float contribution = 1.f;
-
                     contribution *= min(dotN, 1.f);
-                    contribution *= clamp(1.f - dist / cellRadius, 0.f, 1.f);
-                    //contribution = smoothstep(0, 1, contribution);
-                    contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
-
-
-                    sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
+                    contribution *= clamp(1.f - dist / surfelRad, 0.f, 1.f);
+                    contribution = smoothstep(0, 1, contribution);
                 }
+                else
+                {
+					contribution *= max(cosineTheta, 0.f);
+                    contribution *= pow(1.f - dist / surfelRad, 2.0);
+				}
+
+                // lower the weight of new surfels
+                contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
+                sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
 		
 		    }
 	    }
-        sharedRadiance += vec4(totalRadiance, 1.f);
+        //sharedRadiance += vec4(totalRadiance, 1.f);
 
 
         if (sharedRadiance.w > 0.01)
         {
             sharedRadiance.xyz /= sharedRadiance.w;
-            totalRadiance = mix(
-                totalRadiance,
+            //MSME(sharedRadiance.xyz, surfel.msmeData, 0.16);
+            vec3 mean = mix(
+                surfel.msmeData.mean,
                 sharedRadiance.xyz,
                 clamp(length(surfel.msmeData.variance) * 20.f, 0.4f, 1.0f)
                 //0.8f
             );
+            MSME(mean, surfel.msmeData, 0.1);
         }
 
     }
@@ -230,9 +254,9 @@ void main()
 //    ratio  = min(ratio, 31.0f / 32.0f);
 //    totalRadiance = mix(totalRadiance, surfel.radiance, ratio);
 
-    vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.03);
+    //vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.04);
 
-    surfelBuffer[surfelIndex].radiance = mean;
+    surfelBuffer[surfelIndex].radiance = surfel.msmeData.mean;
     surfelBuffer[surfelIndex].msmeData = surfel.msmeData;
     
 }

@@ -149,17 +149,19 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
         uint surfelIndex = cellToSurfel[cellOffset + i];
         Surfel surfel = surfelBuffer[surfelIndex];
         bool isSleeping = (surfelRecycleInfo[surfelIndex].status & 0x0001) != 0;
-        vec3 bias = worldPos - surfel.position;
-        float dist2 = dot(bias, bias);
+        vec3 bias = surfel.position - worldPos;
+		float dist = length(bias);
+        float cosineTheta = dot(bias, worldNor) / dist;
+        if (cosineTheta < -0.5)
+            continue;
 
-        if (dist2 < surfel.radius * surfel.radius)
+        if (dist < surfel.radius)
         {
             vec3 surfelNor = decompress_unit_vec(surfel.normal);
             float dotN = dot(worldNor, surfelNor);
+            float contribution = 1.f;
             if (dotN > 0.f)
             {
-                float dist = sqrt(dist2);
-                float contribution = 1.f;
 
                 contribution *= clamp(dotN, 0.f, 1.f);
                 contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
@@ -182,9 +184,15 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
                         maxContributionSleepingSurfelIndex = surfelIndex;
                     }
                 }*/
-
-                surfelRecycleInfo[surfelIndex].status |= 0x0004u;
             }
+            else
+            {
+                contribution *= max(cosineTheta, 0.f);
+                contribution *= pow(1.f - dist / surfel.radius, 2.0);
+                irradiance += vec4(surfel.radiance, 1.f) * contribution;
+            }
+
+            surfelRecycleInfo[surfelIndex].status |= 0x0004u;
         }
 
 
