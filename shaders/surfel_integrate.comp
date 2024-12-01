@@ -115,7 +115,7 @@ void main()
         {
 			totalRadiance /= packCounter;
 			packCounter = 0;
-            MSME(totalRadiance, surfel.msmeData, 0.01);
+            MSME(totalRadiance, surfel.msmeData, 0.02);
             totalRadiance = vec3(0.0);
 		}
 
@@ -248,7 +248,7 @@ void main()
         {
             //sharedRadiance += vec4(totalRadiance, 1.f);
             sharedRadiance.xyz /= sharedRadiance.w;
-            MSME(sharedRadiance.xyz, surfel.msmeData, 0.1);
+            MSME(sharedRadiance.xyz, surfel.msmeData, 0.04);
 //            vec3 mean = mix(
 //                surfel.msmeData.mean,
 //                sharedRadiance.xyz,

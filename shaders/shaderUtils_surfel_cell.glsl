@@ -143,9 +143,11 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     uint maxContributionSleepingSurfelIndex = 0xffffffff;
 
     const uint searchRange = min(32, cellInfo.surfelCount);
+	uint searchCnt = 0;
 
-    for (uint i = 0; i < searchRange; i++)
+    for (uint i = 0; i < cellInfo.surfelCount; i++)
     {
+        if (searchCnt == searchRange) break;
         uint surfelIndex = cellToSurfel[cellOffset + i];
         Surfel surfel = surfelBuffer[surfelIndex];
         vec3 neiNor = decompress_unit_vec(surfel.normal);
@@ -192,12 +194,17 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
                 contribution *= pow(1.f - dist / surfel.radius, 2.0);
                 irradiance += vec4(surfel.radiance, 1.f) * contribution;
             }
-
+			searchCnt++;
             surfelRecycleInfo[surfelIndex].status |= 0x0004u;
         }
 
 
     }
+
+	if (irradiance.w > 0.f)
+	{
+		irradiance /= irradiance.w;
+	}
 
     uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
         uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);

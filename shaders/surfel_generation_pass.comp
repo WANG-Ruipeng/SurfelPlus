@@ -242,7 +242,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
-		coverage < 2.0f && 
+		coverage < 1.5f && 
 		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
@@ -284,7 +284,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
     {
-        if (coverage > 4.0)
+        if (coverage > 3.0)
         {
             if (rand(randSeed) < depth * 0.2f)
             {

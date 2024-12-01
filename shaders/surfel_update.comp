@@ -201,11 +201,11 @@ void main()
 //			variance = 1.0;
 //		}
 
-		uint rayRequestCnt = uint(mix(8.0, 64.0, clamp(variance * 0.6, 0.f, 1.f)));
+		uint rayRequestCnt = uint(mix(4.0, 64.0, clamp(variance * 0.6, 0.f, 1.f)));
 		//uint rayRequestCnt = 32;
 
 
-		if (isSleeping || !lastSeen) rayRequestCnt = rayRequestCnt / 2;
+		if (isSleeping || !lastSeen) rayRequestCnt = rayRequestCnt / 4;
 		if (recycleInfo.frame < 20) rayRequestCnt = 64;
 
 		// allocate ray buffer
