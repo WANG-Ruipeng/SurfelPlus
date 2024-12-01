@@ -148,11 +148,12 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     {
         uint surfelIndex = cellToSurfel[cellOffset + i];
         Surfel surfel = surfelBuffer[surfelIndex];
+        vec3 neiNor = decompress_unit_vec(surfel.normal);
         bool isSleeping = (surfelRecycleInfo[surfelIndex].status & 0x0001) != 0;
         vec3 bias = surfel.position - worldPos;
 		float dist = length(bias);
         float cosineTheta = dot(bias, worldNor) / dist;
-        if (cosineTheta < -0.5)
+        if (cosineTheta < -0.2 || dot(-bias, neiNor) / dist < -0.2)
             continue;
 
         if (dist < surfel.radius)

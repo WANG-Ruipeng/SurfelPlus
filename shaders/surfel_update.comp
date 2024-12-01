@@ -192,10 +192,20 @@ void main()
 		}
 
 		//Update ray information
-		// use constant ray count (tmp)
-		uint rayRequestCnt = uint(mix(8.0, 64.0, clamp(length(surfel.msmeData.variance) * 0.8f, 0.f, 1.f)));
+		float variance = length(surfel.msmeData.variance);
+
+		// if ray cnt is always too low, sometimes stimulate them
+//		if (variance < 0.01 && rand(randSeed) < 0.01)
+//		{
+//			surfel.msmeData.variance = vec3(1.0);
+//			variance = 1.0;
+//		}
+
+		uint rayRequestCnt = uint(mix(8.0, 64.0, clamp(variance * 0.6, 0.f, 1.f)));
 		//uint rayRequestCnt = 32;
-		if (isSleeping) rayRequestCnt = rayRequestCnt / 4;
+
+
+		if (isSleeping || !lastSeen) rayRequestCnt = rayRequestCnt / 2;
 		if (recycleInfo.frame < 20) rayRequestCnt = 64;
 
 		// allocate ray buffer
