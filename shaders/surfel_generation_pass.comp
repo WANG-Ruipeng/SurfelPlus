@@ -92,6 +92,7 @@ void main()
 	vec3 normal = decompress_unit_vec(compressedNor);
 	vec3 worldPos = WorldPosFromDepth(uv, depth);
 
+	vec4 indirectContrib = vec4(0.f);
 	vec3 indirectLighting = vec3(0.f);
 
 	uint aliveSurfelCnt = surfelCounter.aliveSurfelCnt;
@@ -135,7 +136,7 @@ void main()
 
                 coverage += contribution;
 
-				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
+				indirectContrib += vec4(surfel.radiance, 1.f) * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
 
 				if (maxContribution < contribution)
 				{
@@ -150,10 +151,16 @@ void main()
 			{
 				contribution *= max(cosineTheta, 0.f);
 			    contribution *= pow(1.f - dist / surfel.radius, 2.0);
-				indirectLighting += surfel.radiance * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
+				indirectContrib += vec4(surfel.radiance, 1.f) * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
 			}
 		}
 		
+	}
+
+	if (indirectContrib.w > 0)
+	{
+		indirectContrib.xyz /= indirectContrib.w;
+		indirectLighting = indirectContrib.xyz;
 	}
 
 	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
