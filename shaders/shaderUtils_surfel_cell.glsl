@@ -34,7 +34,7 @@ bool isSurfelIntersectCell(Surfel surfel, vec3 cellPos, vec3 cameraPosW)
 }
 
 float calcRadiusApprox(float area, float distance, float fovy, vec2 resolution) {
-    float angle = sqrt(area / 3.14159265359) * fovy / max(resolution.x, resolution.y);
+    float angle = sqrt(area / 3.14159265359) * fovy * 2.0 / max(resolution.x, resolution.y);
     return distance * tan(angle);
 }
 

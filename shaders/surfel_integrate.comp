@@ -211,7 +211,7 @@ void main()
             float cosineTheta = dot(distV, normal) / dist;
 
             // skip surfels on the backside
-            if (cosineTheta < -0.2 || dot(-distV, neiNor) / dist < -0.5)
+            if (cosineTheta < -0.2 || dot(-distV, neiNor) / dist < -0.2)
 				continue;
 
             //float cellRadius = 1.0 * cellSize * sqrt(3.0);

@@ -47,8 +47,8 @@ static void onErrorCallback(int error, const char* description)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static int const SAMPLE_WIDTH  = 1440;
-static int const SAMPLE_HEIGHT = 1080;
+static int const SAMPLE_WIDTH  = 2360;
+static int const SAMPLE_HEIGHT = 1240;
 
 //--------------------------------------------------------------------------------------------------
 // Application Entry
@@ -62,8 +62,8 @@ int main(int argc, char** argv)
 #endif
 
   InputParser parser(argc, argv);
-  std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
-  //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
+  //std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
+  std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
   // Setup GLFW window

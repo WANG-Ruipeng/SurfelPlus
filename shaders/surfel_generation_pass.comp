@@ -129,11 +129,9 @@ void main()
 			float contribution = 1.f;
             if (dotN > 0.f)
             {
-                
                 contribution *= clamp(dotN, 0.f, 1.f);
                 contribution *= clamp(1.f - dist / surfel.radius, 0.f, 1.f);
                 contribution = smoothstep(0, 1, contribution);
-
 
                 coverage += contribution;
 
@@ -168,7 +166,7 @@ void main()
 			//float dist  = distance(worldPos, mainSurfel.position);
 			//if (dist > 0.1 * mainSurfel.radius) maxContributionSurfelIndex = 0xffffffff;
 			if(rtxState.debugging_mode == esRadiance)
-				imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
+				imageStore(resultImage, imageCoords, vec4(mainSurfel.radiance, 1.f));
 			else if(rtxState.debugging_mode == esSurfelID) 
 				imageStore(resultImage, imageCoords, vec4(hash3u1(maxContributionSurfelIndex), 1.f));
 			else if (rtxState.debugging_mode == esVariance)
@@ -237,7 +235,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
-		coverage < 1.2f && 
+		coverage < 2.0f && 
 		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
@@ -279,7 +277,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
     {
-        if (coverage > 3.0)
+        if (coverage > 4.0)
         {
             if (rand(randSeed) < depth * 0.2f)
             {
