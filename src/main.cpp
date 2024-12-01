@@ -47,8 +47,8 @@ static void onErrorCallback(int error, const char* description)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static int const SAMPLE_WIDTH  = 1440;
-static int const SAMPLE_HEIGHT = 1080;
+static int const SAMPLE_WIDTH  = 2360;
+static int const SAMPLE_HEIGHT = 1240;
 
 //--------------------------------------------------------------------------------------------------
 // Application Entry

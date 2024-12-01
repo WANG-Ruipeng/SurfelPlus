@@ -34,7 +34,7 @@ bool isSurfelIntersectCell(Surfel surfel, vec3 cellPos, vec3 cameraPosW)
 }
 
 float calcRadiusApprox(float area, float distance, float fovy, vec2 resolution) {
-    float angle = sqrt(area / 3.14159265359) * fovy / max(resolution.x, resolution.y);
+    float angle = sqrt(area / 3.14159265359) * fovy * 2.0 / max(resolution.x, resolution.y);
     return distance * tan(angle);
 }
 
@@ -143,16 +143,19 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     uint maxContributionSleepingSurfelIndex = 0xffffffff;
 
     const uint searchRange = min(32, cellInfo.surfelCount);
+	uint searchCnt = 0;
 
-    for (uint i = 0; i < searchRange; i++)
+    for (uint i = 0; i < cellInfo.surfelCount; i++)
     {
+        if (searchCnt == searchRange) break;
         uint surfelIndex = cellToSurfel[cellOffset + i];
         Surfel surfel = surfelBuffer[surfelIndex];
+        vec3 neiNor = decompress_unit_vec(surfel.normal);
         bool isSleeping = (surfelRecycleInfo[surfelIndex].status & 0x0001) != 0;
         vec3 bias = surfel.position - worldPos;
 		float dist = length(bias);
         float cosineTheta = dot(bias, worldNor) / dist;
-        if (cosineTheta < -0.5)
+        if (cosineTheta < -0.2 || dot(-bias, neiNor) / dist < -0.2)
             continue;
 
         if (dist < surfel.radius)
@@ -191,12 +194,17 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
                 contribution *= pow(1.f - dist / surfel.radius, 2.0);
                 irradiance += vec4(surfel.radiance, 1.f) * contribution;
             }
-
+			searchCnt++;
             surfelRecycleInfo[surfelIndex].status |= 0x0004u;
         }
 
 
     }
+
+	if (irradiance.w > 0.f)
+	{
+		irradiance /= irradiance.w;
+	}
 
     uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
         uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);

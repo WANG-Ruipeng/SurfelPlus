@@ -14,6 +14,8 @@
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
+#define IRRADIANCE_SHARE 1
+
 #include "host_device.h"
 #include "compress.glsl"
 #include "msme.glsl"
@@ -109,10 +111,10 @@ void main()
         totalRadiance += rayResult.radiance * norL.z / max(1e-12f, rayResult.pdf);
 
         packCounter++;
-        if (packCounter == samplePack)
+        if (packCounter == samplePack || i == surfel.rayCount - 1)
         {
+			totalRadiance /= packCounter;
 			packCounter = 0;
-			totalRadiance /= samplePack;
             MSME(totalRadiance, surfel.msmeData, 0.02);
             totalRadiance = vec3(0.0);
 		}
@@ -179,6 +181,8 @@ void main()
 
     if (surfel.rayCount > 0) totalRadiance /= surfel.rayCount;
 
+#if IRRADIANCE_SHARE
+
     vec3 camPos = getCameraPosition(sceneCamera);
     ivec4 cellPosIndex = getCellPosNonUniform(surfel.position, camPos);
     
@@ -192,17 +196,22 @@ void main()
 	    CellInfo cellInfo = cellBuffer[flattenIndex];
 	    uint cellOffset = cellInfo.surfelOffset;
 	    uint cellSurfelCount = cellInfo.surfelCount;
+        uint targetShareCount = min(64u, cellSurfelCount);
+        uint passCount = 0;
 
         for (uint i = 0; i < cellSurfelCount; i++)
 	    {
+            if (passCount == targetShareCount)
+				break;
 		    uint surfelIndex = cellToSurfel[cellOffset + i];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];
+            vec3 neiNor = decompress_unit_vec(neiSurfel.normal);
 		    vec3 distV = neiSurfel.position - surfel.position;
             float dist = length(distV);
             float cosineTheta = dot(distV, normal) / dist;
 
             // skip surfels on the backside
-            if (cosineTheta < -0.5)
+            if (cosineTheta < -0.2 || dot(-distV, neiNor) / dist < -0.2)
 				continue;
 
             //float cellRadius = 1.0 * cellSize * sqrt(3.0);
@@ -228,26 +237,30 @@ void main()
                 // lower the weight of new surfels
                 contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
                 sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
+
+                passCount++;
 		
 		    }
 	    }
-        //sharedRadiance += vec4(totalRadiance, 1.f);
-
+        
 
         if (sharedRadiance.w > 0.01)
         {
+            //sharedRadiance += vec4(totalRadiance, 1.f);
             sharedRadiance.xyz /= sharedRadiance.w;
-            //MSME(sharedRadiance.xyz, surfel.msmeData, 0.16);
-            vec3 mean = mix(
-                surfel.msmeData.mean,
-                sharedRadiance.xyz,
-                clamp(length(surfel.msmeData.variance) * 20.f, 0.4f, 1.0f)
-                //0.8f
-            );
-            MSME(mean, surfel.msmeData, 0.1);
+            MSME(sharedRadiance.xyz, surfel.msmeData, 0.04);
+//            vec3 mean = mix(
+//                surfel.msmeData.mean,
+//                sharedRadiance.xyz,
+//                clamp(length(surfel.msmeData.variance) * 20.f, 0.4f, 1.0f)
+//                //0.8f
+//            );
+//            MSME(mean, surfel.msmeData, 0.12);
         }
 
     }
+
+#endif
 
 //    float ratio = surfelRecycleInfo[surfelIndex].frame > 0 ? 
 //        float(surfelRecycleInfo[surfelIndex].frame - 1) / float(surfelRecycleInfo[surfelIndex].frame) : 0.f;

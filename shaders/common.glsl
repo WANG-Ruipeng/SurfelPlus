@@ -97,7 +97,7 @@ void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
 //-----------------------------------------------------------------------
 vec3 OffsetRay(in vec3 p, in vec3 n)
 {
-  const float intScale   = 512.0f;
+  const float intScale   = 4096.0f;
   const float floatScale = 1.0f / 65536.0f;
   const float origin     = 1.0f / 32.0f;
 
@@ -110,6 +110,23 @@ vec3 OffsetRay(in vec3 p, in vec3 n)
   return vec3(abs(p.x) < origin ? p.x + floatScale * n.x : p_i.x,  //
               abs(p.y) < origin ? p.y + floatScale * n.y : p_i.y,  //
               abs(p.z) < origin ? p.z + floatScale * n.z : p_i.z);
+}
+
+vec3 OffsetRayGbuffer(in vec3 p, in vec3 n, in float depth)
+{
+    const float intScale = 1024.0f * (1.0 + depth * 20000.0);
+    const float floatScale = 1.0f / 65536.0f;
+    const float origin = 1.0f / 32.0f;
+
+    ivec3 of_i = ivec3(intScale * n.x, intScale * n.y, intScale * n.z);
+
+    vec3 p_i = vec3(intBitsToFloat(floatBitsToInt(p.x) + ((p.x < 0) ? -of_i.x : of_i.x)),
+        intBitsToFloat(floatBitsToInt(p.y) + ((p.y < 0) ? -of_i.y : of_i.y)),
+        intBitsToFloat(floatBitsToInt(p.z) + ((p.z < 0) ? -of_i.z : of_i.z)));
+
+    return vec3(abs(p.x) < origin ? p.x + floatScale * n.x : p_i.x,  //
+        abs(p.y) < origin ? p.y + floatScale * n.y : p_i.y,  //
+        abs(p.z) < origin ? p.z + floatScale * n.z : p_i.z);
 }
 
 #endif  // RAYCOMMON_GLSL
