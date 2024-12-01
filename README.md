@@ -1,5 +1,7 @@
 # SurfelPlus Readme
 
+![logo](docs/img/logo.png)
+
 *University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project*
 
 This project is developed base on Nvidia's [vk_raytrace renderer](https://github.com/nvpro-samples/vk_raytrace/tree/master).
