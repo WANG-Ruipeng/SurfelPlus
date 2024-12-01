@@ -129,8 +129,6 @@ void main()
     // Direct lighting
     VisibilityContribution directLight = DirectLight(camRay, state);
 
-//    vec3 col = textureLod(texturesMap[nonuniformEXT(mat.pbrBaseColorTexture)], state.texCoord, 0).rgb;
-
     Ray ray = Ray(worldPos, directLight.lightDir);
     //ray.origin = OffsetRay(ray.origin, normal);
     ray.origin += 1e-4 * normal;
@@ -145,11 +143,6 @@ void main()
     float dist = distance(randLight.position, worldPos);
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
 
-//    fragColor.xyz = IntegerToColor(matIndex);
-//    fragColor.xyz = vec3(dot(state.normal, camRay.direction) <= 0.0 ? state.normal : -state.normal);
-    //fragColor.xyz = worldPos - attr0_world;
-//    fragColor.xyz = textureLod(environmentTexture, GetSphericalUv(normalize(worldPos - camPos)), 2).rgb;
-    //fragColor.xyz = hit ? vec3(0) : directLight.radiance;
     fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
 
     if(rtxState.debugging_mode != eNoDebug)
