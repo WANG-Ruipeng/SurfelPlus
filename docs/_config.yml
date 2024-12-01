@@ -4,4 +4,3 @@ plugins:
   - jekyll-remote-theme
 
 title: "SurfelPlus: A realtime global illumination renderer"
-description: "The project page of SurfelPlus"
