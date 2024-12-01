@@ -73,6 +73,13 @@ layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
 
+vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+
 void main()
 {
     uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
@@ -168,9 +175,14 @@ void main()
         }    
         else if (rtxState.debugging_mode == esNonUniformGrid){
             ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos);
-            vec3 cellPos = cellPos4.xyz;
-            int index = cellPos4.w;
-            fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898 + index, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
+            vec3 neighbourPos3 = cellPos4.xyz + vec3(0,-1,0);
+            ivec4 neighbourPos = ivec4(neighbourPos3, cellPos4.w);
+            uint flattenIndex = getFlattenCellIndexNonUniform(neighbourPos) + 1;
+            float hue = float(flattenIndex) * 0.618033988749895;
+            hue = fract(hue);
+            vec3 hsv = vec3(hue, 0.8, 0.9); 
+            fragColor.xyz = hsv2rgb(hsv);
+            //fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898 + index, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
         }    
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
