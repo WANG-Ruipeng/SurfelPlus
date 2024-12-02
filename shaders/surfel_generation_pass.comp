@@ -108,9 +108,9 @@ void main()
 
 	CellInfo cellInfo = cellBuffer[flattenIndex];
 	uint cellOffset = cellInfo.surfelOffset;
-	uint cellSurfelCount = cellInfo.surfelCount; 
+	uint cellSurfelCount = cellInfo.surfelCount;  
 
-	//if(cellOffset != 0 || cellSurfelCount!= 0) debugPrintfEXT("%d, %d\n", cellOffset, cellSurfelCount); 
+	//if(cellOffset != 0 || cellSurfelCount!= 0) debugPrintfEXT("%d, %d\n", cellOffset, cellSurfelCount);
 
 	for (uint i = 0; i < cellSurfelCount; i++)
 	{

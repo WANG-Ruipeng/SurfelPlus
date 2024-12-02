@@ -66,8 +66,8 @@ ivec4 getCellPosNonUniform(vec3 posW, vec3 cameraPosW)
 
     float s = main_axis_pos - half_d;
     int k = int(log(1 - n * s * (1 - p) / d) / log(p));
-    int u = int(other_axis_pos_1 * n * 0.5 / main_axis_pos);
-    int v = int(other_axis_pos_2 * n * 0.5 / main_axis_pos);
+    int u = int(ceil(other_axis_pos_1 * n * 0.5 / main_axis_pos));
+    int v = int(ceil(other_axis_pos_2 * n * 0.5 / main_axis_pos));
     return ivec4(k, u, v, region);
 }
 
@@ -221,11 +221,11 @@ bool isCellValid(ivec4 cellPos)
 
 float getSurfelMaxSize(float distance) {
     if (distance < d / 2.0) {
-		return d / float(n);
+		return d * 0.5f / float(n);
     }
     else {
 		float s = distance - d / 2.0;
         int k = int(log(1 - n * s * (1 - p) / d) / log(p));
-		return d / float(n) * pow(p, float(k));
+		return d * 0.5f / float(n) * pow(p, float(k));
     }
 }
