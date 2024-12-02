@@ -827,10 +827,8 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
 
     m_rtxState.size = { render_size.width, render_size.height };
-	RtxState rtxState = m_rtxState;
-    rtxState.size = { render_size.width / 2, render_size.height / 2 };
 
-	m_reflectionComputePass.setPushContants(rtxState);
+	m_reflectionComputePass.setPushContants(m_rtxState);
 
     m_reflectionComputePass.run(cmdBuf, render_size, profiler, { 
         m_accelStruct.getDescSet(), 

@@ -37,6 +37,8 @@ ShadowHitPayload shadow_payload;
 #include "traceray_rq.glsl"
 
 #include "pathtrace.glsl"
+#include "shaderUtils.glsl"
+#include "shaderUtil_grid.glsl"
 
 #define FIREFLIES 1
 
@@ -59,43 +61,48 @@ layout(local_size_x = 16, local_size_y = 16) in;
 //
 void main()
 {
-	ivec2 imageRes    = rtxState.size / 2;
+	ivec2 imageRes    = rtxState.size / 2.0;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
 	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
 
-	if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
+	if (imageCoords.x >= imageRes.x / 10.0 || imageCoords.y >= imageRes.y / 10.0)
 	{
 		return;
 	}
 
-//	uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
-//    uv *= 0.5f;
-//
-//    uint nodeID = primObjID >> 23;
-//    uint instanceID = sceneNodes[nodeID].primMesh;
-//    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
-//    uint primID = primObjID & 0x007FFFFF;
-//    InstanceData pinfo = geoInfo[instanceID];
-//
-//    // Primitive buffer addresses
-//    Indices  indices  = Indices(pinfo.indexAddress);
-//    Vertices vertices = Vertices(pinfo.vertexAddress);
-//
-//    // Indices of this triangle primitive.
-//    uvec3 tri = indices.i[primID];
-//
-//    // All vertex attributes of the triangle.
-//    VertexAttributes attr0 = vertices.v[tri.x];
-//    VertexAttributes attr1 = vertices.v[tri.y];
-//    VertexAttributes attr2 = vertices.v[tri.z];
-//
-//    // reconstruct world position from depth
-//    float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
-//    vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
-//
-//    // camera ray
-//    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
-//    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+    ivec2 gbufferCoords = ivec2(imageCoords * 2);
+	uint primObjID = texelFetch(gbufferPrim, gbufferCoords, 0).r;
 
-	imageStore(reflectionColor, imageCoords, vec4(1.f, 0, 0, 1.f));
+    uint nodeID = primObjID >> 23;
+    uint instanceID = sceneNodes[nodeID].primMesh;
+    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+    uint primID = primObjID & 0x007FFFFF;
+    InstanceData pinfo = geoInfo[instanceID];
+
+    // Primitive buffer addresses
+    Indices  indices  = Indices(pinfo.indexAddress);
+    Vertices vertices = Vertices(pinfo.vertexAddress);
+
+    // Indices of this triangle primitive.
+    uvec3 tri = indices.i[primID];
+
+    // All vertex attributes of the triangle.
+    VertexAttributes attr0 = vertices.v[tri.x];
+    VertexAttributes attr1 = vertices.v[tri.y];
+    VertexAttributes attr2 = vertices.v[tri.z];
+
+    // reconstruct world position from depth
+    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
+    vec3 worldPos = WorldPosFromDepth(uv, depth);
+
+    // camera ray
+    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+
+    // decompress normal
+    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, gbufferCoords, 0).r);
+
+    State state = GetState(primObjID, normal, depth, uv);
+
+	imageStore(reflectionColor, imageCoords, vec4(uv, 0, 1.f));
 }
