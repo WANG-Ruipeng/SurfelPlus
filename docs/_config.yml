@@ -4,5 +4,6 @@ plugins:
   - jekyll-remote-theme
 
 title: SurfelPlus
-description: A real time dynamic global illumination renderer.
-logo: docs/img/logo.png
+description: A real time dynamic global illumination renderer based on surfel. Final project of University of Pennsylvania's CIS 565 GPU Programming and Architecture class. Written by Zhen Ren, Ruipeng Wang and Jianxiang Wang.
+logo: /img/PennEngineeringLogo.png
+show_downloads: true
