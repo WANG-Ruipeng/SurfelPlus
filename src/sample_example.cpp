@@ -82,6 +82,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_cellToSurfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelRaytracePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelIntegratePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_reflectionComputePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -328,7 +329,9 @@ void SampleExample::createSurfelResources()
         m_scene.getDescLayout(),
 		}, & m_scene);
 
+    createReflectionPass();
 	createLightPass();
+	
 }
 
 void SampleExample::createGbufferPass()
@@ -339,9 +342,24 @@ void SampleExample::createGbufferPass()
 void SampleExample::createLightPass()
 {
 	m_lightPass.createFrameBuffer(m_size, m_offscreen.getOffscreenColorFormat(), m_queues[eGCT1]);
-	m_lightPass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
-        m_surfel.getGbufferImageDescLayout(), m_surfel.getIndirectLightDescLayout()}, & m_scene);
+	m_lightPass.create(m_size, { 
+        m_accelStruct.getDescLayout(), 
+        m_offscreen.getDescLayout(),
+        m_scene.getDescLayout(), 
+        m_descSetLayout,
+        m_surfel.getGbufferImageDescLayout(), 
+        m_surfel.getIndirectLightDescLayout(), 
+        m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
     m_lightPass.createLightPassDescriptorSet(m_offscreen.getDescLayout());
+}
+
+void SampleExample::createReflectionPass()
+{
+    m_reflectionComputePass.createReflectionPassDescriptorSet(m_size, m_queues[eGCT1]);
+
+    m_reflectionComputePass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
+        m_surfel.getGbufferImageDescLayout(), m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -789,4 +807,50 @@ void SampleExample::onMouseButton(int button, int action, int mods)
     m_descaling = false;
     resetFrame();
   }
+}
+
+void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler)
+{
+    if (m_busy)
+    {
+        m_gui->showBusyWindow();  // Busy while loading scene
+        return;
+    }
+
+    LABEL_SCOPE_VK(cmdBuf);
+
+    auto sec = profiler.timeRecurring("Surfel Calculate", cmdBuf);
+
+    VkExtent2D render_size = m_renderRegion.extent;
+    if (m_descaling)
+        render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
+
+    m_rtxState.size = { render_size.width, render_size.height };
+
+	m_reflectionComputePass.setPushContants(m_rtxState);
+
+    m_reflectionComputePass.run(cmdBuf, render_size, profiler, { 
+        m_accelStruct.getDescSet(), 
+        m_offscreen.getDescSet(), 
+        m_scene.getDescSet(), 
+        m_descSet,
+        m_surfel.getGbufferImageDescSet(), 
+        m_reflectionComputePass.getSamplerDescSet() });
+
+	std::vector<nvvk::Texture> textures = m_reflectionComputePass.getColorDirectionTextures();
+	std::vector< VkImageMemoryBarrier> barriers = {};
+    VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+    for (int i = 0; i < textures.size(); i++)
+    {
+        VkImageMemoryBarrier imageMemoryBarrier = {};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
+        imageMemoryBarrier.image = textures[i].image;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+		barriers.push_back(imageMemoryBarrier);
+    }
+
+    vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, static_cast<uint32_t>(barriers.size()), barriers.data());
 }
