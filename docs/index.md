@@ -125,7 +125,7 @@ For Milestone 2, we achieved significant advancements in our surfel-based GI sys
 
 | Diffuse | Surfel indirect |
 |-----------------|----------------|
-| ![image.png](/img/M2Demo1.png.png) | ![image.png](/img/M2Demo2.png) |
+| ![image.png](/img/M2Demo1.png) | ![image.png](/img/M2Demo2.png) |
 
 ### Milestone 3 & Final Goals
 
