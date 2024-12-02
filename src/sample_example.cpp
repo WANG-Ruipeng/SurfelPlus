@@ -570,7 +570,7 @@ void insertMemoryBarriers(const VkCommandBuffer& cmdBuf, std::vector<VkBuffer> b
             outbuffDependency = {};
             outbuffDependency.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             outbuffDependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            outbuffDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
             outbuffDependency.buffer = buffDependencies[i];
             outbuffDependency.size = VK_WHOLE_SIZE;
 			outbuffDependencies.push_back(outbuffDependency);

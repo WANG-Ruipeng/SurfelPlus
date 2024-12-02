@@ -144,13 +144,13 @@ void main()
 
 	Ray ray = Ray(surfelBuffer[surfelIndex].position, dirW);
 	//ray.origin = OffsetRay(ray.origin, N);
-    ray.origin += 1e-1f * N;
+    ray.origin += 0.05f * N;
 
     int maxDepth = isSleeping ? 4 : 2;
-    surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelRay.t);
+    surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelIndex, surfelRay.t);
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
-	//surfelRay.t = prd.hitT;
+
 
 	surfelRayBuffer[index] = surfelRay;
 

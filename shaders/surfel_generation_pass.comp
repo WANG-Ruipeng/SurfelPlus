@@ -163,8 +163,6 @@ void main()
 		indirectLighting = indirectContrib.xyz;
 	}
 
-	//imageStore(resultImage, imageCoords, vec4(hash3u1(texelFetch(primObjIDMap, imageCoords, 0).r), 1.f));
-	//imageStore(resultImage, imageCoords, vec4(normal * 0.5 + 0.5, 1.f));
 	if(rtxState.debugging_mode != eNoDebug)
 	{
 	    if (maxContributionSurfelIndex != 0xffffffff)
