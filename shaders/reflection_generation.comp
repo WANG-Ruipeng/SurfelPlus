@@ -1,0 +1,162 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+#extension GL_ARB_shader_clock : enable                 // Using clockARB
+#extension GL_EXT_shader_image_load_formatted : enable  // The folowing extension allow to pass images as function parameters
+
+#extension GL_NV_shader_sm_builtins : require     // Debug - gl_WarpIDNV, gl_SMIDNV
+#extension GL_ARB_gpu_shader_int64 : enable       // Debug - heatmap value
+#extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
+
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_debug_printf : enable
+#extension GL_KHR_vulkan_glsl : enable
+
+#include "host_device.h"
+
+layout(push_constant) uniform _RtxState
+{
+  RtxState rtxState;
+};
+
+
+
+#include "globals.glsl"
+
+PtPayload        prd;
+ShadowHitPayload shadow_payload;
+
+#include "layouts.glsl"
+#include "random.glsl"
+#include "common.glsl"
+#include "traceray_rq.glsl"
+
+#include "pathtrace.glsl"
+#include "shaderUtils.glsl"
+#include "shaderUtil_grid.glsl"
+
+#define FIREFLIES 1
+
+layout(set = 4, binding = 0) uniform usampler2D gbufferPrim;
+layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
+layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
+
+layout(set = 5, binding = 0) uniform image2D reflectionColor;
+layout(set = 5, binding = 1) uniform image2D reflectionDirection;
+
+
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+//
+//--------------------------------------------------------------------------------------------------
+//
+//
+void main()
+{
+	ivec2 imageRes    = rtxState.size / 2;
+	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
+
+	if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
+	{
+		return;
+	}
+
+    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.frame * rtxState.maxSamples);
+//    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, 114514 * rtxState.maxSamples);
+
+    ivec2 gbufferCoords = ivec2(imageCoords * 2);
+	uint primObjID = texelFetch(gbufferPrim, gbufferCoords, 0).r;
+
+    uint nodeID = primObjID >> 23;
+    uint instanceID = sceneNodes[nodeID].primMesh;
+    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+    uint primID = primObjID & 0x007FFFFF;
+    InstanceData pinfo = geoInfo[instanceID];
+
+    // Primitive buffer addresses
+    Indices  indices  = Indices(pinfo.indexAddress);
+    Vertices vertices = Vertices(pinfo.vertexAddress);
+
+    // Indices of this triangle primitive.
+    uvec3 tri = indices.i[primID];
+
+    // All vertex attributes of the triangle.
+    VertexAttributes attr0 = vertices.v[tri.x];
+    VertexAttributes attr1 = vertices.v[tri.y];
+    VertexAttributes attr2 = vertices.v[tri.z];
+
+    // reconstruct world position from depth
+    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
+    vec3 worldPos = WorldPosFromDepth(uv, depth);
+
+    // camera ray
+    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+
+    // decompress normal
+    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, gbufferCoords, 0).r);
+
+    // reflected direction and brdf
+    State state = GetState(primObjID, normal, depth, uv);
+    vec3 L;
+    float pdf;
+    vec3 brdf = Sample(state, camRay.direction, normal, L, pdf, prd.seed);
+
+    // reflection color
+    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(L));
+    ClosestHit(reflectedRay);
+
+    if(prd.hitT == INFINITY)
+    {
+        vec3 env;
+
+        if(_sunAndSky.in_use == 1)
+            env = sun_and_sky(_sunAndSky, reflectedRay.direction);
+        else
+        {
+            vec2 uv = GetSphericalUv(reflectedRay.direction);  // See sampling.glsl
+            env     = texture(environmentTexture, uv).rgb;
+        }
+
+	    imageStore(reflectionColor, imageCoords, vec4(vec3(env), depth));
+        imageStore(reflectionDirection, imageCoords, vec4(vec3(0), 1.f / pdf));
+    }
+    else
+    {
+        BsdfSampleRec bsdfSampleRec;
+
+        // Get Position, Normal, Tangents, Texture Coordinates, Color
+        ShadeState sstate = GetShadeState(prd);
+
+        State state;
+        state.position       = sstate.position;
+        state.normal         = sstate.normal;
+        state.tangent        = sstate.tangent_u[0];
+        state.bitangent      = sstate.tangent_v[0];
+        state.texCoord       = sstate.text_coords[0];
+        state.matID          = sstate.matIndex;
+        state.isEmitter      = false;
+        state.specularBounce = false;
+        state.isSubsurface   = false;
+        state.ffnormal       = dot(state.normal, reflectedRay.direction) <= 0.0 ? state.normal : -state.normal;
+
+        // Filling material structures
+        GetMaterialsAndTextures(state, reflectedRay);
+
+        // Color at vertices
+        state.mat.albedo *= sstate.color;
+
+        imageStore(reflectionColor, imageCoords, vec4(state.mat.albedo, depth));
+        imageStore(reflectionDirection, imageCoords, vec4(L, 1.f / pdf));
+    }
+
+}
