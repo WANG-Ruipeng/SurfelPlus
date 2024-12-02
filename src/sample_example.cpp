@@ -355,7 +355,7 @@ void SampleExample::createLightPass()
 
 void SampleExample::createReflectionPass()
 {
-    m_reflectionComputePass.createReflectionPassDescriptorSet({m_size.width / 2, m_size.height / 2}, m_queues[eGCT1]);
+    m_reflectionComputePass.createReflectionPassDescriptorSet(m_size, m_queues[eGCT1]);
 
     m_reflectionComputePass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
         m_surfel.getGbufferImageDescLayout(), m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
@@ -819,10 +819,9 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
 
     LABEL_SCOPE_VK(cmdBuf);
 
-    auto sec = profiler.timeRecurring("Reflection Compute", cmdBuf);
+    auto sec = profiler.timeRecurring("Surfel Calculate", cmdBuf);
 
     VkExtent2D render_size = m_renderRegion.extent;
-
     if (m_descaling)
         render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
 
