@@ -252,6 +252,8 @@ int main(int argc, char** argv)
 
         isfirstFrame = false;
 
+        // Run reflection pass
+        sample.computeReflection(cmdBuf, profiler);
 
 		// Run light pass
         {
@@ -259,10 +261,17 @@ int main(int argc, char** argv)
             sample.m_lightPass.beginRenderPass(cmdBuf, sample.getSize());
             sample.m_lightPass.setPushContants(sample.m_rtxState);
             sample.m_lightPass.run(cmdBuf, sample.getRenderRegion().extent, profiler,
-                { sample.m_accelStruct.getDescSet(), sample.m_offscreen.getDescSet(), sample.m_scene.getDescSet(), sample.m_descSet,
-                sample.m_surfel.getGbufferImageDescSet(), sample.m_surfel.getIndirectLightDescSet() });
+                { sample.m_accelStruct.getDescSet(), 
+                sample.m_offscreen.getDescSet(), 
+                sample.m_scene.getDescSet(), 
+                sample.m_descSet,
+                sample.m_surfel.getGbufferImageDescSet(), 
+                sample.m_surfel.getIndirectLightDescSet(), 
+                sample.m_reflectionComputePass.getSamplerDescSet() });
             sample.m_lightPass.endRenderPass(cmdBuf);
         }
+
+        
 	}
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI

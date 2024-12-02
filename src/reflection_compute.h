@@ -33,7 +33,12 @@ public:
     const std::string name();
     void          setPushContants(const RtxState& state) { m_state = state; }
 
-	void createReflectionPassDescriptorSet(const VkExtent2D& size, const size_t frameBufferCnt, VkRenderPass renderPass);
+	void createReflectionPassDescriptorSet(const VkExtent2D& size, nvvk::Queue queue);
+
+    // getters
+	VkDescriptorSetLayout getSamplerDescSetLayout() { return m_samplerDescSetLayout; }
+	VkDescriptorSet getSamplerDescSet() { return m_samplerDescSet; }
+    std::vector<nvvk::Texture> getColorDirectionTextures() { return m_images; }
 
 private:
     // Setup
@@ -41,7 +46,6 @@ private:
     nvvk::DebugUtil          m_debug;            // Utility to name objects
     VkDevice                 m_device{ VK_NULL_HANDLE };
     uint32_t                 m_queueIndex{ 0 };
-    std::vector<nvvk::Queue> m_queues;
 
     VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
     VkPipeline       m_pipeline{ VK_NULL_HANDLE };
@@ -50,5 +54,7 @@ private:
     VkDescriptorSet  m_descSet{ VK_NULL_HANDLE };
     std::vector<nvvk::Texture> m_images;
     VkDescriptorSetLayout	   m_samplerDescSetLayout{ VK_NULL_HANDLE };
+    VkDescriptorSet			   m_samplerDescSet{ VK_NULL_HANDLE };
+    std::vector<VkFramebuffer> m_frameBuffers;
 };
 

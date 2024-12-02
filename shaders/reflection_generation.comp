@@ -25,6 +25,7 @@ layout(push_constant) uniform _RtxState
 };
 
 
+
 #include "globals.glsl"
 
 PtPayload        prd;
@@ -36,22 +37,36 @@ ShadowHitPayload shadow_payload;
 #include "traceray_rq.glsl"
 
 #include "pathtrace.glsl"
-#include "shaderUtils.glsl"
-#include "shaderUtil_grid.glsl"
 
 #define FIREFLIES 1
-
-layout(location = 0) in vec2 uvCoords;
-layout(location = 0) out vec4 fragColor;
 
 layout(set = 4, binding = 0) uniform usampler2D gbufferPrim;
 layout(set = 4, binding = 1) uniform usampler2D gbufferNormal;
 layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
-// Compute input
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(set = 5, binding = 0) uniform image2D reflectionColor;
+layout(set = 5, binding = 1) uniform image2D reflectionDirection;
 
+
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+layout(local_size_x = 8, local_size_y = 8) in;
+
+
+//
+//--------------------------------------------------------------------------------------------------
+//
+//
 void main()
 {
+	ivec2 imageRes    = rtxState.size / 2;
+	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
 
+	if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
+	{
+		return;
+	}
+
+	imageStore(reflectionColor, imageCoords, vec4(1.f, 0, 0, 1.f));
 }
