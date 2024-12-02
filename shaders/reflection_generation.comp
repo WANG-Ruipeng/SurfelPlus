@@ -112,7 +112,7 @@ void main()
     vec3 brdf = Sample(state, camRay.direction, normal, L, pdf, prd.seed);
 
     // reflection color
-    Ray reflectedRay = Ray(worldPos, normalize(L));
+    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(L));
     ClosestHit(reflectedRay);
 
     if(prd.hitT == INFINITY)
@@ -158,4 +158,5 @@ void main()
         imageStore(reflectionColor, imageCoords, vec4(state.mat.albedo, depth));
         imageStore(reflectionDirection, imageCoords, vec4(L, 1.f / pdf));
     }
+
 }
