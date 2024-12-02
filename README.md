@@ -2,7 +2,7 @@
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project.**
 
-*A project by Zhen Ren, Ruipeng Wang and Jianxiang Wang*
+*A project by Zhen Ren, Ruipeng Wang and Jinxiang Wang*
 
 This project is developed base on Nvidia's [vk_raytrace renderer](https://github.com/nvpro-samples/vk_raytrace/tree/master).
 
