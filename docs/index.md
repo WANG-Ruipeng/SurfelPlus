@@ -1,6 +1,7 @@
 # SurfelPlus Project Page
 
 ![DemoImage.png](/img/DemoImage.png)
+![DemoImage.png](/img/logo.png)
 
 # Introduction
 
@@ -14,7 +15,7 @@
 
 Surfels, short for "surface elements," are point-like primitives that represent the surface of a 3D object. Each surfel stores key information, including position, normal, color, and other material properties, enabling efficient computation of light interactions in a scene. 
 
-![image.png](/img/image.png)
+![image.png](/img/surfel.png)
 
 In global illumination, surfels serve as intermediaries for light propagation and reflection, balancing accuracy and computational cost.
 
@@ -24,7 +25,7 @@ In global illumination, surfels serve as intermediaries for light propagation an
     
     Indirect lighting is computed by storing and sharing light energy across surfels. This approach captures diffuse inter-reflections and supports dynamic scenes without requiring precomputed data, making it well-suited for interactive applications.
     
-    ![image.png](/img/image%201.png)
+    ![image.png](/img/surfelIndirect.png)
     
 2. **Lighting Integration**
     
@@ -37,7 +38,7 @@ In global illumination, surfels serve as intermediaries for light propagation an
 4. **Grid-based surfel acceleration structure**
 A grid-based surfel acceleration structure organizes surfels into spatial cells for fast neighbor queries and updates. This method enables efficient surfel-to-surfel interactions and scalable indirect lighting computations.
     
-    ![image.png](/img/image%202.png)
+    ![image.png](/img/Grid-Based.png)
     
 
 ### Advantages of Surfel-Based GI
@@ -50,7 +51,7 @@ A grid-based surfel acceleration structure organizes surfels into spatial cells 
 
 ## Milestone 1
 
-[Click here for the original PDF.](/files/SurfelPlus%20Milestone%201.pdf)
+[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone1.pdf)
 
 For our first milestone, we made significant progress in setting up the foundation of our renderer:
 
@@ -75,13 +76,13 @@ This milestone established a solid groundwork for our surfel-based GI system.
 - **Direct Lighting Pass**: Computes direct lighting effects.
 - **Post-Processing Pass**: Applies post-processing effects to the final image.
 
-![image.png](/img/image%203.png)
+![image.png](/img/M1Passes.png)
 
 ### Demo
 
 | Surfel Generation | Visibility Buffer | Normal Buffer |
 |-----------------|----------------|----------------|
-| ![image.png](/img/image%204.png) | ![image.png](/img/image%205.png) | ![image.png](/img/image%206.png) |
+| ![image.png](/img/M1Demo1.png) | ![image.png](/img/M1Demo2.png) | ![image.png](/img/M1Demo3.png) |
 
 ### Milestone 2 Goals
 
@@ -96,7 +97,7 @@ These improvements aim to advance the overall efficiency and realism of our rend
 
 ## Milestone 2
 
-[Click here for the original PDF.](/files/SurfelPlus%20Milestone%202.pdf)
+[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone2.pdf)
 
 For Milestone 2, we achieved significant advancements in our surfel-based GI system:
 
@@ -118,13 +119,13 @@ For Milestone 2, we achieved significant advancements in our surfel-based GI sys
     - Surfel Update/Recycle
 - **Integration pass for collecting all surfel information**
 
-![image.png](/img/image%207.png)
+![image.png](/img/M2Passes.png)
 
 ### Demo
 
 | Diffuse | Surfel indirect |
 |-----------------|----------------|
-| ![image.png](/img/image%208.png) | ![image.png](/img/image%209.png) |
+| ![image.png](/img/M2Demo1.png.png) | ![image.png](/img/M2Demo2.png) |
 
 ### Milestone 3 & Final Goals
 
@@ -138,7 +139,7 @@ Looking ahead to Milestone 3 and the final stage of the project, our goals inclu
 
 ## Milestone 3
 
-[Click here for the original PDF.](/files/SurfelPlus%20Milestone%203.pdf)
+[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone3.pdf)
 
 For Milestone 3, we addressed key issues identified in Milestone 2 and implemented significant improvements:
 
@@ -150,7 +151,7 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 ### Milestone 3 Improvements:
 
 - **Better Surfelization & Tracing**: Enhanced surfel generation and tracing algorithms to improve accuracy and reduce artifacts.
-- **Higher Resolution & Improved Performance**: Increased rendering resolution from 1080x720 to 2560x1440 while achieving over 120 FPS for smoother performance.
+- **Higher Resolution & Improved Performance**: Increased rendering resolution from **1080x720** to **2560x1440** while keeping over 120 FPS for smoother performance.
 - **Non-Uniform Acceleration Structure**: Replaced the uniform grid with a non-uniform structure for more efficient surfel queries and better scalability.
 - **Improved Stability**:
     - Render pipeline synchronization to prevent flickering and inconsistencies.
@@ -165,7 +166,7 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 
 | Before Milestone 3 | After Milestone 3 |
 |-----------------|----------------|
-| ![image.png](/img/image%2010.png) | ![image.png](/img/image%2011.png) |
+| ![image.png](/img/M3Demo1.png) | ![image.png](/img/M3Demo2.png) |
 
 
 ### Goals for Milestone 3 & Final:
