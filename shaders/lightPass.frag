@@ -73,8 +73,8 @@ layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
 
-layout(set = 6, binding = 3) uniform sampler2D reflectionColor;
-layout(set = 6, binding = 4) uniform sampler2D reflectionDirection;
+layout(set = 6, binding = 2) uniform sampler2D reflectionColor;
+layout(set = 6, binding = 3) uniform sampler2D reflectionDirection;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -186,6 +186,6 @@ void main()
             fragColor.xyz = indirectLight;
     }
 
-//    fragColor.xyz = texture(reflectionColor, uv).rgb;
+    fragColor.xyz = texture(reflectionColor, uv).rgb;
     fragColor.a = 1.0;
 }

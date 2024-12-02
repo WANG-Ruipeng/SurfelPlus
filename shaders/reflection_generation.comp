@@ -50,7 +50,7 @@ layout(set = 5, binding = 1) uniform image2D reflectionDirection;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
 
 //
@@ -67,6 +67,35 @@ void main()
 	{
 		return;
 	}
+
+//	uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
+//    uv *= 0.5f;
+//
+//    uint nodeID = primObjID >> 23;
+//    uint instanceID = sceneNodes[nodeID].primMesh;
+//    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+//    uint primID = primObjID & 0x007FFFFF;
+//    InstanceData pinfo = geoInfo[instanceID];
+//
+//    // Primitive buffer addresses
+//    Indices  indices  = Indices(pinfo.indexAddress);
+//    Vertices vertices = Vertices(pinfo.vertexAddress);
+//
+//    // Indices of this triangle primitive.
+//    uvec3 tri = indices.i[primID];
+//
+//    // All vertex attributes of the triangle.
+//    VertexAttributes attr0 = vertices.v[tri.x];
+//    VertexAttributes attr1 = vertices.v[tri.y];
+//    VertexAttributes attr2 = vertices.v[tri.z];
+//
+//    // reconstruct world position from depth
+//    float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
+//    vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
+//
+//    // camera ray
+//    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+//    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
 
 	imageStore(reflectionColor, imageCoords, vec4(1.f, 0, 0, 1.f));
 }
