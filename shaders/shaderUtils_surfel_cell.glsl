@@ -142,7 +142,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     float maxContribution = 0.f;
     uint maxContributionSleepingSurfelIndex = 0xffffffff;
 
-    const uint searchRange = min(32, cellInfo.surfelCount);
+    const uint searchRange = min(16, cellInfo.surfelCount);
 	uint searchCnt = 0;
 
     for (uint i = 0; i < cellInfo.surfelCount; i++)
@@ -201,14 +201,14 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 
     }
 
-	if (irradiance.w > 0.f)
+	if (irradiance.w > 0.1f)
 	{
 		irradiance /= irradiance.w;
 	}
 
-    uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
-        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
-
+    //uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
+    //    uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
+    //
     // spawn sleeping surfel if coverage is low.
     //if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
     //    coverage < 1.f && cellInfo.surfelCount < 32)
@@ -398,7 +398,7 @@ vec3 surfelPathTrace(Ray r, int maxDepth, inout float firstDepth)
 		bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
 		if (rst)
 		{
-			radiance += irradiance.xyz * throughput;
+			//radiance += irradiance.xyz * throughput;
 		}
     }
 

@@ -255,7 +255,6 @@ void main()
 //                clamp(length(surfel.msmeData.variance) * 20.f, 0.4f, 1.0f)
 //                //0.8f
 //            );
-//            MSME(mean, surfel.msmeData, 0.12);
         }
 
     }
@@ -269,7 +268,7 @@ void main()
 
     //vec3 mean = MSME(totalRadiance, surfel.msmeData, 0.04);
 
-    surfelBuffer[surfelIndex].radiance = surfel.msmeData.mean;
+    //surfelBuffer[surfelIndex].radiance = surfel.msmeData.mean;
     surfelBuffer[surfelIndex].msmeData = surfel.msmeData;
     
 }
