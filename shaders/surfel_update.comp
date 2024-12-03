@@ -165,7 +165,7 @@ void main()
 		}
 
 		if (lastSeen) newRadius = mix(surfel.radius, newRadius, 0.1f);
-		newRadius = max(newRadius, surfelMaxSize * 0.1f);
+		newRadius = max(newRadius, surfelMaxSize * surfelMinSizeRatio);
 		float radDiff = abs(surfel.radius - newRadius);
 		surfel.msmeData.variance *= 1.0 + radDiff * 10.0;
 

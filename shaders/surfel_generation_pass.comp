@@ -114,7 +114,7 @@ void main()
 
 	for (uint i = 0; i < cellSurfelCount; i++)
 	{
-		//uint surfelIndex = surfelAlive[i];
+
 		uint surfelIndex = cellToSurfel[cellOffset + i];
 		Surfel surfel = surfelBuffer[surfelIndex];
 		vec3 bias = surfel.position - worldPos;
@@ -153,6 +153,7 @@ void main()
 			    contribution *= pow(1.f - dist / surfel.radius, 2.0);
 				indirectContrib += vec4(surfel.radiance, 1.f) * contribution * smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
 			}
+
 		}
 		
 	}
@@ -262,7 +263,7 @@ void main()
 			float surfelToCameraDistance = distance(worldPos, getCameraPosition(sceneCamera));
 			float surfelMaxSize = getSurfelMaxSize(surfelToCameraDistance);
 			newSurfel.radius = min(calcSurfelRadius(surfelToCameraDistance, sceneCamera.fov, vec2(rtxState.size)), surfelMaxSize);
-			newSurfel.radius = max(newSurfel.radius, surfelMaxSize * 0.1f);
+			newSurfel.radius = max(newSurfel.radius, surfelMaxSize * surfelMinSizeRatio);
 
 
 

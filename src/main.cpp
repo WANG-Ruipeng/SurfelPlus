@@ -206,6 +206,11 @@ int main(int argc, char** argv)
   profiler.init(vkctx.m_device, vkctx.m_physicalDevice, vkctx.m_queueGCT.familyIndex);
   profiler.setLabelUsage(true);  // depends on VK_EXT_debug_utils
 
+  // Used for Live Demo
+  // Press any keys to continue the program
+  //char ProgramStart;
+  //std::cin >> ProgramStart;
+
   bool isfirstFrame = true;
   // Main loop
   while(glfwWindowShouldClose(window) == GLFW_FALSE)

@@ -202,6 +202,7 @@ struct CellCounter
 //Uniform grid
 const float surfelSize = 1.5f;
 const float cellSize = 2.0f;
+const float surfelMinSizeRatio = 0.15f;
 const uint kCellDimension = 64u;
 const uint kCellCount = kCellDimension * kCellDimension * kCellDimension;
 const uint kMaxLife = 1200u;
@@ -209,7 +210,7 @@ const uint kMaxSurfelCount = 150000u;
 const uint kMaxRayCount = kMaxSurfelCount * 64;
 
 //Non-uniform frustum
-const float d = 128.0;     // Size of the uniform cube
+const float d = 96.0;     // Size of the uniform cube
 const int n = 64; // Split count of the uniform cube & non-unifrom frustum 
 const float p = 1.3; // Split ratio of the non-uniform frustum
 const int m = 16; // Layers of the non-uniform frustum
