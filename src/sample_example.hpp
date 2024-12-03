@@ -77,6 +77,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "imgui_internal.h"
 #include "queue.hpp"
 #include "lightPass.h"
+#include "reflection_compute.h"
 
 class SampleGUI;
 
@@ -134,6 +135,7 @@ public:
   void createSurfelResources();
   void createGbufferPass();
   void createLightPass();
+  void createReflectionPass();
 
   Scene              m_scene;
   SurfelGI           m_surfel;
@@ -152,6 +154,9 @@ public:
   CellToSurfelUpdatePass m_cellToSurfelUpdatePass;
   SurfelRaytracePass m_surfelRaytracePass;
   SurfelIntegratePass m_surfelIntegratePass;
+
+  // reflection compute passes
+  ReflectionComputePass m_reflectionComputePass;
 
   // light pass
   LightPass m_lightPass;
@@ -191,7 +196,7 @@ public:
   void renderScene(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
 
   void calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
-
+  void computeReflection(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
 
   RtxState m_rtxState{
       0,       // frame;
