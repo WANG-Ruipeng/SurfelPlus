@@ -641,7 +641,8 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 		m_surfel.getSurfelBuffersDescSet(), m_surfel.getSurfelDataMapsDescSet(), m_surfel.getCellBufferDescSet(), m_scene.getDescSet()
 		});
 
-    insertMemoryBarriers(cmdBuf, { m_surfel.getSurfelBuffer().buffer});
+    insertMemoryBarriers(cmdBuf, { m_surfel.getCellInfoBuffer().buffer, m_surfel.getCellToSurfelBuffer().buffer,
+        m_surfel.getSurfelBuffer().buffer, m_surfel.getSurfelCounterBuffer().buffer });
 
     m_surfelGenerationPass.run(cmdBuf, render_size, profiler, {
         m_surfel.getSurfelBuffersDescSet(),
