@@ -106,6 +106,7 @@ bool isSurfelIntersectCellNonUniform(Surfel surfel, ivec4 cellPos, vec3 cameraPo
     vec3 maxPos;
     float half_d = d / 2.0;
     float delta = d / float(n);
+	int half_n = n / 2;
 
     if (region == 0)
     {
@@ -132,28 +133,72 @@ bool isSurfelIntersectCellNonUniform(Surfel surfel, ivec4 cellPos, vec3 cameraPo
         int u = cellPos.y;
         int v = cellPos.z;
 
+        if (u < half_n) u = u - half_n;
+		else u = u - half_n + 1;
+
+        if (v < half_n) v = v - half_n;
+        else v = v - half_n + 1;
+
         // Compute s0 and s1
         float s0 = delta * (1.0 - pow(p, float(k))) / (1.0 - p);
         float s1 = delta * (1.0 - pow(p, float(k + 1))) / (1.0 - p);
 
-        float main_axis_min = half_d + s0;
-        float main_axis_max = half_d + s1;
-        float kCoefficient = 1.0;
+        float main_axis_min;
+        float main_axis_max;
+
         if (region % 2 == 0) // Negative direction
         {
             main_axis_min = -(half_d + s1);
             main_axis_max = -(half_d + s0);
-			kCoefficient = -1.0;
+        }
+		else { // Positive direction
+			main_axis_min = half_d + s0;
+			main_axis_max = half_d + s1;
         }
 
-        float main_axis_length = main_axis_max - main_axis_min;
+        // Other axis 1
+        float other_axis_a_1 = 0.0f;
+        float other_axis_b_1 = 0.0f;
+        float other_axis_c_1 = 0.0f;
+        float other_axis_d_1 = 0.0f;
+        if (u > 0) {
+            other_axis_a_1 =  2.0 * (u - 1) / n * (half_d + main_axis_min);
+            other_axis_b_1 =  2.0 * u / n * (half_d + main_axis_max);
+            other_axis_c_1 = 2.0 * (u - 1) / n * (half_d + main_axis_max);
+            other_axis_d_1 = 2.0 * u / n * (half_d + main_axis_min);
+        }
+        else {
+            other_axis_a_1 = 2.0 * (u + 1) / n * (half_d + main_axis_min);
+            other_axis_b_1 = 2.0 * u / n * (half_d + main_axis_max);
+            other_axis_c_1 = 2.0 * (u + 1) / n * (half_d + main_axis_max);
+            other_axis_d_1 = 2.0 * u / n * (half_d + main_axis_min);
+        }
 
-        // Other axes
-        float other_axis_min_1 = kCoefficient * 2.0 * u / n * (half_d + main_axis_min);
-        float other_axis_max_1 = kCoefficient * 2.0 * (u + kCoefficient * 1.0) / n * (half_d + main_axis_max);
+        float other_axis_min_1 = min(min(other_axis_a_1, other_axis_b_1), min(other_axis_c_1, other_axis_d_1));
+        float other_axis_max_1 = max(max(other_axis_a_1, other_axis_b_1), max(other_axis_c_1, other_axis_d_1));
 
-        float other_axis_min_2 = kCoefficient * 2.0 * v / n * (half_d + main_axis_min);
-        float other_axis_max_2 = kCoefficient * 2.0 * (v + kCoefficient * 1.0) / n * (half_d + main_axis_max);
+        // Other axis 2
+        float other_axis_a_2 = 0.0f;
+        float other_axis_b_2 = 0.0f;
+        float other_axis_c_2 = 0.0f;
+        float other_axis_d_2 = 0.0f;
+
+        if (v > 0) {
+            other_axis_a_2 = 2.0 * (v - 1) / n * (half_d + main_axis_min);
+            other_axis_b_2 = 2.0 * v / n * (half_d + main_axis_max);
+            other_axis_c_2 = 2.0 * (v - 1) / n * (half_d + main_axis_max);
+            other_axis_d_2 = 2.0 * v / n * (half_d + main_axis_min);
+        }
+        else {
+            other_axis_a_2 = 2.0 * (v + 1) / n * (half_d + main_axis_min);
+            other_axis_b_2 = 2.0 * v / n * (half_d + main_axis_max);
+            other_axis_c_2 = 2.0 * (v + 1) / n * (half_d + main_axis_max);
+            other_axis_d_2 = 2.0 * v / n * (half_d + main_axis_min);
+        }
+
+        // Calculate min and max for Other axis 2
+        float other_axis_min_2 = min(min(other_axis_a_2, other_axis_b_2), min(other_axis_c_2, other_axis_d_2));
+        float other_axis_max_2 = max(max(other_axis_a_2, other_axis_b_2), max(other_axis_c_2, other_axis_d_2));
 
         // Assign minPos and maxPos based on region
         if (region == 1 || region == 2) // X-axis frustums
@@ -192,7 +237,8 @@ bool isSurfelIntersectCellNonUniform(Surfel surfel, ivec4 cellPos, vec3 cameraPo
     // AABB-Sphere intersection test
     vec3 closestPoint = clamp(surfel.position, minPos, maxPos);
     float distanceSquared = dot(closestPoint - surfel.position, closestPoint - surfel.position);
-    return distanceSquared <= surfel.radius * surfel.radius;
+    //return distanceSquared <= surfel.radius * surfel.radius;
+    return true;
 }
 
 bool isCellValid(ivec4 cellPos)
