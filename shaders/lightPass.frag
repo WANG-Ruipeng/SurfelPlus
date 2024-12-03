@@ -182,7 +182,7 @@ void main()
     }
 
     // Reflection
-    uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(reflectionColor,0)) * 0.5;
-    fragColor.xyz = texture(reflectionColor, uv).rgb;
-    fragColor.a = 1.0;
+    //uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(reflectionColor,0)) * 0.5;
+    //fragColor.xyz = texture(reflectionColor, uv).rgb;
+    //fragColor.a = 1.0;
 }
