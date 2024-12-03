@@ -171,10 +171,18 @@ void main()
         }    
         else if (rtxState.debugging_mode == esNonUniformGrid) {
             ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos); 
-            vec3 normalizedPos = vec3(cellPos4.xyz) / float(n);
-            fragColor.xyz = clamp(normalizedPos, 0.0, 1.0); 
+            uint index = getFlattenCellIndexNonUniform(cellPos4);
+            if (index > n*n*n + 3*m*n*n) {
+                fragColor.xyz = vec3(0.0);
+            } 
+            else if (cellPos4.w == 0){
+                fragColor.a = 0.0f;
+            }
+            else {
+                vec3 normalizedPos = vec3(cellPos4.xyz) / float(n); 
+                fragColor.xyz = clamp(normalizedPos, 0.0, 1.0); 
+            }
         }
-
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
         else

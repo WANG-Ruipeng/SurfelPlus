@@ -210,8 +210,10 @@ const uint kMaxSurfelCount = 150000u;
 const uint kMaxRayCount = kMaxSurfelCount * 64;
 
 //Non-uniform frustum
-const float d = 96.0;     // Size of the uniform cube
-const int n = 64; // Split count of the uniform cube & non-unifrom frustum 
+//const float d = 96.0;     // Size of the uniform cube
+//const int n = 64; // Split count of the uniform cube & non-unifrom frustum, must be even
+const float d = 16.0; 
+const int n = 16; 
 const float p = 1.3; // Split ratio of the non-uniform frustum
 const int m = 16; // Layers of the non-uniform frustum
 

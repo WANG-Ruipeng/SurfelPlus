@@ -24,6 +24,7 @@ ivec4 getCellPosNonUniform(vec3 posW, vec3 cameraPosW)
     // Determine region
     int region = 0;
     float half_d = d / 2.0;
+	int half_n = n / 2;
     if (abs(posC.x) <= half_d && abs(posC.y) <= half_d && abs(posC.z) <= half_d)
     {
         // Inside the cube
@@ -64,10 +65,14 @@ ivec4 getCellPosNonUniform(vec3 posW, vec3 cameraPosW)
         main_axis_pos = posC.z;
     }
 
-    float s = main_axis_pos - half_d;
+    float s = abs(main_axis_pos) - half_d;
     int k = int(log(1 - n * s * (1 - p) / d) / log(p));
-    int u = int(ceil(other_axis_pos_1 * n * 0.5 / main_axis_pos));
-    int v = int(ceil(other_axis_pos_2 * n * 0.5 / main_axis_pos));
+    int u = int(ceil(other_axis_pos_1 * n * 0.5 / main_axis_pos)) + half_n;
+    int v = int(ceil(other_axis_pos_2 * n * 0.5 / main_axis_pos)) + half_n;
+
+    if (u > 0) u--;
+	if (v > 0) v--;
+
     return ivec4(k, u, v, region);
 }
 
