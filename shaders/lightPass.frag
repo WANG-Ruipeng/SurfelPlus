@@ -171,17 +171,16 @@ void main()
             fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
         }    
         else if (rtxState.debugging_mode == esNonUniformGrid) {
-            ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos); 
+            ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos);
             uint index = getFlattenCellIndexNonUniform(cellPos4);
-            if (index > n*n*n + 3*m*n*n) {
-                fragColor.xyz = vec3(0.0);
-            } 
-            else if (cellPos4.w == 0){
+            if (cellPos4.w == 0){
                 fragColor.a = 0.0f;
             }
-            else {
+            else if(index < n*n*n + 6*m*n*n || index > 0) {
                 vec3 normalizedPos = vec3(cellPos4.xyz) / float(n); 
                 fragColor.xyz = clamp(normalizedPos, 0.0, 1.0); 
+            }else{
+                fragColor.xyz = vec3(1.0, 0.0, 0.0);
             }
         }
         else if (rtxState.debugging_mode == esEmissive)
