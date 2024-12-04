@@ -9,7 +9,7 @@
 #include "nvvk/commands_vk.hpp"
 #include "shaders/host_device.h"
 
-#include "autogen/spatial_filter.comp.h"
+#include "autogen/temporal_spatial_pass.comp.h"
 
 void TemporalSpatialPass::setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator)
 {
@@ -62,7 +62,7 @@ void TemporalSpatialPass::create(const VkExtent2D& fullSize, const std::vector<V
 	VkComputePipelineCreateInfo computePipelineCreateInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
 	computePipelineCreateInfo.layout = m_pipelineLayout;
 	computePipelineCreateInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, spatial_filter_comp, sizeof(spatial_filter_comp));
+	computePipelineCreateInfo.stage.module = nvvk::createShaderModule(m_device, temporal_spatial_pass_comp, sizeof(temporal_spatial_pass_comp));
 	computePipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 	computePipelineCreateInfo.stage.pName = "main";
 

@@ -242,4 +242,5 @@ public:
 
 
   std::shared_ptr<SampleGUI> m_gui;
+
 };

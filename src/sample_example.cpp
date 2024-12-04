@@ -365,12 +365,8 @@ void SampleExample::createReflectionPass()
         m_descSetLayout,
         m_surfel.getGbufferImageDescLayout(), 
         m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
+
     m_temporalSpatialPass.create(m_size, { 
-        m_accelStruct.getDescLayout(), 
-        m_offscreen.getDescLayout(), 
-        m_scene.getDescLayout(), 
-        m_descSetLayout,
-        m_surfel.getGbufferImageDescLayout(), 
         m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
 }
 
@@ -843,6 +839,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
 	m_reflectionComputePass.setPushContants(m_rtxState);
 	m_temporalSpatialPass.setPushContants(m_rtxState);
 
+
     m_reflectionComputePass.run(cmdBuf, render_size, profiler, { 
         m_accelStruct.getDescSet(), 
         m_offscreen.getDescSet(), 
@@ -851,38 +848,8 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getGbufferImageDescSet(), 
         m_reflectionComputePass.getSamplerDescSet() });
 
-    /*
-    VkImageMemoryBarrier imageBarriers[3] = {};
-    for (int i = 0; i < 3; i++) {
-        imageBarriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageBarriers[i].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        imageBarriers[i].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        imageBarriers[i].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-        imageBarriers[i].newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        imageBarriers[i].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    }
-
-    imageBarriers[0].image = m_reflectionComputePass.getColorDirectionTextures()[0].image;  // reflectionColor
-    imageBarriers[1].image = m_reflectionComputePass.getColorDirectionTextures()[1].image;  // reflectionDirection
-    imageBarriers[2].image = m_reflectionComputePass.getColorDirectionTextures()[2].image;  // reflectionPointBrdf
-
-    vkCmdPipelineBarrier(
-        cmdBuf,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,       
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,        
-        0,
-        0, nullptr,                                 
-        0, nullptr,                                  
-        3, imageBarriers                            
-    );
-    */
 
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
-        m_accelStruct.getDescSet(),
-        m_offscreen.getDescSet(),
-        m_scene.getDescSet(),
-        m_descSet,
-        m_surfel.getGbufferImageDescSet(),
         m_reflectionComputePass.getSamplerDescSet()
         });
 
@@ -894,8 +861,12 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     {
         VkImageMemoryBarrier imageMemoryBarrier = {};
         imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
         imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
+        imageMemoryBarrier.srcQueueFamilyIndex = m_queues[eGCT0].familyIndex;
+		imageMemoryBarrier.dstQueueFamilyIndex = m_queues[eGCT0].familyIndex;
         imageMemoryBarrier.image = textures[i].image;
         imageMemoryBarrier.subresourceRange = subresourceRange;
 		barriers.push_back(imageMemoryBarrier);
