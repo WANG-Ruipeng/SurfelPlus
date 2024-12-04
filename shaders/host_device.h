@@ -118,7 +118,8 @@ esRoughness = 10,
 esTexcoord = 11,
 esTangent = 12,
 esUniformGrid = 13,
-esNonUniformGrid = 14
+esNonUniformGrid = 14,
+esReflectionBrdf = 15
 END_ENUM();
 
 // Surfel data
@@ -205,13 +206,15 @@ const float cellSize = 2.0f;
 const float surfelMinSizeRatio = 0.15f;
 const uint kCellDimension = 64u;
 const uint kCellCount = kCellDimension * kCellDimension * kCellDimension;
+
+// Sufel
 const uint kMaxLife = 1200u;
 const uint kMaxSurfelCount = 150000u;
 const uint kMaxRayCount = kMaxSurfelCount * 64;
 
 //Non-uniform frustum
 const float d = 96.0;     // Size of the uniform cube
-const int n = 64; // Split count of the uniform cube & non-unifrom frustum 
+const int n = 64; // Split count of the uniform cube & non-unifrom frustum, must be even
 const float p = 1.3; // Split ratio of the non-uniform frustum
 const int m = 16; // Layers of the non-uniform frustum
 

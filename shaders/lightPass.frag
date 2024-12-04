@@ -73,8 +73,10 @@ layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 layout(set = 5, binding = eSampler)	uniform sampler2D indirectLightMap;
 
-layout(set = 6, binding = 2) uniform sampler2D reflectionColor;
-layout(set = 6, binding = 3) uniform sampler2D reflectionDirection;
+layout(set = 6, binding = 4) uniform sampler2D reflectionColor;
+layout(set = 6, binding = 5) uniform sampler2D reflectionDirection;
+layout(set = 6, binding = 6) uniform sampler2D reflectionPointBrdf;
+layout(set = 6, binding = 7) uniform sampler2D filteredReflectionColor;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -170,19 +172,27 @@ void main()
             fragColor.xyz = fract(sin(dot(cellPos, vec3(12.9898, 78.233, 45.164))) * vec3(43758.5453, 28001.8384, 50849.4141));
         }    
         else if (rtxState.debugging_mode == esNonUniformGrid) {
-            ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos); 
-            vec3 normalizedPos = vec3(cellPos4.xyz) / float(n);
-            fragColor.xyz = clamp(normalizedPos, 0.0, 1.0); 
+            ivec4 cellPos4 = getCellPosNonUniform(worldPos, camPos);
+            uint index = getFlattenCellIndexNonUniform(cellPos4);
+            if (cellPos4.w == 0){
+                fragColor.a = 0.0f;
+            }
+            else if(index < n*n*n + 6*m*n*n || index > 0) {
+                vec3 normalizedPos = vec3(cellPos4.xyz) / float(n); 
+                fragColor.xyz = clamp(normalizedPos, 0.0, 1.0); 
+            }else{
+                fragColor.xyz = vec3(1.0, 0.0, 0.0);
+            }
         }
-
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
+        else if (rtxState.debugging_mode == esReflectionBrdf){
+            uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(filteredReflectionColor,0)) * 0.5;
+            fragColor.xyz = texture(filteredReflectionColor, uv).rgb;
+            fragColor.a = 1.0;
+        }
         else
             fragColor.xyz = indirectLight;
     }
 
-    // Reflection
-    //uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(reflectionColor,0)) * 0.5;
-    //fragColor.xyz = texture(reflectionColor, uv).rgb;
-    //fragColor.a = 1.0;
 }

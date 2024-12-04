@@ -239,8 +239,9 @@ void main()
                 sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
 
                 passCount++;
-		
+		        
 		    }
+            if(rtxState.debugging_mode == esNonUniformGrid) break;
 	    }
         
 

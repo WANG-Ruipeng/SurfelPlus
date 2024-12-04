@@ -83,6 +83,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_surfelRaytracePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelIntegratePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_reflectionComputePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_temporalSpatialPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -357,9 +358,20 @@ void SampleExample::createReflectionPass()
 {
     m_reflectionComputePass.createReflectionPassDescriptorSet(m_size, m_queues[eGCT1]);
 
-    m_reflectionComputePass.create(m_size, { m_accelStruct.getDescLayout(), m_offscreen.getDescLayout(), m_scene.getDescLayout(), m_descSetLayout,
-        m_surfel.getGbufferImageDescLayout(), m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
-
+    m_reflectionComputePass.create(m_size, { 
+        m_accelStruct.getDescLayout(), 
+        m_offscreen.getDescLayout(), 
+        m_scene.getDescLayout(), 
+        m_descSetLayout,
+        m_surfel.getGbufferImageDescLayout(), 
+        m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
+    m_temporalSpatialPass.create(m_size, { 
+        m_accelStruct.getDescLayout(), 
+        m_offscreen.getDescLayout(), 
+        m_scene.getDescLayout(), 
+        m_descSetLayout,
+        m_surfel.getGbufferImageDescLayout(), 
+        m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -829,6 +841,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     m_rtxState.size = { render_size.width, render_size.height };
 
 	m_reflectionComputePass.setPushContants(m_rtxState);
+	m_temporalSpatialPass.setPushContants(m_rtxState);
 
     m_reflectionComputePass.run(cmdBuf, render_size, profiler, { 
         m_accelStruct.getDescSet(), 
@@ -837,6 +850,41 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_descSet,
         m_surfel.getGbufferImageDescSet(), 
         m_reflectionComputePass.getSamplerDescSet() });
+
+    /*
+    VkImageMemoryBarrier imageBarriers[3] = {};
+    for (int i = 0; i < 3; i++) {
+        imageBarriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageBarriers[i].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        imageBarriers[i].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        imageBarriers[i].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageBarriers[i].newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageBarriers[i].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    }
+
+    imageBarriers[0].image = m_reflectionComputePass.getColorDirectionTextures()[0].image;  // reflectionColor
+    imageBarriers[1].image = m_reflectionComputePass.getColorDirectionTextures()[1].image;  // reflectionDirection
+    imageBarriers[2].image = m_reflectionComputePass.getColorDirectionTextures()[2].image;  // reflectionPointBrdf
+
+    vkCmdPipelineBarrier(
+        cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,       
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,        
+        0,
+        0, nullptr,                                 
+        0, nullptr,                                  
+        3, imageBarriers                            
+    );
+    */
+
+    m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
+        m_accelStruct.getDescSet(),
+        m_offscreen.getDescSet(),
+        m_scene.getDescSet(),
+        m_descSet,
+        m_surfel.getGbufferImageDescSet(),
+        m_reflectionComputePass.getSamplerDescSet()
+        });
 
 	std::vector<nvvk::Texture> textures = m_reflectionComputePass.getColorDirectionTextures();
 	std::vector< VkImageMemoryBarrier> barriers = {};

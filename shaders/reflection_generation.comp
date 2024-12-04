@@ -48,7 +48,8 @@ layout(set = 4, binding = 2) uniform sampler2D gbufferDepth;
 
 layout(set = 5, binding = 0) uniform image2D reflectionColor;
 layout(set = 5, binding = 1) uniform image2D reflectionDirection;
-
+layout(set = 5, binding = 2) uniform image2D reflectionPointBrdf;
+layout(set = 5, binding = 3) uniform image2D filteredReflectionColor;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -107,13 +108,14 @@ void main()
 
     // reflected direction and brdf
     State state = GetState(primObjID, normal, depth, uv);
-    vec3 L;
-    float pdf;
-    vec3 brdf = Sample(state, camRay.direction, normal, L, pdf, prd.seed);
+    BsdfSampleRec reflectBsdfSampleRec;
+
+    reflectBsdfSampleRec.f = Sample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
 
     // reflection color
-    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(L));
+    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
     ClosestHit(reflectedRay);
+
 
     if(prd.hitT == INFINITY)
     {
@@ -128,7 +130,8 @@ void main()
         }
 
 	    imageStore(reflectionColor, imageCoords, vec4(vec3(env), depth));
-        imageStore(reflectionDirection, imageCoords, vec4(vec3(0), 1.f / pdf));
+        imageStore(reflectionDirection, imageCoords, vec4(vec3(0), 1.f / reflectBsdfSampleRec.pdf));
+        
     }
     else
     {
@@ -156,7 +159,9 @@ void main()
         state.mat.albedo *= sstate.color;
 
         imageStore(reflectionColor, imageCoords, vec4(state.mat.albedo, depth));
-        imageStore(reflectionDirection, imageCoords, vec4(L, 1.f / pdf));
+        imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
     }
+
+    imageStore(reflectionPointBrdf, imageCoords, vec4(reflectBsdfSampleRec.f, 1.f));
 
 }
