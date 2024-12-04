@@ -78,6 +78,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "queue.hpp"
 #include "lightPass.h"
 #include "reflection_compute.h"
+#include "temporal_spatial_pass.h"
 
 class SampleGUI;
 
@@ -157,6 +158,7 @@ public:
 
   // reflection compute passes
   ReflectionComputePass m_reflectionComputePass;
+  TemporalSpatialPass m_temporalSpatialPass;
 
   // light pass
   LightPass m_lightPass;

@@ -81,8 +81,8 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 {
 	VkExtent2D size = { fullSize.width / 2, fullSize.height / 2 };
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 }
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 4 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 }
 	};
 	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 1);
  
@@ -114,6 +114,10 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		auto reflectBrdfCreateInfo = nvvk::makeImage2DCreateInfo(
 			size, VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
+		auto filteredReflectionCreateInfo = nvvk::makeImage2DCreateInfo(
+			size, VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+			true);
 
 		// create image
 		nvvk::Image reflectColor = m_pAlloc->createImage(reflectColorCreateInfo);
@@ -122,27 +126,31 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		NAME_VK(reflectDirection.image);
 		nvvk::Image reflectBrdf = m_pAlloc->createImage(reflectBrdfCreateInfo);
 		NAME_VK(reflectBrdf.image);
+		nvvk::Image filteredReflection = m_pAlloc->createImage(filteredReflectionCreateInfo);
+		NAME_VK(filteredReflection.image);
 
 		// create image view
 		VkImageViewCreateInfo reflectColorvInfo = nvvk::makeImageViewCreateInfo(reflectColor.image, reflectColorCreateInfo);
 		VkImageViewCreateInfo reflectDirectionvInfo = nvvk::makeImageViewCreateInfo(reflectDirection.image, reflectDirectionCreateInfo);
 		VkImageViewCreateInfo reflectBrdfvInfo = nvvk::makeImageViewCreateInfo(reflectBrdf.image, reflectBrdfCreateInfo);
+		VkImageViewCreateInfo filteredReflectionvInfo = nvvk::makeImageViewCreateInfo(filteredReflection.image, filteredReflectionCreateInfo);
 
 		// create sampler
 		VkSamplerCreateInfo reflectColorSampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-		//reflectColorSampler.maxLod = FLT_MAX;
 		reflectColorSampler.magFilter = VK_FILTER_LINEAR;
 		reflectColorSampler.minFilter = VK_FILTER_LINEAR;
 
 		VkSamplerCreateInfo reflectDirectionSampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-		//reflectDirectionSampler.maxLod = FLT_MAX;
 		reflectDirectionSampler.magFilter = VK_FILTER_LINEAR;
 		reflectDirectionSampler.minFilter = VK_FILTER_LINEAR;
 
 		VkSamplerCreateInfo reflectBrdfSampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-		//reflectDirectionSampler.maxLod = FLT_MAX;
 		reflectBrdfSampler.magFilter = VK_FILTER_LINEAR;
 		reflectBrdfSampler.minFilter = VK_FILTER_LINEAR;
+
+		VkSamplerCreateInfo filteredReflectionSampler{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		filteredReflectionSampler.magFilter = VK_FILTER_LINEAR;
+		filteredReflectionSampler.minFilter = VK_FILTER_LINEAR;
 
 		// create texture
 		nvvk::Texture reflectColorTex = m_pAlloc->createTexture(reflectColor, reflectColorvInfo, reflectColorSampler);
@@ -151,6 +159,8 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		reflectDirectionTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		nvvk::Texture reflectBrdfTex = m_pAlloc->createTexture(reflectBrdf, reflectBrdfvInfo, reflectBrdfSampler);
 		reflectBrdfTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		nvvk::Texture filteredReflectionTex = m_pAlloc->createTexture(filteredReflection, filteredReflectionvInfo, filteredReflectionSampler);
+		filteredReflectionTex.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 
 		nvvk::CommandPool cmdBufGet(m_device, queue.familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, queue.queue);
@@ -159,12 +169,14 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		nvvk::cmdBarrierImageLayout(cmdBuf, reflectColor.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 		nvvk::cmdBarrierImageLayout(cmdBuf, reflectDirection.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 		nvvk::cmdBarrierImageLayout(cmdBuf, reflectBrdf.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		nvvk::cmdBarrierImageLayout(cmdBuf, filteredReflection.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
 		cmdBufGet.submitAndWait(cmdBuf);
 
 		m_images.push_back(reflectColorTex);
 		m_images.push_back(reflectDirectionTex);
 		m_images.push_back(reflectBrdfTex);
+		m_images.push_back(filteredReflectionTex);
 	}
 
 	// reflection description set
@@ -174,10 +186,12 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
-		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+		bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+
 		bind.addBinding({ 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
 		bind.addBinding({ 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
-
+		bind.addBinding({ 6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+		bind.addBinding({ 7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
 
 		// allocate the descriptor set
 		m_samplerDescSetLayout = bind.createLayout(m_device);
@@ -187,18 +201,21 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		// update the descriptor set
 		std::vector<VkWriteDescriptorSet> writes;
 
-		VkDescriptorImageInfo descImg[3] = {
+		VkDescriptorImageInfo descImg[4] = {
 			m_images[0].descriptor,
 			m_images[1].descriptor,
-			m_images[2].descriptor
+			m_images[2].descriptor,
+			m_images[3].descriptor
 		};
 
 		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 0, &descImg[0]));
 		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 1, &descImg[1]));
 		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 2, &descImg[2]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 3, &descImg[0]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 4, &descImg[1]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 5, &descImg[2]));
+		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 3, &descImg[3]));
+		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 4, &descImg[0]));
+		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 5, &descImg[1]));
+		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 6, &descImg[2]));
+		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 7, &descImg[3]));
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}
 

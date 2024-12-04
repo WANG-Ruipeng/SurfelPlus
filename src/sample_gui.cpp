@@ -171,6 +171,7 @@ bool SampleGUI::guiRayTracing()
                                    "Tangent",
                                    "UniformGrid",
 								   "NonUniformGrid",
+                                   "ReflectBRDF"
                                });
 
     if(rtxState.debugging_mode == eHeatmap)
@@ -186,12 +187,9 @@ bool SampleGUI::guiRayTracing()
   if(_se->m_supportRayQuery)
   {
     SampleExample::RndMethod method = _se->m_rndMethod;
-    if(GuiH::Selection<int>("Rendering Pipeline", "Choose the type of rendering", (int*)&method, nullptr,
-                            GuiH::Control::Flags::Normal, {"Ray Tracing Pipeline", "Ray Query"}))
-    {
-      _se->createRender(method);
-      changed = true;
-    }
+    //GuiH::Selection<int>("Rendering Pipeline", "Choose the type of rendering", (int*)&method, nullptr, GuiH::Control::Flags::Normal, { "Ray Tracing Pipeline", "Ray Query" });
+    _se->createRender(method);
+    changed = true;
   }
 
   GuiH::Info("Frame", "", std::to_string(rtxState.frame), GuiH::Flags::Disabled);

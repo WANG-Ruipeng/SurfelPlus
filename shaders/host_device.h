@@ -118,7 +118,8 @@ esRoughness = 10,
 esTexcoord = 11,
 esTangent = 12,
 esUniformGrid = 13,
-esNonUniformGrid = 14
+esNonUniformGrid = 14,
+esReflectionBrdf = 15
 END_ENUM();
 
 // Surfel data
