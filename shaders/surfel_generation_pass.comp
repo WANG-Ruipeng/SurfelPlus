@@ -283,7 +283,7 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt > 0 && maxContribution == groupMaxContribution)
     {
-        if (coverage > 3.0)
+        if (coverage > 4.0)
         {
             if (rand(randSeed) < depth * 0.2f)
             {

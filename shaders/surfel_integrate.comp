@@ -196,7 +196,7 @@ void main()
 	    CellInfo cellInfo = cellBuffer[flattenIndex];
 	    uint cellOffset = cellInfo.surfelOffset;
 	    uint cellSurfelCount = cellInfo.surfelCount;
-        uint targetShareCount = min(32u, cellSurfelCount);
+        uint targetShareCount = min(48u, cellSurfelCount);
         uint passCount = 0;
 
         for (uint i = 0; i < cellSurfelCount; i++)

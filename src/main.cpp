@@ -208,6 +208,7 @@ int main(int argc, char** argv)
 
   // Used for Live Demo
   // Press any keys to continue the program
+  //std::cout << "Press any key to continue the program" << std::endl;
   //char ProgramStart;
   //std::cin >> ProgramStart;
 
