@@ -81,6 +81,12 @@ void main()
 		return;
 	}
 
+    uvec2 seed01 = uvec2(imageCoords) * rtxState.frame;
+    uvec2 seed02 = seed01 + 1919810;
+    uint seed11 = tea(seed01.x, seed01.y);
+    uint seed12 = tea(seed02.x, seed02.y);
+    vec2 stocasticUV = uv + vec2(rand(seed11) - 0.5, rand(seed12) - 0.5) / vec2(imageRes);
+
     prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.frame * rtxState.maxSamples);
 //    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, 114514 * rtxState.maxSamples);
 
@@ -107,6 +113,14 @@ void main()
 
     // reconstruct world position from depth
     float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
+    if (depth == 1.0)
+	{
+        imageStore(reflectionColor, imageCoords, vec4(0.0));
+        imageStore(reflectionDirection, imageCoords, vec4(0.0));
+		return;
+	}
+//    vec3 worldPos = WorldPosFromDepth(uv, depth);
+    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
     if (depth == 1.0)
 	{
         imageStore(reflectionColor, imageCoords, vec4(0.0));
