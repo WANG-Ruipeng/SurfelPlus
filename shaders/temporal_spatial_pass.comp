@@ -123,6 +123,7 @@ void main()
     if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
         return; 
 
+    // STAGE 1; Spatial reconstruction filtering
     ivec2 halfImageCoords = imageCoords / 2;
 
     vec3 result = vec3(0.0);
@@ -163,25 +164,6 @@ void main()
         weightSum += weight;
     }
 
-    // Sample with distance-based weights
-//    for (int i = 0; i < 8; i++) {
-//        ivec2 offset = ivec2(poissonDisk[i] * radius);
-//        ivec2 neighborCoords = halfImageCoords + offset;
-//
-//        vec4 neighborColor = imageLoad(reflectionColor, neighborCoords);
-//        if (neighborColor.a == 0.0)
-//			continue;
-//
-//        float brdfWeight = neighborColor.a;
-//        float pdfInv = max(imageLoad(reflectionDirection, neighborCoords).a, 1e-5);
-//        
-//        // Combine BRDF weight with distance weight
-//        float weight = max(brdfWeight * pdfInv, 0.0);
-//
-//        result += neighborColor.rgb * weight;
-//        weightSum += weight;
-//    }
-
     // Add center sample contribution
     float centerPdfInv = max(centerDirection.a, 0.001);
     float centerWeight = max(centerColor.a * centerPdfInv, 0.0);
@@ -195,10 +177,61 @@ void main()
         result = centerColor.rgb;
     }
 
+    imageStore(filteredReflectionColor, imageCoords, vec4(result, 1.0));
+        //return;
+
     // temporal accumulation
     //float ratio = 1.0 / min(64.0, (1.0 + float(rtxState.frame)));
     //vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
     //result = mix(colPrev, result, ratio);
+
+    // STAGE 2: bilateral filter
+
+    result = vec3(0.0);
+    weightSum = 0.0;
+
+    // Define sigma values
+    float sigmaS = 2.0;
+    float sigmaR = 0.5;
+
+    // Define a kernel radius for the spatial domain
+    int kernelRadius = int(3.0 * sigmaS);
+
+    for (int y = -kernelRadius; y <= kernelRadius; ++y) {
+        for (int x = -kernelRadius; x <= kernelRadius; ++x) {
+            ivec2 neighborCoords = imageCoords + ivec2(x, y);
+
+            // Boundary check
+            if (neighborCoords.x < 0 || neighborCoords.y < 0 ||
+                neighborCoords.x >= imageRes.x || neighborCoords.y >= imageRes.y)
+                continue;
+
+            vec4 neighborColor = imageLoad(filteredReflectionColor, neighborCoords);
+
+            if(length (neighborColor.rgb) < 0.001) continue;
+
+            // Spatial weight
+            float dist2 = float(x * x + y * y);
+            float spatialWeight = exp(-dist2 / (2.0 * sigmaS * sigmaS));
+
+            // Range weight
+            float colorDiff = length(neighborColor.rgb - centerColor.rgb);
+            float rangeWeight = exp(-colorDiff * colorDiff / (2.0 * sigmaR * sigmaR));
+
+            // Combined weight
+            float weight = spatialWeight * rangeWeight;
+
+            result += neighborColor.rgb * weight;
+            weightSum += weight;
+        }
+    }
+
+    // Normalize result
+    if (weightSum > 1e-5) {
+        result /= weightSum;
+    } else {
+        result = centerColor.rgb;
+    }
 
     imageStore(filteredReflectionColor, imageCoords, vec4(result, 1.0));
 }
