@@ -123,6 +123,7 @@ void main()
     if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
         return; 
 
+    // STAGE 1; Spatial reconstruction filtering
     ivec2 halfImageCoords = imageCoords / 2;
 
     vec3 result = vec3(0.0);
