@@ -105,4 +105,5 @@ void main()
     }
 
     imageStore(filteredReflectionColor, imageCoords, vec4(result, 1.0));
+//    imageStore(filteredReflectionColor, imageCoords, vec4(imageLoad(reflectionColor, imageCoords).xyz, 1.0));
 }

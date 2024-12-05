@@ -71,6 +71,12 @@ void main()
 		return;
 	}
 
+    uvec2 seed01 = uvec2(imageCoords) * rtxState.frame;
+    uvec2 seed02 = seed01 + 1919810;
+    uint seed11 = tea(seed01.x, seed01.y);
+    uint seed12 = tea(seed02.x, seed02.y);
+    vec2 stocasticUV = uv + vec2(rand(seed11) - 0.5, rand(seed12) - 0.5) / vec2(imageRes);
+
     prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.frame * rtxState.maxSamples);
 //    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, 114514 * rtxState.maxSamples);
 
@@ -97,7 +103,8 @@ void main()
 
     // reconstruct world position from depth
     float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
-    vec3 worldPos = WorldPosFromDepth(uv, depth);
+//    vec3 worldPos = WorldPosFromDepth(uv, depth);
+    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
 
     // camera ray
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
@@ -119,18 +126,18 @@ void main()
 
     if(prd.hitT == INFINITY)
     {
-        vec3 env;
+//        vec3 env;
+//
+//        if(_sunAndSky.in_use == 1)
+//            env = sun_and_sky(_sunAndSky, reflectedRay.direction);
+//        else
+//        {
+//            vec2 uv = GetSphericalUv(reflectedRay.direction);  // See sampling.glsl
+//            env     = texture(environmentTexture, uv).rgb;
+//        }
 
-        if(_sunAndSky.in_use == 1)
-            env = sun_and_sky(_sunAndSky, reflectedRay.direction);
-        else
-        {
-            vec2 uv = GetSphericalUv(reflectedRay.direction);  // See sampling.glsl
-            env     = texture(environmentTexture, uv).rgb;
-        }
-
-	    imageStore(reflectionColor, imageCoords, vec4(vec3(env), depth));
-        imageStore(reflectionDirection, imageCoords, vec4(vec3(0), 1.f / reflectBsdfSampleRec.pdf));
+	    imageStore(reflectionColor, imageCoords, vec4(vec3(0), depth));
+        imageStore(reflectionDirection, imageCoords, vec4(vec3(0), 0));
         
     }
     else
@@ -162,6 +169,7 @@ void main()
         imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
     }
 
-    imageStore(reflectionPointBrdf, imageCoords, vec4(reflectBsdfSampleRec.f, 1.f));
+    imageStore(reflectionPointBrdf, imageCoords, prd.hitT == INFINITY ? vec4(vec3(0), 0 ): vec4(reflectBsdfSampleRec.f, 1.f));
+//    imageStore(reflectionPointBrdf, imageCoords, vec4(camRay.direction, 1.f));
 
 }
