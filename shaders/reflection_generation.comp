@@ -131,12 +131,19 @@ void main()
 
     // reflected direction and brdf
     State state = GetState(primObjID, normal, depth, uv);
+    // ignore rough surface
+    if (state.mat.roughness > 0.95)
+	{
+		imageStore(reflectionColor, imageCoords, vec4(0.0));
+		imageStore(reflectionDirection, imageCoords, vec4(0.0));
+		return;
+	}
     BsdfSampleRec reflectBsdfSampleRec;
 
     reflectBsdfSampleRec.f = Sample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
     // calculate brdf weight
     float weight = brdfWeight(-camRay.direction, state.normal, reflectBsdfSampleRec.L, state.mat.roughness);
-    reflectBsdfSampleRec.pdf = max(1e-5, reflectBsdfSampleRec.pdf);
+    reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
 
     // reflection color
     Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
