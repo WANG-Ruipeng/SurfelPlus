@@ -110,5 +110,4 @@ void main()
     result = mix(colPrev, result, ratio);
 
     imageStore(filteredReflectionColor, imageCoords, vec4(result, 1.0));
-//    imageStore(filteredReflectionColor, imageCoords, vec4(imageLoad(reflectionColor, imageCoords).xyz, 1.0));
 }

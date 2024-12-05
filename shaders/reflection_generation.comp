@@ -119,15 +119,8 @@ void main()
         imageStore(reflectionDirection, imageCoords, vec4(0.0));
 		return;
 	}
-//    vec3 worldPos = WorldPosFromDepth(uv, depth);
+
     vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
-    if (depth == 1.0)
-	{
-        imageStore(reflectionColor, imageCoords, vec4(0.0));
-        imageStore(reflectionDirection, imageCoords, vec4(0.0));
-		return;
-	}
-    vec3 worldPos = WorldPosFromDepth(uv, depth);
 
     // camera ray
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
