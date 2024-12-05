@@ -31,8 +31,7 @@ void TemporalSpatialPass::destroy()
 void TemporalSpatialPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::ProfilerVK& profiler, const std::vector<VkDescriptorSet>& descSets)
 {
 	LABEL_SCOPE_VK(cmdBuf);
-	const int GROUP_SIZE = 16;
-	auto halfSize = VkExtent2D(size.width * 0.5, size.height * 0.5);
+	const int GROUP_SIZE = 8;
 	// Preparing for the compute shader
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
 	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayout, 0,
@@ -42,12 +41,12 @@ void TemporalSpatialPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& s
 	vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState), &m_state);
 
 	// Dispatching the shader
-	vkCmdDispatch(cmdBuf, (halfSize.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (halfSize.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
+	vkCmdDispatch(cmdBuf, (size.width + (GROUP_SIZE - 1)) / GROUP_SIZE, (size.height + (GROUP_SIZE - 1)) / GROUP_SIZE, 1);
 }
 
 void TemporalSpatialPass::create(const VkExtent2D& fullSize, const std::vector<VkDescriptorSetLayout>& extraDescSetsLayout, Scene* _scene)
 {
-	VkExtent2D size = { fullSize.width / 2, fullSize.height / 2 };
+	VkExtent2D size = { fullSize.width, fullSize.height};
 
 	std::vector<VkPushConstantRange> push_constants;
 	push_constants.push_back({ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState) });
