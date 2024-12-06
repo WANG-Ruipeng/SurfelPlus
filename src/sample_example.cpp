@@ -375,7 +375,8 @@ void SampleExample::createReflectionPass()
         m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
 
 	m_bilateralCleanupPass.create(m_size, {
-		m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
+		m_reflectionComputePass.getSamplerDescSetLayout(),
+        m_surfel.getGbufferImageDescLayout(), }, &m_scene);
 
 	m_taaPass.create(m_size, {
 		m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
@@ -901,7 +902,8 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         barriers.data());
 
     m_bilateralCleanupPass.run(cmdBuf, render_size, profiler, {
-    m_reflectionComputePass.getSamplerDescSet()
+        m_reflectionComputePass.getSamplerDescSet(),
+        m_surfel.getGbufferImageDescSet(),
         });
 
     m_taaPass.run(cmdBuf, render_size, profiler, {
