@@ -127,14 +127,14 @@ void main()
 
     // STAGE 1; Spatial reconstruction filtering
     ivec2 halfImageCoords = imageCoords / 2;
-    uint randUint = tea(halfImageCoords.y * imageRes.x + halfImageCoords.x, rtxState.frame);
+    uint randUint = tea(halfImageCoords.y * imageRes.x + halfImageCoords.x, rtxState.totalFrames);
     int dir = (randUint & 1u) > 0 ? 1 : -1;
 
     vec3 result = vec3(0.0);
     float weightSum = 0.0;
     
     // Base sampling radius
-    float radius = min(imageRes.x, imageRes.y) * 0.003;
+    //float radius = min(imageRes.x, imageRes.y) * 0.003;
     
     // Get center pixel values as reference
     vec4 centerColor = imageLoad(reflectionColor, halfImageCoords);
@@ -155,8 +155,8 @@ void main()
     result += centerContrib;
     weightSum += centerWeight;
 
-    uint quadID = (imageCoords.x & 0x1) << 1 + (imageCoords.y & 0x1);
-    quadID = (quadID + randUint) & 0x3;
+    uint quadID = ((imageCoords.y & 0x1) << 1) + (imageCoords.x & 0x1);
+    quadID = (quadID + randUint & 0x3) & 0x3;
     float variance = 0.0;
 
     for (int i = 0; i < 16; ++i)
@@ -201,5 +201,5 @@ void main()
     result = mix(colPrev, result, ratio);
 
     imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, weightSum));
-    //imageStore(filteredReflectionColor, imageCoords, centerColor);
+    //imageStore(filteredReflectionColor, imageCoords, vec4(float(quadID)));
 }
