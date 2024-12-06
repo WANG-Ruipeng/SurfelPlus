@@ -157,7 +157,7 @@ void main()
     uint seed12 = tea(seed02.x, seed02.y);
     vec2 stocasticUV = uv + vec2(rand(seed11) - 0.5, rand(seed12) - 0.5) / vec2(imageRes);
 
-    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.frame * rtxState.maxSamples);
+    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.totalFrames * rtxState.maxSamples);
 //    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, 114514 * rtxState.maxSamples);
 
     ivec2 gbufferCoords = ivec2(imageCoords * 2);
@@ -209,11 +209,17 @@ void main()
 		return;
 	}
     BsdfSampleRec reflectBsdfSampleRec;
+    float weight = 0.0;
+    uint maxItr = 0;
 
-    reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
-    // calculate brdf weight
-    float weight = brdfWeight(-camRay.direction, state.normal, reflectBsdfSampleRec.L, state.mat.roughness);
-    reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
+    while(weight < 1e-5 && maxItr < 3)
+    {
+        reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
+        // calculate brdf weight
+        weight = brdfWeight(-camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, state.mat.roughness);
+        reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
+        maxItr++;
+    }
 
     // reflection color
     Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
@@ -221,8 +227,10 @@ void main()
 
     float firstDepth = -1.f;
     vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth);
+    float invPdf = 1.f / reflectBsdfSampleRec.pdf;
+    radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.normal));
     imageStore(reflectionColor, imageCoords, vec4(radiance, weight));
-    imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
+    imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, invPdf));
 
     //ClosestHit(reflectedRay);
 
