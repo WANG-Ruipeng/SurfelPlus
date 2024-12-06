@@ -25,7 +25,6 @@ layout(push_constant) uniform _RtxState
 };
 
 
-
 #include "globals.glsl"
 
 PtPayload        prd;
@@ -37,8 +36,6 @@ ShadowHitPayload shadow_payload;
 #include "traceray_rq.glsl"
 
 #include "pathtrace.glsl"
-#include "shaderUtils.glsl"
-#include "shaderUtil_grid.glsl"
 
 #define FIREFLIES 1
 
@@ -50,6 +47,23 @@ layout(set = 5, binding = 0) uniform image2D reflectionColor;
 layout(set = 5, binding = 1) uniform image2D reflectionDirection;
 layout(set = 5, binding = 2) uniform image2D reflectionPointBrdf;
 layout(set = 5, binding = 3) uniform image2D filteredReflectionColor;
+
+// surfel buffers
+layout(set = 6, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter surfelCounter; };
+layout(set = 6, binding = 1,  scalar)		buffer _SurfelBuffer		{ Surfel surfelBuffer[]; };
+layout(set = 6, binding = 2,  scalar)		buffer _SurfelAlive		    { uint surfelAlive[]; };
+layout(set = 6, binding = 3,  scalar)		buffer _SurfelDead		    { uint surfelDead[]; };
+layout(set = 6, binding = 4,  scalar)		buffer _SurfelDirty		    { uint surfelDirty[]; };
+layout(set = 6, binding = 5,  scalar)		buffer _SurfelRecycle		{ SurfelRecycleInfo surfelRecycleInfo[]; };
+layout(set = 6, binding = 6,  scalar)		buffer _SurfelRayBuffer		{ SurfelRay surfelRayBuffer[]; };
+
+// cell buffer
+layout(set = 7, binding = 0,  scalar)		buffer _CellBuffer			{ CellInfo cellBuffer[]; };
+layout(set = 7, binding = 1,  scalar)		buffer _CellCounter			{ CellCounter cellCounter; };
+layout(set = 7, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel[]; };
+
+#include "shaderUtils_surfel_cell.glsl"
+#include "shaderUtils.glsl"
 
 float brdfWeight(vec3 V, vec3 N, vec3 L, float roughness)
 {
@@ -63,6 +77,61 @@ float brdfWeight(vec3 V, vec3 N, vec3 L, float roughness)
   float G = V_GGX(NdotL, NdotV, roughness);
   float D = D_GGX(NdotH, max(0.001, roughness));
   return G * D;
+}
+
+// only sample specular lobe
+vec3 SpecSample(in State state, vec3 V, vec3 N, inout vec3 L, inout float pdf, inout RngStateType seed)
+{
+  pdf       = 0.0;
+  vec3 brdf = vec3(0.0);
+
+  float probability   = rand(seed);
+  float diffuseRatio  = 0.5 * (1.0 - state.mat.metallic);
+  float specularRatio = 1.0 - diffuseRatio;
+  float transWeight   = 0.f;
+
+  float r1 = rand(seed);
+  float r2 = rand(seed);
+
+  {
+    // Anything less than 2% is physically impossible and is instead considered to be shadowing. Compare to "Real-Time-Rendering" 4th editon on page 325.
+    vec3  specularCol = state.mat.f0;
+    float reflectance = max(max(specularCol.r, specularCol.g), specularCol.b);
+    vec3  f0          = specularCol.rgb;
+    vec3  f90         = vec3(clamp(reflectance * 50.0, 0.0, 1.0));
+
+    vec3 T = state.tangent;
+    vec3 B = state.bitangent;
+
+    float primarySpecRatio = 1.0 / (1.0 + state.mat.clearcoat);
+    float roughness;
+    if(rand(seed) < primarySpecRatio)
+      roughness = state.mat.roughness;
+    else
+      roughness = state.mat.clearcoatRoughness;
+
+    vec3 H = GgxSampling(roughness, r1, r2);
+    H      = T * H.x + B * H.y + N * H.z;
+    L      = reflect(-V, H);
+
+
+    // Sample primary specular lobe
+    if(rand(seed) < primarySpecRatio)
+    {
+      // Specular
+      brdf = EvalSpecularGltf(state, f0, f90, V, N, L, H, pdf);
+      pdf *= primarySpecRatio * specularRatio;  //*(1 - clearcoat * clearcoatFresnel)
+    }
+    else
+    {
+      // Clearcoat
+      brdf = EvalClearcoatGltf(state, V, N, L, H, pdf);
+      pdf *= (1.0 - primarySpecRatio) * specularRatio;
+    }
+
+  }
+
+  return brdf;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -93,6 +162,17 @@ void main()
     ivec2 gbufferCoords = ivec2(imageCoords * 2);
 	uint primObjID = texelFetch(gbufferPrim, gbufferCoords, 0).r;
 
+    // reconstruct world position from depth
+    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
+    if (depth == 1.0)
+	{
+        imageStore(reflectionColor, imageCoords, vec4(0.0));
+        imageStore(reflectionDirection, imageCoords, vec4(0.0));
+		return;
+	}
+
+    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
+
     uint nodeID = primObjID >> 23;
     uint instanceID = sceneNodes[nodeID].primMesh;
     mat4 worldMat = sceneNodes[nodeID].worldMatrix;
@@ -110,17 +190,6 @@ void main()
     VertexAttributes attr0 = vertices.v[tri.x];
     VertexAttributes attr1 = vertices.v[tri.y];
     VertexAttributes attr2 = vertices.v[tri.z];
-
-    // reconstruct world position from depth
-    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
-    if (depth == 1.0)
-	{
-        imageStore(reflectionColor, imageCoords, vec4(0.0));
-        imageStore(reflectionDirection, imageCoords, vec4(0.0));
-		return;
-	}
-
-    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
 
     // camera ray
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
@@ -140,60 +209,67 @@ void main()
 	}
     BsdfSampleRec reflectBsdfSampleRec;
 
-    reflectBsdfSampleRec.f = Sample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
+    reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
     // calculate brdf weight
     float weight = brdfWeight(-camRay.direction, state.normal, reflectBsdfSampleRec.L, state.mat.roughness);
     reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
 
     // reflection color
     Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
-    ClosestHit(reflectedRay);
 
 
-    if(prd.hitT == INFINITY)
-    {
-        vec3 env;
+    float firstDepth = -1.f;
+    vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth);
+    imageStore(reflectionColor, imageCoords, vec4(radiance, weight));
+    imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
 
-        if(_sunAndSky.in_use == 1)
-            env = sun_and_sky(_sunAndSky, reflectedRay.direction);
-        else
-        {
-            vec2 uv = GetSphericalUv(reflectedRay.direction);  // See sampling.glsl
-            env     = texture(environmentTexture, uv).rgb;
-        }
+    //ClosestHit(reflectedRay);
 
-	    imageStore(reflectionColor, imageCoords, vec4(env, weight));
-        imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
-        
-    }
-    else
-    {
 
-        // Get Position, Normal, Tangents, Texture Coordinates, Color
-        ShadeState sstate = GetShadeState(prd);
+//    if(prd.hitT == INFINITY)
+//    {
+//        vec3 env;
+//
+//        if(_sunAndSky.in_use == 1)
+//            env = sun_and_sky(_sunAndSky, reflectedRay.direction);
+//        else
+//        {
+//            vec2 uv = GetSphericalUv(reflectedRay.direction);  // See sampling.glsl
+//            env     = texture(environmentTexture, uv).rgb;
+//        }
+//
+//	    imageStore(reflectionColor, imageCoords, vec4(env, weight));
+//        imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
+//        
+//    }
+//    else
+//    {
+//
+//        // Get Position, Normal, Tangents, Texture Coordinates, Color
+//        ShadeState sstate = GetShadeState(prd);
+//
+//        State state;
+//        state.position       = sstate.position;
+//        state.normal         = sstate.normal;
+//        state.tangent        = sstate.tangent_u[0];
+//        state.bitangent      = sstate.tangent_v[0];
+//        state.texCoord       = sstate.text_coords[0];
+//        state.matID          = sstate.matIndex;
+//        state.isEmitter      = false;
+//        state.specularBounce = false;
+//        state.isSubsurface   = false;
+//        state.ffnormal       = dot(state.normal, reflectedRay.direction) <= 0.0 ? state.normal : -state.normal;
+//
+//        // Filling material structures
+//        GetMaterialsAndTextures(state, reflectedRay);
+//
+//        // Color at vertices
+//        state.mat.albedo *= sstate.color;
+//
+//        imageStore(reflectionColor, imageCoords, vec4(state.mat.albedo, weight));
+//        imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
+//    }
 
-        State state;
-        state.position       = sstate.position;
-        state.normal         = sstate.normal;
-        state.tangent        = sstate.tangent_u[0];
-        state.bitangent      = sstate.tangent_v[0];
-        state.texCoord       = sstate.text_coords[0];
-        state.matID          = sstate.matIndex;
-        state.isEmitter      = false;
-        state.specularBounce = false;
-        state.isSubsurface   = false;
-        state.ffnormal       = dot(state.normal, reflectedRay.direction) <= 0.0 ? state.normal : -state.normal;
-
-        // Filling material structures
-        GetMaterialsAndTextures(state, reflectedRay);
-
-        // Color at vertices
-        state.mat.albedo *= sstate.color;
-
-        imageStore(reflectionColor, imageCoords, vec4(state.mat.albedo, weight));
-        imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, 1.f / reflectBsdfSampleRec.pdf));
-    }
-
-    imageStore(reflectionPointBrdf, imageCoords, vec4(reflectBsdfSampleRec.f, 1.f));
+    //imageStore(reflectionPointBrdf, imageCoords, vec4(reflectBsdfSampleRec.f, 1.f));
 
 }

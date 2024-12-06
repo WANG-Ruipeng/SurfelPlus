@@ -148,7 +148,7 @@ void main()
 
     //vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy) / 2, 0).rgb;
     vec3 indirectLight = texture(indirectLightMap, uv).rgb;
-    vec3 diffuseAlbedo = state.mat.albedo * (1.0 - state.mat.metallic);
+    vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
 
     Light randLight = selectRandomLight(114514);

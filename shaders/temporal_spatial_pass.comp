@@ -202,9 +202,9 @@ void main()
     }
 
     // temporal accumulation
-    //float ratio = 1.0 / min(64.0, (1.0 + float(rtxState.frame)));
-    //vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
-    //result = mix(colPrev, result, ratio);
+    float ratio = 1.0 / min(64.0, (1.0 + float(rtxState.frame)));
+    vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
+    result = mix(colPrev, result, ratio);
 
     imageStore(filteredReflectionColor, imageCoords, vec4(result, sqrt(variance)));
 }

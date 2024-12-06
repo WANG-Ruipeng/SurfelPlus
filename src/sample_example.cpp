@@ -364,7 +364,10 @@ void SampleExample::createReflectionPass()
         m_scene.getDescLayout(), 
         m_descSetLayout,
         m_surfel.getGbufferImageDescLayout(), 
-        m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
+        m_reflectionComputePass.getSamplerDescSetLayout(),
+        m_surfel.getSurfelBuffersDescLayout(),
+        m_surfel.getCellBufferDescLayout()
+        }, & m_scene);
 
     m_temporalSpatialPass.create(m_size, { 
         m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
@@ -845,8 +848,11 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_offscreen.getDescSet(), 
         m_scene.getDescSet(), 
         m_descSet,
-        m_surfel.getGbufferImageDescSet(), 
-        m_reflectionComputePass.getSamplerDescSet() });
+        m_surfel.getGbufferImageDescSet(),
+        m_reflectionComputePass.getSamplerDescSet(),
+        m_surfel.getSurfelBuffersDescSet(),
+        m_surfel.getCellBufferDescSet()
+        });
 
 
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
