@@ -153,6 +153,8 @@ void main()
         * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
+    // fist several frame is noisy, so blend in
+    reflectionColor *= smoothstep(0.0, 20.0, float(rtxState.frame));
 
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);

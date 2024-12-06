@@ -160,14 +160,14 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 	uint searchCnt = 0;
 
     uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
-        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
+        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.totalFrames);
 
 	uint targetCnt = min(64, cellInfo.surfelCount);
 	float surfelCntF = float(cellInfo.surfelCount);
 
     for (uint i = 0; i < targetCnt; i++)
     {
-		uint currIndex = uint(rand(randSeed) * surfelCntF);
+        uint currIndex = targetCnt == cellInfo.surfelCount ? i : uint(rand(randSeed) * surfelCntF);
 
         uint surfelIndex = cellToSurfel[cellOffset + currIndex];
         Surfel surfel = surfelBuffer[surfelIndex];
