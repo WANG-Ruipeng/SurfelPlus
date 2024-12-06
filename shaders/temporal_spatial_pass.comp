@@ -138,9 +138,10 @@ void main()
     vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
     if (centerDirection == vec4(0.0))
     {
-		//imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
+		imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
 		return;
 	}
+    float matID = centerDirection.x;
 
     //vec4 centerBrdf = imageLoad(reflectionPointBrdf, halfImageCoords);
 
@@ -151,7 +152,7 @@ void main()
     result += centerContrib;
     weightSum += centerWeight;
 
-    uint quadID = (imageCoords.y & 0x1) << 1 + (imageCoords.x & 0x1);
+    uint quadID = (imageCoords.x & 0x1) << 1 + (imageCoords.y & 0x1);
     float variance = 0.0;
 
     for (int i = 0; i < 16; ++i)
@@ -164,7 +165,12 @@ void main()
             continue;
         
         float brdfWeight = neighborColor.a;
-        float pdfInv = max(imageLoad(reflectionDirection, neighborCoords).a, 1e-3);
+        vec4 neiDir = imageLoad(reflectionDirection, neighborCoords);
+        float neiMatID = neiDir.x;
+        if (neiMatID != matID)
+			continue;
+
+        float pdfInv = max(neiDir.a, 1e-3);
         
         // Combine BRDF weight with distance weight
         float weight = max(brdfWeight * pdfInv, 0.0);

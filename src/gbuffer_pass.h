@@ -14,6 +14,7 @@ public:
 	struct InstanceData
 	{
 		glm::mat4 model;
+		glm::mat4 modelInvTrp;
 		uint32_t id;
 	};
 

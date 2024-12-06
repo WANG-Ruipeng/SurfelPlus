@@ -14,6 +14,7 @@ layout(set = 0, binding = 0,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCa
 
 layout(push_constant) uniform Instance {
     mat4 model;
+    mat4 modelInvTrp;
     uint id;
 } instanceData;
 
@@ -26,7 +27,8 @@ layout(location = 1) out vec3 normal;
 void main()
 {
   instanceID = instanceData.id;
-  normal = decompress_unit_vec(in_normal);
+  vec3 normalL = decompress_unit_vec(in_normal);
+  normal = mat3(instanceData.modelInvTrp) * normalL;
 
   vec4 wpos = instanceData.model * vec4(in_pos, 1);
   wpos /= wpos.w;

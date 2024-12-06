@@ -151,7 +151,7 @@ void main()
     vec3 indirectLight = texture(indirectLightMap, uv).rgb;
     //vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-camRay.direction, state.normal)), state.mat.roughness)
-        * (1.0 - state.mat.metallic));
+        * (1.0 - state.mat.metallic)) * 0.5;
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(filteredReflectionColor, ivec2(gl_FragCoord.xy), 0).rgb;
 

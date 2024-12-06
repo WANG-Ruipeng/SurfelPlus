@@ -116,6 +116,7 @@ void GbufferPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvv
 		instanceData.id = nodeID++;
 		uint32_t primID = node.primMesh;
 		instanceData.model = node.worldMatrix;
+		instanceData.modelInvTrp = glm::mat4(glm::inverse(glm::transpose(glm::mat3(instanceData.model))));
 
 		// Sending the push constant information
 		vkCmdPushConstants(cmdBuf, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(InstanceData), &instanceData);

@@ -159,10 +159,17 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     const uint searchRange = min(16, cellInfo.surfelCount);
 	uint searchCnt = 0;
 
-    for (uint i = 0; i < cellInfo.surfelCount; i++)
+    uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
+        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
+
+	uint targetCnt = min(64, cellInfo.surfelCount);
+	float surfelCntF = float(cellInfo.surfelCount);
+
+    for (uint i = 0; i < targetCnt; i++)
     {
-        if (searchCnt == searchRange) break;
-        uint surfelIndex = cellToSurfel[cellOffset + i];
+		uint currIndex = uint(rand(randSeed) * surfelCntF);
+
+        uint surfelIndex = cellToSurfel[cellOffset + currIndex];
         Surfel surfel = surfelBuffer[surfelIndex];
         vec3 neiNor = decompress_unit_vec(surfel.normal);
         bool isSleeping = (surfelRecycleInfo[surfelIndex].status & 0x0001) != 0;
@@ -208,7 +215,6 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
                 contribution *= pow(1.f - dist / surfel.radius, 2.0);
                 irradiance += vec4(surfel.radiance, 1.f) * contribution;
             }
-			searchCnt++;
             surfelRecycleInfo[surfelIndex].status |= 0x0004u;
         }
 
@@ -219,9 +225,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 	{
 		irradiance /= irradiance.w;
 	}
-
-    //uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
-    //    uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.frame);
+  
     //
     // spawn sleeping surfel if coverage is low.
     //if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
@@ -582,18 +586,18 @@ vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth, inout Bs
     }
 
     // use surfel indirect when the path reach max depth
-	//if (depth == maxDepth && valid)
- //   {
- //       vec4 irradiance = vec4(0.0);
- //       bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
- //       //bool rst = false;
- //       if (rst)
- //       {
- //           // apply diffuse ratio
-	//		irradiance.rgb *= diffuseRatio;
- //           radiance += irradiance.xyz * throughput;
- //       }
- //   }
+	if (depth == maxDepth && valid)
+    {
+        vec4 irradiance = vec4(0.0);
+        bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
+        //bool rst = false;
+        if (rst)
+        {
+            // apply diffuse ratio
+			irradiance.rgb *= diffuseRatio;
+            radiance += irradiance.xyz * throughput;
+        }
+    }
 
 
     return radiance;
