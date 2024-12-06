@@ -48,13 +48,13 @@ void main()
     vec3 result = vec3(0.0,0.0,0.0);
     float weightSum = 0.0;
 
-    if(length(centerColor) < 0.0001 || sqrt(variance) < 1.0){
+    if(length(centerColor) < 0.0001 || sqrt(variance) < 0.1){
         imageStore(bilateralCleanupColor, imageCoords, vec4(0.0));
         return;
     }
 
     // Define sigma values
-    float sigmaS = clamp (sqrt(variance) , 2.0, 6.0);
+    float sigmaS = clamp (sqrt(variance) , 2.0, 4.0);
     float sigmaR = 0.5;
     // Define a kernel radius for the spatial domain
     int kernelRadius = int(0.5 * sigmaS);
