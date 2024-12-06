@@ -196,14 +196,14 @@ void main()
 	    CellInfo cellInfo = cellBuffer[flattenIndex];
 	    uint cellOffset = cellInfo.surfelOffset;
 	    uint cellSurfelCount = cellInfo.surfelCount;
-        uint targetShareCount = min(48u, cellSurfelCount);
+        uint targetShareCount = min(64u, cellSurfelCount);
+        float cellSurfelCntF = float(cellSurfelCount);
         uint passCount = 0;
 
-        for (uint i = 0; i < cellSurfelCount; i++)
+        for (uint i = 0; i < targetShareCount; i++)
 	    {
-            if (passCount == targetShareCount)
-				break;
-		    uint surfelIndex = cellToSurfel[cellOffset + i];
+            uint currIndex = uint(rand(randSeed) * cellSurfelCntF);
+		    uint surfelIndex = cellToSurfel[cellOffset + currIndex];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];
             vec3 neiNor = decompress_unit_vec(neiSurfel.normal);
 		    vec3 distV = neiSurfel.position - surfel.position;
@@ -238,7 +238,6 @@ void main()
                 contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
                 sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
 
-                passCount++;
 		        
 		    }
             if(rtxState.debugging_mode == esNonUniformGrid) break;

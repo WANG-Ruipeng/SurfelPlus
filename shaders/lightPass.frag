@@ -89,8 +89,7 @@ vec3 hsv2rgb(vec3 c) {
 void main()
 {
     uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
-    vec2 uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(indirectLightMap,0));
-    uv *= 0.5f;
+    vec2 uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(gbufferPrim,0));
 
     uint nodeID = primObjID >> 23;
     uint instanceID = sceneNodes[nodeID].primMesh;
@@ -148,10 +147,10 @@ void main()
     bool hit = AnyHit(ray, 100.0);
 
     //vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy) / 2, 0).rgb;
-    vec3 indirectLight = texture(indirectLightMap, uv).rgb;
+    vec3 indirectLight = texture(indirectLightMap, uv * 0.5).rgb;
     //vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-camRay.direction, state.normal)), state.mat.roughness)
-        * (1.0 - state.mat.metallic)) * 0.5;
+        * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(filteredReflectionColor, ivec2(gl_FragCoord.xy), 0).rgb;
 

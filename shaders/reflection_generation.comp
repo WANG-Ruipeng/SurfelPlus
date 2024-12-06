@@ -231,6 +231,11 @@ void main()
     vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth, tmp, weight);
     float invPdf = 1.f / reflectBsdfSampleRec.pdf;
     radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.ffnormal));
+    float lum = dot(radiance, vec3(0.212671f, 0.715160f, 0.072169f));
+    if(lum > rtxState.fireflyClampThreshold)
+    {
+      radiance *= rtxState.fireflyClampThreshold / lum;
+    }
 
     imageStore(reflectionColor, imageCoords, vec4(radiance, weight));
     imageStore(reflectionDirection, imageCoords, vec4(vec3(state.matID + 1), invPdf));

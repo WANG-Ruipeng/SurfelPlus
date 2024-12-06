@@ -25,6 +25,7 @@ layout(push_constant) uniform _RtxState
 };
 
 #include "globals.glsl"
+#include "random.glsl"
 
 layout(set = 0, binding = 0) uniform image2D reflectionColor;
 layout(set = 0, binding = 1) uniform image2D reflectionDirection;
@@ -126,6 +127,8 @@ void main()
 
     // STAGE 1; Spatial reconstruction filtering
     ivec2 halfImageCoords = imageCoords / 2;
+    uint randUint = tea(halfImageCoords.y * imageRes.x + halfImageCoords.x, rtxState.frame);
+    int dir = (randUint & 1u) > 0 ? 1 : -1;
 
     vec3 result = vec3(0.0);
     float weightSum = 0.0;
@@ -153,11 +156,12 @@ void main()
     weightSum += centerWeight;
 
     uint quadID = (imageCoords.x & 0x1) << 1 + (imageCoords.y & 0x1);
+    quadID = (quadID + randUint) & 0x3;
     float variance = 0.0;
 
     for (int i = 0; i < 16; ++i)
     {
-		ivec2 offset = samplePattern[quadID][i];
+		ivec2 offset = dir * samplePattern[quadID][i];
 		ivec2 neighborCoords = halfImageCoords + offset;
 
 		vec4 neighborColor = imageLoad(reflectionColor, neighborCoords);
@@ -196,6 +200,6 @@ void main()
     vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
     result = mix(colPrev, result, ratio);
 
-    imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, sqrt(variance)));
+    imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, weightSum));
     //imageStore(filteredReflectionColor, imageCoords, centerColor);
 }
