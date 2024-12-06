@@ -863,7 +863,6 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getCellBufferDescSet()
         });
 
-
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet()
         });
@@ -894,16 +893,9 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         static_cast<uint32_t>(barriers.size()),
         barriers.data());
 
-	m_bilateralCleanupPass.run(cmdBuf, render_size, profiler, {
-		m_reflectionComputePass.getSamplerDescSet()
-		});
-
-    vkCmdPipelineBarrier(cmdBuf,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        0, 0, nullptr, 0, nullptr,
-        static_cast<uint32_t>(barriers.size()),
-        barriers.data());
+    m_bilateralCleanupPass.run(cmdBuf, render_size, profiler, {
+    m_reflectionComputePass.getSamplerDescSet()
+        });
 
     m_taaPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet()

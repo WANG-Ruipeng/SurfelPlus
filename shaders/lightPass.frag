@@ -188,8 +188,8 @@ void main()
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
         else if (rtxState.debugging_mode == esReflectionBrdf){
-            uv = ( gl_FragCoord.xy) / vec2(textureSize(bilateralCleanupColor,0));
-            fragColor.xyz = texture(bilateralCleanupColor, uv).rgb;
+            uv = ( gl_FragCoord.xy) / vec2(textureSize(bilateralCleanupColor ,0 ));
+            fragColor.xyz = texture(bilateralCleanupColor , uv).rgb;
             fragColor.a = 1.0;
         }
         else
