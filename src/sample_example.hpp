@@ -79,6 +79,8 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "lightPass.h"
 #include "reflection_compute.h"
 #include "temporal_spatial_pass.h"
+#include "bilateral_cleanup_pass.h"
+#include "taa_pass.h"
 
 class SampleGUI;
 
@@ -159,6 +161,8 @@ public:
   // reflection compute passes
   ReflectionComputePass m_reflectionComputePass;
   TemporalSpatialPass m_temporalSpatialPass;
+  BilateralCleanupPass m_bilateralCleanupPass;
+  TAAPass m_taaPass;
 
   // light pass
   LightPass m_lightPass;

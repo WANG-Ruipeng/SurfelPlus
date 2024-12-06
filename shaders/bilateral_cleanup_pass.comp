@@ -1,0 +1,88 @@
+
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+#extension GL_ARB_shader_clock : enable                 // Using clockARB
+#extension GL_EXT_shader_image_load_formatted : enable  // The folowing extension allow to pass images as function parameters
+
+#extension GL_NV_shader_sm_builtins : require     // Debug - gl_WarpIDNV, gl_SMIDNV
+#extension GL_ARB_gpu_shader_int64 : enable       // Debug - heatmap value
+#extension GL_EXT_shader_realtime_clock : enable  // Debug - heatmap timing
+
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_debug_printf : enable
+#extension GL_KHR_vulkan_glsl : enable
+
+#include "host_device.h"
+
+layout(push_constant) uniform _RtxState
+{
+  RtxState rtxState;
+};
+
+#include "globals.glsl"
+
+layout(set = 0, binding = 0) uniform image2D reflectionColor;
+layout(set = 0, binding = 1) uniform image2D reflectionDirection;
+layout(set = 0, binding = 2) uniform image2D reflectionPointBrdf;
+layout(set = 0, binding = 3) uniform image2D filteredReflectionColor;
+layout(set = 0, binding = 4) uniform image2D bilateralCleanupColor;
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+void main()
+{
+    ivec2 imageRes = rtxState.size; 
+    ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
+    
+    if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
+        return; 
+
+    vec4 centerColor = imageLoad(filteredReflectionColor, imageCoords);
+    float variance = centerColor.w;
+    vec3 result = vec3(0.8,0.0,0.0);
+    float weightSum = 0.0;
+
+    if(sqrt(variance) > 2.0 && !(length (centerColor.rgb ) < 0.001) ){
+        
+        // Define sigma values
+        float sigmaS = clamp (sqrt(variance) , 2.0, 6.0);
+        float sigmaR = 0.5;
+        // Define a kernel radius for the spatial domain
+        int kernelRadius = int(0.25 * sigmaS);
+        for (int y = -kernelRadius; y <= kernelRadius; ++y) {
+            for (int x = -kernelRadius; x <= kernelRadius; ++x) {
+                ivec2 neighborCoords = imageCoords + ivec2(x, y);
+                // Boundary check
+                if (neighborCoords.x < 0 || neighborCoords.y < 0 ||
+                    neighborCoords.x >= imageRes.x || neighborCoords.y >= imageRes.y)
+                    continue;
+                vec4 neighborColor = imageLoad(filteredReflectionColor, neighborCoords);
+                if(length (neighborColor.rgb) < 0.001) continue;
+                // Spatial weight
+                float dist2 = float(x * x + y * y);
+                float spatialWeight = exp(-dist2 / (2.0 * sigmaS * sigmaS));
+                // Range weight
+                float colorDiff = length(neighborColor.rgb - centerColor.rgb);
+                float rangeWeight = exp(-colorDiff * colorDiff / (2.0 * sigmaR * sigmaR));
+                // Combined weight
+                float weight = spatialWeight * rangeWeight;
+                result += neighborColor.rgb * weight;
+                weightSum += weight;
+            }
+        }
+        // Normalize result
+        if (weightSum > 1e-5) {
+            result /= weightSum;
+        } else {
+            result = centerColor.rgb;
+        }
+    }
+    
+    imageStore(bilateralCleanupColor, imageCoords, vec4(result, 1.0));
+}

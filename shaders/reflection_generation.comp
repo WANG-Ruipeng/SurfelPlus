@@ -47,6 +47,7 @@ layout(set = 5, binding = 0) uniform image2D reflectionColor;
 layout(set = 5, binding = 1) uniform image2D reflectionDirection;
 layout(set = 5, binding = 2) uniform image2D reflectionPointBrdf;
 layout(set = 5, binding = 3) uniform image2D filteredReflectionColor;
+layout(set = 5, binding = 4) uniform image2D bilateralCleanupColor;
 
 // surfel buffers
 layout(set = 6, binding = 0,  scalar)		buffer _SurfelCounter		{ SurfelCounter surfelCounter; };
