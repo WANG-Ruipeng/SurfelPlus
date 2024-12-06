@@ -892,9 +892,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet()
         });
-
 	
-
     vkCmdPipelineBarrier(cmdBuf,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,

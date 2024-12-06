@@ -48,13 +48,13 @@ void main()
     vec3 result = vec3(0.0,0.0,0.0);
     float weightSum = 0.0;
 
-    if(length(centerColor) < 0.0001 || sqrt(variance) < 2.0){
+    if(length(centerColor) < 0.0001 || variance < 2.0){
         imageStore(bilateralCleanupColor, imageCoords, vec4(0.0));
         return;
     }
 
     // Define sigma values
-    float sigmaS = clamp (sqrt(variance) , 2.0, 4.0);
+    float sigmaS = clamp (variance , 2.0, 4.0);
     float sigmaR = 0.5;
     // Define a kernel radius for the spatial domain
     int kernelRadius = int(0.5 * sigmaS);
@@ -67,7 +67,7 @@ void main()
                 neighborCoords.x >= imageRes.x || neighborCoords.y >= imageRes.y)
                 continue;
             vec4 neighborColor = imageLoad(filteredReflectionColor, neighborCoords);
-            if(length (neighborColor.rgb) < 0.001) continue;
+            if(length (neighborColor.rgb) < 0.1) continue;
             // Spatial weight
             float dist2 = float(x * x + y * y);
             float spatialWeight = exp(-dist2 / (2.0 * sigmaS * sigmaS));
