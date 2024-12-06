@@ -66,20 +66,6 @@ layout(set = 7, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel
 #include "shaderUtils_surfel_cell.glsl"
 #include "shaderUtils.glsl"
 
-float brdfWeight(vec3 V, vec3 N, vec3 L, float roughness)
-{
-  float NdotL = dot(N, L);
-  if(NdotL < 0.0)
-    return 0.0;
-
-  vec3 H = normalize(L + V);
-  float NdotV = dot(N, V);
-  float NdotH = clamp(dot(N, H), 0, 1);
-  float G = V_GGX(NdotL, NdotV, roughness);
-  float D = D_GGX(NdotH, max(0.001, roughness));
-  return G * D;
-}
-
 // only sample specular lobe
 vec3 SpecSample(in State state, vec3 V, vec3 N, inout vec3 L, inout float pdf, inout RngStateType seed)
 {
@@ -151,86 +137,112 @@ void main()
 		return;
 	}
 
-    uvec2 seed01 = uvec2(imageCoords) * rtxState.frame;
-    uvec2 seed02 = seed01 + 1919810;
-    uint seed11 = tea(seed01.x, seed01.y);
-    uint seed12 = tea(seed02.x, seed02.y);
-    vec2 stocasticUV = uv + vec2(rand(seed11) - 0.5, rand(seed12) - 0.5) / vec2(imageRes);
+    uint randSeed = initRandom(imageRes, imageCoords, lowbias32(rtxState.totalFrames));
+    vec2 stocasticUV = uv + vec2(rand(randSeed) - 0.5, rand(randSeed) - 0.5) / vec2(imageRes);
 
     prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.totalFrames * rtxState.maxSamples);
-//    prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, 114514 * rtxState.maxSamples);
+    vec2       d           = stocasticUV * 2.0 - 1.0;
 
-    ivec2 gbufferCoords = ivec2(imageCoords * 2);
-	uint primObjID = texelFetch(gbufferPrim, gbufferCoords, 0).r;
+    vec4 origin    = sceneCamera.viewInverse * vec4(0, 0, 0, 1);
+    vec4 target    = sceneCamera.projInverse * vec4(d.x, d.y, 1, 1);
+    vec4 direction = sceneCamera.viewInverse * vec4(normalize(target.xyz), 0);
+    Ray ray = Ray(origin.xyz, direction.xyz);
 
-    // reconstruct world position from depth
-    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
-    if (depth == 1.0)
-	{
-        imageStore(reflectionColor, imageCoords, vec4(0.0));
-        imageStore(reflectionDirection, imageCoords, vec4(0.0));
-		return;
-	}
-
-    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
-
-    uint nodeID = primObjID >> 23;
-    uint instanceID = sceneNodes[nodeID].primMesh;
-    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
-    uint primID = primObjID & 0x007FFFFF;
-    InstanceData pinfo = geoInfo[instanceID];
-
-    // Primitive buffer addresses
-    Indices  indices  = Indices(pinfo.indexAddress);
-    Vertices vertices = Vertices(pinfo.vertexAddress);
-
-    // Indices of this triangle primitive.
-    uvec3 tri = indices.i[primID];
-
-    // All vertex attributes of the triangle.
-    VertexAttributes attr0 = vertices.v[tri.x];
-    VertexAttributes attr1 = vertices.v[tri.y];
-    VertexAttributes attr2 = vertices.v[tri.z];
-
-    // camera ray
-    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
-    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
-
-    // decompress normal
-    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, gbufferCoords, 0).r);
-
-    // reflected direction and brdf
-    State state = GetState(primObjID, normal, depth, uv);
-    // ignore rough surface
-    if (state.mat.roughness > 0.95)
-	{
-		imageStore(reflectionColor, imageCoords, vec4(0.0));
+    float firstDepth = -1.f;
+    BsdfSampleRec reflectBsdfSampleRec;
+    float weight;
+    vec3 radiance = surfelRefelctionTrace(ray, 8, firstDepth, reflectBsdfSampleRec, weight);
+    if (firstDepth == INFINITY)
+    {
+    	imageStore(reflectionColor, imageCoords, vec4(0.0));
 		imageStore(reflectionDirection, imageCoords, vec4(0.0));
 		return;
 	}
-    BsdfSampleRec reflectBsdfSampleRec;
-    float weight = 0.0;
-    uint maxItr = 0;
-
-    while(weight < 1e-5 && maxItr < 3)
+    float lum = dot(radiance, vec3(0.212671f, 0.715160f, 0.072169f));
+    if(lum > rtxState.fireflyClampThreshold)
     {
-        reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
-        // calculate brdf weight
-        weight = brdfWeight(-camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, state.mat.roughness);
-        reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
-        maxItr++;
+      radiance *= rtxState.fireflyClampThreshold / lum;
     }
-
-    // reflection color
-    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
-
-
-    float firstDepth = -1.f;
-    vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth);
     float invPdf = 1.f / reflectBsdfSampleRec.pdf;
-    radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.normal));
+    //radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.normal));
+
     imageStore(reflectionColor, imageCoords, vec4(radiance, weight));
     imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, invPdf));
+
+
+
+//    ivec2 gbufferCoords = ivec2(imageCoords * 2);
+//	uint primObjID = texelFetch(gbufferPrim, gbufferCoords, 0).r;
+//
+//    // reconstruct world position from depth
+//    float depth = texelFetch(gbufferDepth, gbufferCoords, 0).r;
+//    if (depth == 1.0)
+//	{
+//        imageStore(reflectionColor, imageCoords, vec4(0.0));
+//        imageStore(reflectionDirection, imageCoords, vec4(0.0));
+//		return;
+//	}
+//
+//    vec3 worldPos = WorldPosFromDepth(stocasticUV, depth);
+//
+//    uint nodeID = primObjID >> 23;
+//    uint instanceID = sceneNodes[nodeID].primMesh;
+//    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+//    uint primID = primObjID & 0x007FFFFF;
+//    InstanceData pinfo = geoInfo[instanceID];
+//
+//    // Primitive buffer addresses
+//    Indices  indices  = Indices(pinfo.indexAddress);
+//    Vertices vertices = Vertices(pinfo.vertexAddress);
+//
+//    // Indices of this triangle primitive.
+//    uvec3 tri = indices.i[primID];
+//
+//    // All vertex attributes of the triangle.
+//    VertexAttributes attr0 = vertices.v[tri.x];
+//    VertexAttributes attr1 = vertices.v[tri.y];
+//    VertexAttributes attr2 = vertices.v[tri.z];
+//
+//    // camera ray
+//    vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+//    Ray camRay = Ray(camPos, normalize(worldPos - camPos));
+//
+//    // decompress normal
+//    vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, gbufferCoords, 0).r);
+//
+//    // reflected direction and brdf
+//    State state = GetState(primObjID, normal, depth, uv);
+//    // ignore rough surface
+//    if (state.mat.roughness > 0.95)
+//	{
+//		imageStore(reflectionColor, imageCoords, vec4(0.0));
+//		imageStore(reflectionDirection, imageCoords, vec4(0.0));
+//		return;
+//	}
+//    BsdfSampleRec reflectBsdfSampleRec;
+//    float weight = 0.0;
+//    uint maxItr = 0;
+//
+//    while(weight < 1e-5 && maxItr < 3)
+//    {
+//        reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
+//        // calculate brdf weight
+//        weight = brdfWeight(-camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, state.mat.roughness);
+//        reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
+//        maxItr++;
+//    }
+//
+//    // reflection color
+//    Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
+
+
+//    float firstDepth = -1.f;
+//    vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth);
+//    float invPdf = 1.f / reflectBsdfSampleRec.pdf;
+//    radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.normal));
+//
+//    imageStore(reflectionColor, imageCoords, vec4(radiance, weight));
+//    imageStore(reflectionDirection, imageCoords, vec4(reflectBsdfSampleRec.L, invPdf));
 
     //ClosestHit(reflectedRay);
 

@@ -149,7 +149,9 @@ void main()
 
     //vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy) / 2, 0).rgb;
     vec3 indirectLight = texture(indirectLightMap, uv).rgb;
-    vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+    //vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+    vec3 diffuseAlbedo = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-camRay.direction, state.normal)), state.mat.roughness)
+        * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(filteredReflectionColor, ivec2(gl_FragCoord.xy), 0).rgb;
 
@@ -189,8 +191,7 @@ void main()
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
         else if (rtxState.debugging_mode == esReflectionBrdf){
-            uv = ( gl_FragCoord.xy) / vec2(textureSize(bilateralCleanupColor ,0 ));
-            fragColor.xyz = texture(bilateralCleanupColor , uv).rgb;
+            fragColor.xyz = reflectionColor;
             fragColor.a = 1.0;
         }
         else

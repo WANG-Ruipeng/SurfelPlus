@@ -81,8 +81,8 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 {
 	VkExtent2D size = { fullSize.width / 2, fullSize.height / 2 };
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 4 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 }
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 5 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5 }
 	};
 	m_descPool = nvvk::createDescriptorPool(m_device, descriptorPoolSizes, 1);
  

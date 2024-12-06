@@ -135,14 +135,14 @@ void main()
     
     // Get center pixel values as reference
     vec4 centerColor = imageLoad(reflectionColor, halfImageCoords);
-    if (centerColor.a == 0.0)
+    vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
+    if (centerDirection == vec4(0.0))
     {
-		imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
+		//imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
 		return;
 	}
 
-    vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
-    vec4 centerBrdf = imageLoad(reflectionPointBrdf, halfImageCoords);
+    //vec4 centerBrdf = imageLoad(reflectionPointBrdf, halfImageCoords);
 
     // Add center sample contribution
     float centerPdfInv = max(centerDirection.a, 0.001);
@@ -183,10 +183,13 @@ void main()
         result = centerColor.rgb;
     }
 
+    //result = centerColor.rgb;
+
     // temporal accumulation
-    float ratio = 1.0 / min(128.0, (1.0 + float(rtxState.frame)));
+    float ratio = 1.0 / max(1.0, float(rtxState.frame + 1));
     vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
     result = mix(colPrev, result, ratio);
 
-    imageStore(filteredReflectionColor, imageCoords, vec4(result, sqrt(variance)));
+    imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, sqrt(variance)));
+    //imageStore(filteredReflectionColor, imageCoords, centerColor);
 }

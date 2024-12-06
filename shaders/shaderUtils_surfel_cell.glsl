@@ -123,6 +123,20 @@ const vec3 neighborOffset[27] = vec3[27](
 
 #ifdef LAYOUTS_GLSL
 
+float brdfWeight(vec3 V, vec3 N, vec3 L, float roughness)
+{
+    float NdotL = dot(N, L);
+    if (NdotL < 0.0)
+        return 0.0;
+
+    vec3 H = normalize(L + V);
+    float NdotV = dot(N, V);
+    float NdotH = clamp(dot(N, H), 0, 1);
+    float G = V_GGX(NdotL, NdotV, roughness);
+    float D = D_GGX(NdotH, max(0.001, roughness));
+    return G * D;
+}
+
 bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 {
     irradiance = vec4(0.0f);
@@ -320,7 +334,10 @@ vec3 surfelPathTrace(Ray r, int maxDepth, uint surfelIndex, inout float firstDep
         // Color at vertices
         state.mat.albedo *= sstate.color;
 
-        diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+        //diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+
+        diffuseRatio = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-r.direction, state.normal)), state.mat.roughness)
+            * (1.0 - state.mat.metallic));
 
         // Debugging info
         /*if (rtxState.debugging_mode != eNoDebug && rtxState.debugging_mode < eRadiance)
@@ -419,7 +436,7 @@ vec3 surfelPathTrace(Ray r, int maxDepth, uint surfelIndex, inout float firstDep
 }
 
 
-vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth)
+vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth, inout BsdfSampleRec reflectSample, inout float weight)
 {
     vec3 radiance = vec3(0.0);
     vec3 throughput = vec3(1.0);
@@ -479,7 +496,10 @@ vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth)
         // Color at vertices
         state.mat.albedo *= sstate.color;
 
-        diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+        //diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+
+        diffuseRatio = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-r.direction, state.normal)), state.mat.roughness)
+            * (1.0 - state.mat.metallic));
 
         // Debugging info
         /*if (rtxState.debugging_mode != eNoDebug && rtxState.debugging_mode < eRadiance)
@@ -509,6 +529,12 @@ vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth)
 
         // Sampling for the next ray
         bsdfSampleRec.f = Sample(state, -r.direction, state.ffnormal, bsdfSampleRec.L, bsdfSampleRec.pdf, prd.seed);
+
+        if (depth == 0)
+        {
+            reflectSample = bsdfSampleRec;
+			weight = brdfWeight(-r.direction, state.ffnormal, bsdfSampleRec.L, state.mat.roughness);
+        }
 
         // Set absorption only if the ray is currently inside the object.
         if (dot(state.ffnormal, bsdfSampleRec.L) < 0.0)
@@ -556,18 +582,18 @@ vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth)
     }
 
     // use surfel indirect when the path reach max depth
-	if (depth == maxDepth && valid && dot(radiance, radiance) > 0.0)
-    {
-        vec4 irradiance = vec4(0.0);
-        bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
-        //bool rst = false;
-        if (rst)
-        {
-            // apply diffuse ratio
-			irradiance.rgb *= diffuseRatio;
-            radiance += irradiance.xyz * throughput;
-        }
-    }
+	//if (depth == maxDepth && valid)
+ //   {
+ //       vec4 irradiance = vec4(0.0);
+ //       bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
+ //       //bool rst = false;
+ //       if (rst)
+ //       {
+ //           // apply diffuse ratio
+	//		irradiance.rgb *= diffuseRatio;
+ //           radiance += irradiance.xyz * throughput;
+ //       }
+ //   }
 
 
     return radiance;

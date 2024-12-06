@@ -845,6 +845,25 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     if (m_descaling)
         render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
 
+    std::vector<nvvk::Texture> textures = m_reflectionComputePass.getColorDirectionTextures();
+    std::vector< VkImageMemoryBarrier> barriers = {};
+    VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+    for (int i = 0; i < textures.size(); i++)
+    {
+        VkImageMemoryBarrier imageMemoryBarrier = {};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
+        imageMemoryBarrier.srcQueueFamilyIndex = m_queues[eGCT0].familyIndex;
+        imageMemoryBarrier.dstQueueFamilyIndex = m_queues[eGCT0].familyIndex;
+        imageMemoryBarrier.image = textures[i].image;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+        barriers.push_back(imageMemoryBarrier);
+    }
+
     m_rtxState.size = { render_size.width, render_size.height };
 
 	m_reflectionComputePass.setPushContants(m_rtxState);
@@ -863,28 +882,18 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getCellBufferDescSet()
         });
 
+    vkCmdPipelineBarrier(cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        0, 0, nullptr, 0, nullptr,
+        static_cast<uint32_t>(barriers.size()),
+        barriers.data());
+
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet()
         });
 
-	std::vector<nvvk::Texture> textures = m_reflectionComputePass.getColorDirectionTextures();
-	std::vector< VkImageMemoryBarrier> barriers = {};
-    VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-
-    for (int i = 0; i < textures.size(); i++)
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = {};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // change here?
-        imageMemoryBarrier.srcQueueFamilyIndex = m_queues[eGCT0].familyIndex;
-		imageMemoryBarrier.dstQueueFamilyIndex = m_queues[eGCT0].familyIndex;
-        imageMemoryBarrier.image = textures[i].image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-		barriers.push_back(imageMemoryBarrier);
-    }
+	
 
     vkCmdPipelineBarrier(cmdBuf,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
