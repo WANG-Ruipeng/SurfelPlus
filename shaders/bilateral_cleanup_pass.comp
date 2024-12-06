@@ -31,7 +31,7 @@ layout(set = 0, binding = 0) uniform image2D reflectionColor;
 layout(set = 0, binding = 1) uniform image2D reflectionDirection;
 layout(set = 0, binding = 2) uniform image2D reflectionPointBrdf;
 layout(set = 0, binding = 3) uniform image2D filteredReflectionColor;
-layout(set = 5, binding = 4) uniform image2D bilateralCleanupColor;
+layout(set = 0, binding = 4) uniform image2D bilateralCleanupColor;
 
 const ivec2 samplePattern[4][16] = ivec2[4][16](
 	ivec2[16](
@@ -125,79 +125,13 @@ void main()
     if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
         return; 
 
-    // STAGE 1; Spatial reconstruction filtering
-    ivec2 halfImageCoords = imageCoords / 2;
-
-    vec3 result = vec3(0.0);
+    vec4 centerColor = imageLoad(filteredReflectionColor, imageCoords);
+    float variance = centerColor.w;
+    vec3 result = vec3(0.8,0.0,0.0);
     float weightSum = 0.0;
-    
-    // Base sampling radius
-    float radius = min(imageRes.x, imageRes.y) * 0.003;
-    
-    // Get center pixel values as reference
-    vec4 centerColor = imageLoad(reflectionColor, halfImageCoords);
-    if (centerColor.a == 0.0)
-    {
-		imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
-		return;
-	}
 
-    vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
-    vec4 centerBrdf = imageLoad(reflectionPointBrdf, halfImageCoords);
-
-    // Add center sample contribution
-    float centerPdfInv = max(centerDirection.a, 0.001);
-    float centerWeight = max(centerColor.a * centerPdfInv, 0.0);
-    vec3 centerContrib = centerColor.rgb * centerWeight;
-    result += centerContrib;
-    weightSum += centerWeight;
-
-    uint quadID = (imageCoords.y & 0x1) << 1 + (imageCoords.x & 0x1);
-    float variance = 0.0;
-
-    for (int i = 0; i < 16; ++i)
-    {
-		ivec2 offset = samplePattern[quadID][i];
-		ivec2 neighborCoords = halfImageCoords + offset;
-
-		vec4 neighborColor = imageLoad(reflectionColor, neighborCoords);
-		if (neighborColor.a == 0.0)
-            continue;
-        
-        float brdfWeight = neighborColor.a;
-        float pdfInv = max(imageLoad(reflectionDirection, neighborCoords).a, 1e-5);
-        
-        // Combine BRDF weight with distance weight
-        float weight = max(brdfWeight * pdfInv, 0.0);
-        vec3 contrib = neighborColor.rgb * weight;
-        vec3 diff = contrib - centerContrib;
-        variance += dot(diff, diff);
-
-        result += contrib;
-        weightSum += weight;
-    }
-
-    // Normalize result
-    if (weightSum > 1e-5) {
-        result /= weightSum;
-    } else {
-        result = centerColor.rgb;
-    }
-
-    // temporal accumulation
-    //float ratio = 1.0 / min(64.0, (1.0 + float(rtxState.frame)));
-    //vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
-    //result = mix(colPrev, result, ratio);
-
-    imageStore(filteredReflectionColor, imageCoords, vec4(result, sqrt(variance)));
-    //barriering is fine for now, if we need to optimize, maybe spliting different stage into seperate shader will be good
-    memoryBarrier();
-    barrier();
-
-    // STAGE 2: bilateral filter
     if(sqrt(variance) > 2.0 && !(length (centerColor.rgb ) < 0.001) ){
-        result = vec3(0.0);
-        weightSum = 0.0;
+        
         // Define sigma values
         float sigmaS = clamp (sqrt(variance) , 2.0, 6.0);
         float sigmaR = 0.5;
@@ -232,5 +166,5 @@ void main()
         }
     }
     
-    imageStore(filteredReflectionColor, imageCoords, vec4(result, 1.0));
+    imageStore(bilateralCleanupColor, imageCoords, vec4(result, 1.0));
 }

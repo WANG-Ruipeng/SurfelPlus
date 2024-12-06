@@ -84,6 +84,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_surfelIntegratePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_reflectionComputePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_temporalSpatialPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_bilateralCleanupPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -368,6 +369,9 @@ void SampleExample::createReflectionPass()
 
     m_temporalSpatialPass.create(m_size, { 
         m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
+
+	m_bilateralCleanupPass.create(m_size, {
+		m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -838,7 +842,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
 
 	m_reflectionComputePass.setPushContants(m_rtxState);
 	m_temporalSpatialPass.setPushContants(m_rtxState);
-
+	m_bilateralCleanupPass.setPushContants(m_rtxState);
 
     m_reflectionComputePass.run(cmdBuf, render_size, profiler, { 
         m_accelStruct.getDescSet(), 
@@ -873,4 +877,8 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     }
 
     vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, static_cast<uint32_t>(barriers.size()), barriers.data());
+
+	m_bilateralCleanupPass.run(cmdBuf, render_size, profiler, {
+		m_reflectionComputePass.getSamplerDescSet()
+		});
 }
