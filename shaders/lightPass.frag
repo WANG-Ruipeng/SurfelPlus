@@ -151,12 +151,13 @@ void main()
     vec3 indirectLight = texture(indirectLightMap, uv).rgb;
     vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
+    vec3 reflectionColor = texelFetch(filteredReflectionColor, ivec2(gl_FragCoord.xy), 0).rgb;
 
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
 
-    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
+    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor;
 
     if(rtxState.debugging_mode != eNoDebug)
     {
