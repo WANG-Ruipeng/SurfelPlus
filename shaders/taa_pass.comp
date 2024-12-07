@@ -118,7 +118,7 @@ void main()
 	// final blend
 	vec3 finalColor = mix(prevCol, col_clipped, 0.5);
 
-	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
+//	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 
 
