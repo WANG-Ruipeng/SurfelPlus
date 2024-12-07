@@ -82,6 +82,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_cellToSurfelUpdatePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelRaytracePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_surfelIntegratePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_indirectPostprocessPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_reflectionComputePass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_temporalSpatialPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_bilateralCleanupPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
@@ -334,6 +335,12 @@ void SampleExample::createSurfelResources()
         m_surfel.getCellBufferDescLayout(),
         m_scene.getDescLayout(),
 		}, & m_scene);
+
+	m_indirectPostprocessPass.create(m_size, {
+        m_scene.getDescLayout(),
+        m_surfel.getGbufferSamplerDescLayout(),
+		m_surfel.getIndirectLightDescLayout()
+		}, &m_scene);
 
     createReflectionPass();
 	createLightPass();
@@ -637,6 +644,7 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_surfelUpdatePass.setPushContants(m_rtxState);
 	m_surfelRaytracePass.setPushContants(m_rtxState);
 	m_surfelIntegratePass.setPushContants(m_rtxState);
+	m_indirectPostprocessPass.setPushContants(m_rtxState);
 
 
     VkBufferMemoryBarrier outbuffDependency = {};
@@ -702,6 +710,14 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	imageMemoryBarrier.image = m_surfel.getIndirectLightingMap().image;
 	imageMemoryBarrier.subresourceRange = subresourceRange;
+
+    vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+
+	m_indirectPostprocessPass.run(cmdBuf, render_size, profiler, {
+		m_scene.getDescSet(),
+		m_surfel.getGbufferSamplerDescSet(),
+		m_surfel.getIndirectLightDescSet()
+		});
 
 
     vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
