@@ -33,8 +33,10 @@ layout(set = 0, binding = 9) uniform sampler2D bilateralCleanupColorSampler;
 layout(set = 1, binding = 2) uniform sampler2D gbufferDepth;
 layout(set = 2, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 
-layout(set = 3, binding = 1) uniform sampler2D prevTAAColor;
-layout(set = 4, binding = 0) uniform image2D outputTAAColor;
+layout(set = 3, binding = 0) uniform image2D TAASampler1;
+layout(set = 3, binding = 1) uniform image2D TAASampler2;
+layout(set = 3, binding = 2) uniform sampler2D TAAColor1;
+layout(set = 3, binding = 3) uniform sampler2D TAAColor2;
 
 #include "globals.glsl"
 #include "shaderUtils.glsl"

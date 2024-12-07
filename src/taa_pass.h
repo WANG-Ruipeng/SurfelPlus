@@ -33,13 +33,10 @@ public:
     const std::string name();
     void          setPushContants(const RtxState& state) { m_state = state; }
     void createTAADescriptorSet(const VkExtent2D& fullSize, nvvk::Queue queue);
-    void updateDescSet(int currFrame);
 
     // getters
-    VkDescriptorSetLayout getPrevSamplerDescSetLayout() { return m_prevSamplerDescSetLayout; }
-    VkDescriptorSet getPrevSamplerDescSet() { return m_prevSamplerDescSet; }
-    VkDescriptorSetLayout getCurrSamplerDescSetLayout() { return m_currSamplerDescSetLayout; }
-    VkDescriptorSet getCurrSamplerDescSet() { return m_currSamplerDescSet; }
+    VkDescriptorSetLayout getSamplerDescSetLayout() { return m_sampleDescSetLayout; }
+    VkDescriptorSet getSamplerDescSet() { return m_sampleDescSet; }
 
 private:
     // Setup
@@ -53,12 +50,8 @@ private:
     VkDescriptorPool m_descPool{ VK_NULL_HANDLE };
     VkDescriptorSet  m_descSet{ VK_NULL_HANDLE };
     std::vector<nvvk::Texture> m_images;
-    VkDescriptorSetLayout	   m_prevSamplerDescSetLayout{ VK_NULL_HANDLE };
-    VkDescriptorSet			   m_prevSamplerDescSet{ VK_NULL_HANDLE };
-    VkDescriptorSetLayout	   m_currSamplerDescSetLayout{ VK_NULL_HANDLE };
-    VkDescriptorSet			   m_currSamplerDescSet{ VK_NULL_HANDLE };
+    VkDescriptorSetLayout	   m_sampleDescSetLayout{ VK_NULL_HANDLE };
+    VkDescriptorSet			   m_sampleDescSet{ VK_NULL_HANDLE };
 
-    nvvk::DescriptorSetBindings m_bind_prev;
-    nvvk::DescriptorSetBindings m_bind_curr;
 };
 

@@ -95,11 +95,8 @@ void TAAPass::createTAADescriptorSet(const VkExtent2D& fullSize, nvvk::Queue que
 			}
 		}
 
-		if (m_prevSamplerDescSetLayout != VK_NULL_HANDLE)
-			vkDestroyDescriptorSetLayout(m_device, m_prevSamplerDescSetLayout, nullptr);
-
-		if (m_currSamplerDescSetLayout != VK_NULL_HANDLE)
-			vkDestroyDescriptorSetLayout(m_device, m_currSamplerDescSetLayout, nullptr);
+		if (m_sampleDescSetLayout != VK_NULL_HANDLE)
+			vkDestroyDescriptorSetLayout(m_device, m_sampleDescSetLayout, nullptr);
 	}
 
 	// create reflection map and direction map
@@ -153,21 +150,16 @@ void TAAPass::createTAADescriptorSet(const VkExtent2D& fullSize, nvvk::Queue que
 
 	// reflection description set
 	{
-
-		m_bind_prev.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
-		m_bind_prev.addBinding({ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
-
-		m_bind_curr.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
-		m_bind_curr.addBinding({ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
+		nvvk::DescriptorSetBindings m_bind;
+		m_bind.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		m_bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		m_bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
+		m_bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 
 		// allocate the descriptor set
-		m_prevSamplerDescSetLayout = m_bind_prev.createLayout(m_device);
-		m_prevSamplerDescSet = nvvk::allocateDescriptorSet(m_device,
-			m_descPool, m_prevSamplerDescSetLayout);
-
-		m_currSamplerDescSetLayout = m_bind_curr.createLayout(m_device);
-		m_currSamplerDescSet = nvvk::allocateDescriptorSet(m_device,
-			m_descPool, m_currSamplerDescSetLayout);
+		m_sampleDescSetLayout = m_bind.createLayout(m_device);
+		m_sampleDescSet = nvvk::allocateDescriptorSet(m_device,
+			m_descPool, m_sampleDescSetLayout);
 
 		// update the descriptor set
 		std::vector<VkWriteDescriptorSet> writes;
@@ -177,36 +169,13 @@ void TAAPass::createTAADescriptorSet(const VkExtent2D& fullSize, nvvk::Queue que
 			m_images[1].descriptor,
 		};
 
-		writes.emplace_back(m_bind_prev.makeWrite(m_prevSamplerDescSet, 0, &descImg[0]));
-		writes.emplace_back(m_bind_prev.makeWrite(m_prevSamplerDescSet, 1, &descImg[0]));
-
-		writes.emplace_back(m_bind_curr.makeWrite(m_currSamplerDescSet, 0, &descImg[1]));
-		writes.emplace_back(m_bind_curr.makeWrite(m_currSamplerDescSet, 1, &descImg[1]));
+		writes.emplace_back(m_bind.makeWrite(m_sampleDescSet, 0, &descImg[0]));
+		writes.emplace_back(m_bind.makeWrite(m_sampleDescSet, 1, &descImg[1]));
+		writes.emplace_back(m_bind.makeWrite(m_sampleDescSet, 2, &descImg[0]));
+		writes.emplace_back(m_bind.makeWrite(m_sampleDescSet, 3, &descImg[1]));
 
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
 	}
 }
 
-
-void TAAPass::updateDescSet(int currFrame)
-{
-	int prevIdx = currFrame % 2;
-	int currIdx = (currFrame + 1) % 2;
-
-	// update the descriptor set
-	std::vector<VkWriteDescriptorSet> writes;
-
-	VkDescriptorImageInfo descImg[2] = {
-		m_images[prevIdx].descriptor,
-		m_images[currIdx].descriptor,
-	};
-
-	writes.emplace_back(m_bind_prev.makeWrite(m_prevSamplerDescSet, 0, &descImg[0]));
-	writes.emplace_back(m_bind_prev.makeWrite(m_prevSamplerDescSet, 1, &descImg[0]));
-
-	writes.emplace_back(m_bind_curr.makeWrite(m_currSamplerDescSet, 0, &descImg[1]));
-	writes.emplace_back(m_bind_curr.makeWrite(m_currSamplerDescSet, 1, &descImg[1]));
-
-	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-}

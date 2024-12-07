@@ -356,7 +356,7 @@ void SampleExample::createLightPass()
         m_surfel.getGbufferImageDescLayout(), 
         m_surfel.getIndirectLightDescLayout(), 
         m_reflectionComputePass.getSamplerDescSetLayout(),
-        m_taaPass.getCurrSamplerDescSetLayout()}, & m_scene);
+        m_taaPass.getSamplerDescSetLayout()}, & m_scene);
     m_lightPass.createLightPassDescriptorSet(m_offscreen.getDescLayout());
 }
 
@@ -387,8 +387,7 @@ void SampleExample::createReflectionPass()
 		m_reflectionComputePass.getSamplerDescSetLayout(), 
         m_surfel.getGbufferImageDescLayout(),
         m_scene.getDescLayout(),
-		m_taaPass.getPrevSamplerDescSetLayout(),
-		m_taaPass.getCurrSamplerDescSetLayout()
+		m_taaPass.getSamplerDescSetLayout(),
         }, &m_scene);
 }
 
@@ -916,13 +915,11 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getGbufferImageDescSet(),
         });
 
-    m_taaPass.updateDescSet(m_rtxState.frame);
     m_taaPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet(),
         m_surfel.getGbufferImageDescSet(),
         m_scene.getDescSet(),
-		m_taaPass.getPrevSamplerDescSet(),
-		m_taaPass.getCurrSamplerDescSet()
+		m_taaPass.getSamplerDescSet()
         });
 
     vkCmdPipelineBarrier(cmdBuf,
