@@ -191,12 +191,17 @@ void main()
         }
         else if (rtxState.debugging_mode == esEmissive)
             fragColor.xyz = state.mat.emission;
-        else if (rtxState.debugging_mode == esReflectionBrdf){
+        else if (rtxState.debugging_mode == esReflection){
             fragColor.xyz = reflectionColor;
             fragColor.a = 1.0;
         }
-        else
+        else if (rtxState.debugging_mode == esNoReflection){
+            fragColor.a = 1.0;
+        }
+        else{
             fragColor.xyz = indirectLight;
+        }
+            
     }
 
 }

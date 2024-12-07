@@ -171,7 +171,8 @@ bool SampleGUI::guiRayTracing()
                                    "Tangent",
                                    "UniformGrid",
 								   "NonUniformGrid",
-                                   "ReflectBRDF"
+                                   "ReflectionOnly",
+                                   "NoReflection"
                                });
 
     if(rtxState.debugging_mode == eHeatmap)
