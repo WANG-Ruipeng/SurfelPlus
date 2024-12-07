@@ -118,7 +118,7 @@ void main()
     Ray camRay = Ray(camPos, normalize(worldPos - camPos));
 
     // Hitting the environment
-    if(distance(worldPos, camPos) > 400.0)
+    if(depth == 1.0)
     {
       vec3 env;
       if(_sunAndSky.in_use == 1)
@@ -153,8 +153,8 @@ void main()
         * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
-    // fist several frame is noisy, so blend in
-    reflectionColor *= smoothstep(0.0, 20.0, float(rtxState.frame));
+    // first several frames are noisy, so blend in
+    reflectionColor *= smoothstep(0.0, 100.0, float(rtxState.frame));
 
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
@@ -196,7 +196,7 @@ void main()
             fragColor.a = 1.0;
         }
         else if (rtxState.debugging_mode == esNoReflection){
-            fragColor.a = 1.0;
+            fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
         }
         else{
             fragColor.xyz = indirectLight;

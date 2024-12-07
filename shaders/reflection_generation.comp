@@ -66,6 +66,28 @@ layout(set = 7, binding = 2,  scalar)		buffer _CellToSurfel		{ uint cellToSurfel
 #include "shaderUtils_surfel_cell.glsl"
 #include "shaderUtils.glsl"
 
+uint randSeed;
+
+struct Resevior
+{
+    BsdfSampleRec outSample;
+    float weightSum;
+};
+
+void addSample(inout Resevior resevior, in BsdfSampleRec candidate, float weight)
+{
+    resevior.weightSum += weight;
+	if (rand(randSeed) < weight / resevior.weightSum)
+	{
+		resevior.outSample = candidate;
+	}
+}
+
+float pHat(in BsdfSampleRec candidate)
+{
+	return length(candidate.f);
+}
+
 // only sample specular lobe
 vec3 SpecSample(in State state, vec3 V, vec3 N, inout vec3 L, inout float pdf, inout RngStateType seed)
 {
@@ -137,7 +159,7 @@ void main()
 		return;
 	}
 
-    uint randSeed = initRandom(imageRes, imageCoords, lowbias32(rtxState.totalFrames));
+    randSeed = initRandom(imageRes, imageCoords, lowbias32(rtxState.totalFrames));
     vec2 stocasticUV = uv + vec2(rand(randSeed) - 0.5, rand(randSeed) - 0.5) / vec2(imageRes);
 
     prd.seed = tea(rtxState.size.x * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x, rtxState.totalFrames * rtxState.maxSamples);
@@ -210,18 +232,51 @@ void main()
 		imageStore(reflectionDirection, imageCoords, vec4(0.0));
 		return;
 	}
+
+    Resevior resevior;
+    resevior.weightSum = 0.f;
+    resevior.outSample.pdf = 0.f;
+    resevior.outSample.f = vec3(0.f);
+    resevior.outSample.L = vec3(0.f);
+
     BsdfSampleRec reflectBsdfSampleRec;
+    int numCandidates = 16;
+    float candInv = 1.f / float(numCandidates);
     float weight = 0.0;
     uint maxItr = 0;
 
-    while(weight < 1e-5 && maxItr < 3)
+    for (int i = 0; i < numCandidates; ++i)
     {
         reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
-        // calculate brdf weight
-        weight = brdfWeight(-camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, state.mat.roughness);
-        reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
-        maxItr++;
+        if (reflectBsdfSampleRec.pdf < 1e-5)
+            continue;
+		weight = candInv * pHat(reflectBsdfSampleRec) / reflectBsdfSampleRec.pdf;
+        if (weight < 1e-5)
+			continue;
+		addSample(resevior, reflectBsdfSampleRec, weight);
     }
+
+    reflectBsdfSampleRec = resevior.outSample;
+    weight = pHat(reflectBsdfSampleRec);
+
+    if (weight < 1e-5 || reflectBsdfSampleRec.pdf < 1e-5)
+    {
+        imageStore(reflectionColor, imageCoords, vec4(0.0));
+		imageStore(reflectionDirection, imageCoords, vec4(vec3(state.matID + 1), 0.0));
+		return;
+    }
+
+    float invPdf = resevior.weightSum / weight;
+
+
+//    while(weight < 1e-5 && maxItr < 3)
+//    {
+//        reflectBsdfSampleRec.f = SpecSample(state, -camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, reflectBsdfSampleRec.pdf, prd.seed);
+//        // calculate brdf weight
+//        weight = brdfWeight(-camRay.direction, state.ffnormal, reflectBsdfSampleRec.L, state.mat.roughness);
+//        reflectBsdfSampleRec.pdf = max(1e-4, reflectBsdfSampleRec.pdf);
+//        maxItr++;
+//    }
 
     // reflection color
     Ray reflectedRay = Ray(worldPos + 1e-2 * normal, normalize(reflectBsdfSampleRec.L));
@@ -229,7 +284,7 @@ void main()
     float firstDepth = -1.f;
     BsdfSampleRec tmp;
     vec3 radiance = surfelRefelctionTrace(reflectedRay, 1, firstDepth, tmp, weight);
-    float invPdf = 1.f / reflectBsdfSampleRec.pdf;
+    //float invPdf = 1.f / reflectBsdfSampleRec.pdf;
     radiance *= invPdf * reflectBsdfSampleRec.f * max(0.0, dot(reflectBsdfSampleRec.L, state.ffnormal));
     float lum = dot(radiance, vec3(0.212671f, 0.715160f, 0.072169f));
     if(lum > rtxState.fireflyClampThreshold)

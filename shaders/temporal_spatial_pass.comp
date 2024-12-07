@@ -174,7 +174,9 @@ void main()
         if (neiMatID != matID)
 			continue;
 
-        float pdfInv = max(neiDir.a, 1e-3);
+        float pdfInv = neiDir.a;
+        if (pdfInv < 1e-5)
+			continue;
         
         // Combine BRDF weight with distance weight
         float weight = max(brdfWeight * pdfInv, 0.0);
