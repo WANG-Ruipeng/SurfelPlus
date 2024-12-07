@@ -96,6 +96,10 @@ public:
   void setDirty(bool dirty) { m_lights.dirty = dirty; }
   bool getDirty() { return m_lights.dirty; }
 
+  void setHammersleySequence(const std::vector<vec2>& seq) { m_hammersleySeq = seq; }
+  void setCurrFrame(int frame) { m_frame = frame; }
+  void setSize(VkExtent2D size) { m_size = size; }
+
 private:
   void createTextureImages(VkCommandBuffer cmdBuf, tinygltf::Model& gltfModel);
   void createDescriptorSet(const nvh::GltfScene& gltf);
@@ -128,4 +132,9 @@ private:
   VkDescriptorPool      m_descPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};
   VkDescriptorSet       m_descSet{VK_NULL_HANDLE};
+
+  // Hammerley sequence
+  std::vector<vec2> m_hammersleySeq;
+  int m_frame{ 0 };
+  VkExtent2D m_size{ 0, 0 };
 };

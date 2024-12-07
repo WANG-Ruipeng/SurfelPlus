@@ -203,6 +203,8 @@ public:
 
   void calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
   void computeReflection(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
+  std::vector<vec2> hammersleySequence(int maxNumberPoints);
+  void initHammerleySequence(int maxNumberPoints);
 
   RtxState m_rtxState{
       0,       // frame;

@@ -120,7 +120,7 @@ esTangent = 12,
 esUniformGrid = 13,
 esNonUniformGrid = 14,
 esReflection = 15,
-esNoReflection = 16
+esOcclusion = 16
 END_ENUM();
 
 // Surfel data
@@ -227,6 +227,7 @@ struct SceneCamera
   float fov;
   // Extra
   int nbLights;
+  mat4  prevViewProj;
 };
 
 struct VertexAttributes
