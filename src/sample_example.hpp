@@ -80,6 +80,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "reflection_compute.h"
 #include "temporal_spatial_pass.h"
 #include "bilateral_cleanup_pass.h"
+#include "indirect_postprocess_pass.h"
 #include "taa_pass.h"
 
 class SampleGUI;
@@ -157,6 +158,7 @@ public:
   CellToSurfelUpdatePass m_cellToSurfelUpdatePass;
   SurfelRaytracePass m_surfelRaytracePass;
   SurfelIntegratePass m_surfelIntegratePass;
+  IndirectPostprocessPass m_indirectPostprocessPass;
 
   // reflection compute passes
   ReflectionComputePass m_reflectionComputePass;
