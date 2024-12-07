@@ -23,6 +23,7 @@ layout(push_constant) uniform _RtxState
 };
 
 #include "globals.glsl"
+#include "compress.glsl"
 
 layout(set = 0, binding = 0) uniform image2D reflectionColor;
 layout(set = 0, binding = 1) uniform image2D reflectionDirection;
@@ -56,16 +57,19 @@ void main()
     vec3 result = vec3(0.0,0.0,0.0);
     float weightSum = 0.0;
 
-    if(length(centerColor) < 0.0001 || variance < 2.0){
-        imageStore(bilateralCleanupColor, imageCoords, vec4(0.0));
+    if( variance < 0.0){
+    // culled pixel
+        imageStore(bilateralCleanupColor, imageCoords, vec4(0.0,0.0,0.0,0.0));
+        return;
+    }
+    else if( variance < 1.0){
+        imageStore(bilateralCleanupColor, imageCoords, centerColor);
         return;
     }
 
-    uvec4 centerNormalData = texelFetch(gbufferNormal, imageCoords, 0);
-    vec3 centerNormal = decodeNormal(centerNormalData);
-
+    vec3 centerNormal = decompress_unit_vec(texelFetch(gbufferNormal, imageCoords, 0).r);
     // Define sigma values
-    float sigmaS = clamp(variance, 2.0, 4.0);
+    float sigmaS = clamp(variance, 2.0, 6.0);
     float sigmaR = 0.5;
     float sigmaN = 0.2; 
 
@@ -81,15 +85,14 @@ void main()
                 continue;
             
             vec4 neighborColor = imageLoad(filteredReflectionColor, neighborCoords);
-            if(length(neighborColor.rgb) < 0.1) continue;
+            if(neighborColor.x == 0 && neighborColor.y == 0 && neighborColor.z == 0) continue;
 
             // Read Normal
-            uvec4 neighborNormalData = texelFetch(gbufferNormal, neighborCoords, 0);
-            vec3 neighborNormal = decodeNormal(neighborNormalData);
+            vec3 neighborNormal = decompress_unit_vec(texelFetch(gbufferNormal, neighborCoords, 0).r);
 
             // Spatial weight
             float dist2 = float(x * x + y * y);
-            float spatialWeight = exp(-dist2 / (2.0 * sigmaS * sigmaS));
+            float spatialWeight = exp(-dist2 / (4.0 * sigmaS * sigmaS));
 
             // Range weight (color difference)
             float colorDiff = length(neighborColor.rgb - centerColor.rgb);

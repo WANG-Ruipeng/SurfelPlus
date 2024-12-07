@@ -8,6 +8,12 @@ This project is developed base on Nvidia's [vk_raytrace renderer](https://github
 
 **IMPORTANT**: This readme file will only include the basic setup and usage for this project. For a complete development log and demo, please visit this site: [SurfelPlus Project Page](https://wang-ruipeng.github.io/SurfelPlus/)
 
+![DemoImage.png](docs/img/logo.png)
+
+## Introduction
+
+**SurfelPlus** is a real-time dynamic global illumination renderer built on top of NVIDIA's vk_raytrace framework. Using **Vulkan ray tracing** and **surfel-based** techniques, SurfelPlus aims to deliver high-quality lighting effects with dynamic scene updates, providing an efficient solution for realistic and immersive visual rendering in real time.
+
 ## Setup
 
 You can use cmake to build this project.
