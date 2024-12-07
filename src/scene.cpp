@@ -700,6 +700,27 @@ void Scene::updateCamera(const VkCommandBuffer& cmdBuf, float aspectRatio)
   const auto& view = CameraManip.getMatrix();
   auto        proj = glm::perspectiveRH_ZO(glm::radians(CameraManip.getFov()), aspectRatio, 1.f, 1000.0f);
   proj[1][1] *= -1;
+
+  //// print proj matrix
+  //for (int i = 0; i < 4; i++)
+  //{
+	 // for (int j = 0; j < 4; j++)
+	 // {
+		//  std::cout << proj[i][j] << " ";
+	 // }
+	 // std::cout << std::endl;
+  //}
+
+  // Apply jittering
+  if (!m_hammersleySeq.empty())
+  {
+      vec2 offset = m_hammersleySeq[m_frame % m_hammersleySeq.size()];
+      // Shear projection matrix to introduce noise
+      proj[2][0] = 2.0f * (offset.x - 0.5f) / m_size.width;
+	  proj[2][1] = 2.0f * (offset.y - 0.5f) / m_size.height;
+  }
+
+  m_camera.prevViewProj = m_camera.view * m_camera.proj; // Previous frame
   m_camera.view = view;
   m_camera.proj = proj;
   m_camera.viewInverse = glm::inverse(view);

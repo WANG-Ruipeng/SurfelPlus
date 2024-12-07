@@ -221,7 +221,10 @@ void SampleExample::updateFrame()
       m_rtxState.frame++;
 	  m_rtxState.totalFrames++;
   }
-    
+  
+  // update scene frame
+  m_scene.setCurrFrame(m_rtxState.frame);
+  m_scene.setSize(m_size);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -916,4 +919,34 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         0, 0, nullptr, 0, nullptr,
         static_cast<uint32_t>(barriers.size()),
         barriers.data());
+}
+
+vec2 Hammersley(float i, float numSamples)
+{
+    uint b = uint(i);
+
+    b = (b << 16u) | (b >> 16u);
+    b = ((b & 0x55555555u) << 1u) | ((b & 0xAAAAAAAAu) >> 1u);
+    b = ((b & 0x33333333u) << 2u) | ((b & 0xCCCCCCCCu) >> 2u);
+    b = ((b & 0x0F0F0F0Fu) << 4u) | ((b & 0xF0F0F0F0u) >> 4u);
+    b = ((b & 0x00FF00FFu) << 8u) | ((b & 0xFF00FF00u) >> 8u);
+
+    float radicalInverseVDC = float(b) * 2.3283064365386963e-10;
+
+    return vec2((i / numSamples), radicalInverseVDC);
+}
+
+std::vector<vec2> SampleExample::hammersleySequence(int maxNumberPoints)
+{
+	std::vector<vec2> points;
+	for (int i = 0; i < maxNumberPoints; i++)
+	{
+		points.push_back(Hammersley(i, maxNumberPoints));
+	}
+	return points;
+}
+
+void SampleExample::initHammerleySequence(int maxNumberPoints)
+{
+	m_scene.setHammersleySequence(hammersleySequence(maxNumberPoints));
 }

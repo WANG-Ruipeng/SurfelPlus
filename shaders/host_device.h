@@ -227,6 +227,7 @@ struct SceneCamera
   float fov;
   // Extra
   int nbLights;
+  mat4  prevViewProj;
 };
 
 struct VertexAttributes
