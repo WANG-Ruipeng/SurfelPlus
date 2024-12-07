@@ -79,7 +79,7 @@ layout(set = 6, binding = 7) uniform sampler2D reflectionPointBrdf;
 layout(set = 6, binding = 8) uniform sampler2D filteredReflectionColor;
 layout(set = 6, binding = 9) uniform sampler2D bilateralCleanupColor;
 
-layout(set = 7, binding = 1) uniform sampler2D currTAAColor;
+layout(set = 7, binding = 1) uniform sampler2D outputTAAColor;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);

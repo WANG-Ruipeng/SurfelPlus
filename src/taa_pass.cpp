@@ -188,6 +188,7 @@ void TAAPass::createTAADescriptorSet(const VkExtent2D& fullSize, nvvk::Queue que
 	}
 }
 
+
 void TAAPass::updateDescSet(int currFrame)
 {
 	int prevIdx = currFrame % 2;

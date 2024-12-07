@@ -916,6 +916,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getGbufferImageDescSet(),
         });
 
+    m_taaPass.updateDescSet(m_rtxState.frame);
     m_taaPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet(),
         m_surfel.getGbufferImageDescSet(),
