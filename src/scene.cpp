@@ -696,12 +696,12 @@ void Scene::updateCamera(const VkCommandBuffer &cmdBuf, float aspectRatio)
 
     // update jitter
     m_camera.jitter = vec4(
-        2.0f * (offset.x - 0.5f), 
-        2.0f * (offset.y - 0.5f),
+        2.0f * (offset.x - 0.5f) / m_size.width,
+        2.0f * (offset.y - 0.5f) / m_size.height,
         m_camera.jitter[0], 
         m_camera.jitter[1]);
-	m_camera.proj[2][0] = m_camera.jitter[0] / m_size.width;
-	m_camera.proj[2][1] = m_camera.jitter[1] / m_size.height;
+	proj[2][0] += m_camera.jitter[0];
+	proj[2][1] += m_camera.jitter[1];
     // print jitter
 	//std::cout << "Jitter: " << m_camera.jitter[0] << ", " << m_camera.jitter[1] << ", " << m_camera.jitter[2] << ", " << m_camera.jitter[3] << std::endl;
   }
