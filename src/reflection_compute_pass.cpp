@@ -209,7 +209,7 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 		bind.addBinding({ 6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
 		bind.addBinding({ 7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
 		bind.addBinding({ 8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
-		bind.addBinding({ 9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
+		bind.addBinding({ 9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT |VK_SHADER_STAGE_COMPUTE_BIT });
 
 		// allocate the descriptor set
 		m_samplerDescSetLayout = bind.createLayout(m_device);
@@ -227,16 +227,22 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 			m_images[4].descriptor
 		};
 
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 0, &descImg[0]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 1, &descImg[1]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 2, &descImg[2]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 3, &descImg[3]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 4, &descImg[4]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 5, &descImg[0]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 6, &descImg[1]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 7, &descImg[2]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 8, &descImg[3]));
-		writes.emplace_back(bind.makeWrite(m_samplerDescSet, 9, &descImg[4]));
+		for (int i = 0; i < 5; ++i)
+		{
+			writes.emplace_back(bind.makeWrite(m_samplerDescSet, i, &descImg[i]));
+			writes.emplace_back(bind.makeWrite(m_samplerDescSet, i + 5, &descImg[i]));
+		}
+
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 0, &descImg[0]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 1, &descImg[1]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 2, &descImg[2]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 3, &descImg[3]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 4, &descImg[4]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 5, &descImg[0]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 6, &descImg[1]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 7, &descImg[2]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 8, &descImg[3]));
+		//writes.emplace_back(bind.makeWrite(m_samplerDescSet, 9, &descImg[4]));
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 	}
 

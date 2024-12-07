@@ -690,13 +690,19 @@ void Scene::updateCamera(const VkCommandBuffer &cmdBuf, float aspectRatio)
 
 
   // Apply jittering
-  //if (!m_hammersleySeq.empty())
-  //{
-  //  vec2 offset = m_hammersleySeq[m_frame % m_hammersleySeq.size()];
-  //  // Shear projection matrix to introduce noise
-  //  proj[2][0] = 2.0f * (offset.x - 0.5f) / m_size.width;
-  //  proj[2][1] = 2.0f * (offset.y - 0.5f) / m_size.height;
-  //}
+  if (!m_hammersleySeq.empty())
+  {
+    vec2 offset = m_hammersleySeq[m_frame % m_hammersleySeq.size()];
+
+    // update jitter
+    m_camera.jitter = vec4(2.0f * (offset.x - 0.5f), 
+        2.0f * (offset.y - 0.5f), 
+        m_camera.jitter[0], 
+        m_camera.jitter[1]);
+
+    // print jitter
+	//std::cout << "Jitter: " << m_camera.jitter[0] << ", " << m_camera.jitter[1] << ", " << m_camera.jitter[2] << ", " << m_camera.jitter[3] << std::endl;
+  }
 
   m_camera.prevViewProj = m_camera.proj * m_camera.view; // Previous frame
   m_camera.view = view;

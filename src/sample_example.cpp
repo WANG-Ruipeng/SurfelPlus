@@ -355,7 +355,8 @@ void SampleExample::createLightPass()
         m_descSetLayout,
         m_surfel.getGbufferImageDescLayout(), 
         m_surfel.getIndirectLightDescLayout(), 
-        m_reflectionComputePass.getSamplerDescSetLayout()}, & m_scene);
+        m_reflectionComputePass.getSamplerDescSetLayout(),
+        m_taaPass.getCurrSamplerDescSetLayout()}, & m_scene);
     m_lightPass.createLightPassDescriptorSet(m_offscreen.getDescLayout());
 }
 
@@ -381,10 +382,13 @@ void SampleExample::createReflectionPass()
 		m_reflectionComputePass.getSamplerDescSetLayout(),
         m_surfel.getGbufferImageDescLayout(), }, &m_scene);
 
+	m_taaPass.createTAADescriptorSet(m_size, m_queues[eGCT1]);
 	m_taaPass.create(m_size, {
 		m_reflectionComputePass.getSamplerDescSetLayout(), 
         m_surfel.getGbufferImageDescLayout(),
-        m_scene.getDescLayout() 
+        m_scene.getDescLayout(),
+		m_taaPass.getPrevSamplerDescSetLayout(),
+		m_taaPass.getCurrSamplerDescSetLayout()
         }, &m_scene);
 }
 
@@ -915,7 +919,9 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
     m_taaPass.run(cmdBuf, render_size, profiler, {
         m_reflectionComputePass.getSamplerDescSet(),
         m_surfel.getGbufferImageDescSet(),
-        m_scene.getDescSet()
+        m_scene.getDescSet(),
+		m_taaPass.getPrevSamplerDescSet(),
+		m_taaPass.getCurrSamplerDescSet()
         });
 
     vkCmdPipelineBarrier(cmdBuf,
@@ -947,6 +953,7 @@ std::vector<vec2> SampleExample::hammersleySequence(int maxNumberPoints)
 	for (int i = 0; i < maxNumberPoints; i++)
 	{
 		points.push_back(Hammersley(i, maxNumberPoints));
+		std::cout << points[i].x << " " << points[i].y << std::endl;
 	}
 	return points;
 }

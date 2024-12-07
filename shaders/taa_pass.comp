@@ -33,6 +33,9 @@ layout(set = 0, binding = 9) uniform sampler2D bilateralCleanupColorSampler;
 layout(set = 1, binding = 2) uniform sampler2D gbufferDepth;
 layout(set = 2, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 
+layout(set = 3, binding = 1) uniform sampler2D prevTAAColor;
+layout(set = 4, binding = 0) uniform image2D currTAAColor;
+
 #include "globals.glsl"
 #include "shaderUtils.glsl"
 
@@ -46,10 +49,17 @@ void main()
     if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
         return; 
 
-	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / vec2(textureSize(bilateralCleanupColorSampler,0));
+	vec4 jitter = sceneCamera.jitter;
+	vec2 texSize = vec2(textureSize(bilateralCleanupColorSampler, 0));
+	jitter.xy /= texSize;
+	jitter.zw /= texSize;
+	jitter.xz = vec2(0);
+	jitter.yw *= 1.0;
+
+	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize + jitter.xy;
 
 	float depth = texelFetch(gbufferDepth, imageCoords, 0).r;
-	ivec2 closestOffset = ivec2(0, 0);
+	vec2 closestCoords = ivec2(0, 0);
 
 	vec3 max33 = vec3(0.0);
 	vec3 min33 = vec3(1.0);
@@ -61,11 +71,11 @@ void main()
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			ivec2 neighborCoords = imageCoords + ivec2(i, j);
-			if (neighborCoords.x < 0 || neighborCoords.x >= imageRes.x || neighborCoords.y < 0 || neighborCoords.y >= imageRes.y || (i == 0 && j == 0))
+			vec2 neighborCoords = uvCoords + vec2(i, j) / texSize;
+			if (neighborCoords.x < 0 || neighborCoords.x >= 1.0 || neighborCoords.y < 0 || neighborCoords.y >= 1.0 || (i == 0 && j == 0))
 				continue;
 
-			vec3 neighborColor = texelFetch(bilateralCleanupColorSampler, neighborCoords, 0).rgb;
+			vec3 neighborColor = texture(bilateralCleanupColorSampler, neighborCoords).rgb;
 
 			// 3x3
 			max33 = max(max33, neighborColor.rgb);
@@ -78,11 +88,11 @@ void main()
 				minCross = min(minCross, neighborColor.rgb);
 			}
 
-			float neighborDepth = texelFetch(gbufferDepth, neighborCoords, 0).r;
+			float neighborDepth = texelFetch(gbufferDepth, imageCoords + ivec2(i, j), 0).r;
 			if (neighborDepth < depth)
 			{
 				depth = neighborDepth;
-				closestOffset = ivec2(i, j);
+				closestCoords = neighborCoords;
 			}
 		}
 	}
@@ -97,12 +107,11 @@ void main()
 	// prev uv pos 
 	vec4 prevClip = sceneCamera.prevViewProj * vec4(worldPos, 1.0);
 	prevClip /= prevClip.w;
-	vec2 prevUV = prevClip.xy * 0.5 + 0.5;
+	vec2 prevUV = prevClip.xy * 0.5 + 0.5 + jitter.zw;
 	vec3 prevCol = texture(bilateralCleanupColorSampler, prevUV).rgb;
 
 	// unjittered color
-	vec2 jitter = vec2(sceneCamera.proj[2][0], sceneCamera.proj[2][1]);
-	vec2 unJitteredUV = uvCoords - jitter;
+	vec2 unJitteredUV = uvCoords - jitter.xy;
 	vec3 unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
 
 	// line box clipping
@@ -116,9 +125,9 @@ void main()
 	vec3 col_clipped = ma_unit > 1.0 ? vec3(p_clip) + v_clip / ma_unit : prevCol;
 
 	// final blend
-	vec3 finalColor = mix(prevCol, col_clipped, 0.5);
+	vec3 finalColor = mix(prevCol, col_clipped, 0.1);
 
-//	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
+	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 
 

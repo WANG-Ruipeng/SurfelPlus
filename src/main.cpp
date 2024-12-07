@@ -277,7 +277,8 @@ int main(int argc, char **argv)
                                 sample.m_descSet,
                                 sample.m_surfel.getGbufferImageDescSet(),
                                 sample.m_surfel.getIndirectLightDescSet(),
-                                sample.m_reflectionComputePass.getSamplerDescSet()});
+                                sample.m_reflectionComputePass.getSamplerDescSet(),
+                                sample.m_taaPass.getCurrSamplerDescSet()});
         sample.m_lightPass.endRenderPass(cmdBuf);
       }
     }
