@@ -85,6 +85,73 @@ vec3 hsv2rgb(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+const int KERNEL_SIZE = 64;
+const vec3 kernel[KERNEL_SIZE] = vec3[KERNEL_SIZE](
+    vec3(0.0381, 0.0253, 0.0659),
+    vec3(-0.0659, 0.0462, 0.0968),
+    vec3(0.0483, -0.0659, 0.0771),
+    vec3(-0.0659, -0.0462, 0.0659),
+    vec3(0.0513, 0.0634, 0.0344),
+    vec3(-0.0234, 0.0632, 0.0865),
+    vec3(0.0854, -0.0234, 0.0543),
+    vec3(-0.0325, -0.0432, 0.0865),
+    vec3(0.0854, 0.0342, 0.0254),
+    vec3(-0.0157, 0.0654, 0.0785),
+    vec3(0.0864, -0.0123, 0.0432),
+    vec3(-0.0765, -0.0654, 0.0324),
+    vec3(0.0534, 0.0864, 0.0234),
+    vec3(-0.0435, 0.0234, 0.0876),
+    vec3(0.0864, -0.0543, 0.0321),
+    vec3(-0.0234, -0.0765, 0.0543),
+    vec3(0.0654, 0.0123, 0.0865),
+    vec3(-0.0543, 0.0876, 0.0234),
+    vec3(0.0234, -0.0321, 0.0987),
+    vec3(-0.0876, -0.0234, 0.0432),
+    vec3(0.0123, 0.0987, 0.0321),
+    vec3(-0.0321, 0.0432, 0.0876),
+    vec3(0.0987, -0.0876, 0.0123),
+    vec3(-0.0432, -0.0321, 0.0987),
+    vec3(0.0876, 0.0123, 0.0432),
+    vec3(-0.0987, 0.0876, 0.0321),
+    vec3(0.0321, -0.0432, 0.0876),
+    vec3(-0.0123, -0.0987, 0.0432),
+    vec3(0.0432, 0.0321, 0.0987),
+    vec3(-0.0876, 0.0123, 0.0432),
+    vec3(0.0987, -0.0876, 0.0321),
+    vec3(-0.0321, -0.0432, 0.0876),
+    vec3(0.0432, 0.0987, 0.0123),
+    vec3(-0.0987, 0.0321, 0.0876),
+    vec3(0.0123, -0.0876, 0.0432),
+    vec3(-0.0876, -0.0432, 0.0321),
+    vec3(0.0321, 0.0876, 0.0987),
+    vec3(-0.0432, 0.0123, 0.0432),
+    vec3(0.0987, -0.0987, 0.0321),
+    vec3(-0.0123, -0.0321, 0.0876),
+    vec3(0.0876, 0.0432, 0.0432),
+    vec3(-0.0321, 0.0987, 0.0876),
+    vec3(0.0432, -0.0123, 0.0321),
+    vec3(-0.0987, -0.0876, 0.0987),
+    vec3(0.0123, 0.0321, 0.0432),
+    vec3(-0.0876, 0.0432, 0.0876),
+    vec3(0.0321, -0.0987, 0.0321),
+    vec3(-0.0432, -0.0123, 0.0987),
+    vec3(0.0987, 0.0876, 0.0432),
+    vec3(-0.0123, 0.0321, 0.0876),
+    vec3(0.0876, -0.0432, 0.0321),
+    vec3(-0.0321, -0.0987, 0.0987),
+    vec3(0.0432, 0.0123, 0.0432),
+    vec3(-0.0987, 0.0876, 0.0876),
+    vec3(0.0123, -0.0321, 0.0321),
+    vec3(-0.0876, -0.0432, 0.0987),
+    vec3(0.0321, 0.0987, 0.0432),
+    vec3(-0.0432, 0.0123, 0.0876),
+    vec3(0.0987, -0.0876, 0.0321),
+    vec3(-0.0123, -0.0321, 0.0987),
+    vec3(0.0876, 0.0432, 0.0432),
+    vec3(-0.0321, 0.0987, 0.0876),
+    vec3(0.0432, -0.0123, 0.0321),
+    vec3(0.0278, 0.0368, 0.0165)
+);
 
 void main()
 {
@@ -160,7 +227,26 @@ void main()
     float dist = distance(randLight.position, worldPos);
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
 
-    fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor;
+    //SSAO
+    float occlusion = 0.0;
+    float radius = 0.02;
+    float bias = 0.005;
+    vec4 viewPos = sceneCamera.view * vec4(worldPos, 1.0);
+    for(int i = 0; i < KERNEL_SIZE; i++) {
+        vec3 samplePos = viewPos.xyz + kernel[i] * radius;
+        vec3 sampleWorldPos = worldPos + kernel[i] * radius;
+        vec4 offset = sceneCamera.proj * vec4(samplePos, 1.0);
+        offset.xyz /= offset.w;
+        offset.xyz = offset.xyz * 0.5 + 0.5;
+        vec2 sampleuv = offset.xy;
+        ivec2 pixelCoord = ivec2(sampleuv * vec2(rtxState.size));
+        float sampleDepth = texelFetch(gbufferDepth, pixelCoord, 0).r;
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(depth - sampleDepth ));
+        occlusion += ( sampleDepth > offset.z - bias ? 1.0 : 0.0) * rangeCheck;
+    }
+    occlusion = 1.0 - (occlusion / float(KERNEL_SIZE));
+    
+    fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor) * occlusion;
 
     if(rtxState.debugging_mode != eNoDebug)
     {
@@ -195,8 +281,8 @@ void main()
             fragColor.xyz = reflectionColor;
             fragColor.a = 1.0;
         }
-        else if (rtxState.debugging_mode == esNoReflection){
-            fragColor.a = 1.0;
+        else if (rtxState.debugging_mode == esOcclusion){
+            fragColor.xyz = vec3(occlusion);
         }
         else{
             fragColor.xyz = indirectLight;
