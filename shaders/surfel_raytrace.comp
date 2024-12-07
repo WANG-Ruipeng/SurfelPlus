@@ -148,6 +148,11 @@ void main()
 
     int maxDepth = isSleeping ? 4 : 3;
     surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelIndex, surfelRay.t);
+    float lum = dot(surfelRay.radiance, vec3(0.212671f, 0.715160f, 0.072169f));
+    if(lum > rtxState.fireflyClampThreshold)
+    {
+      surfelRay.radiance *= rtxState.fireflyClampThreshold / lum;
+    }
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
 

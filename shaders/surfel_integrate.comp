@@ -202,7 +202,10 @@ void main()
 
         for (uint i = 0; i < targetShareCount; i++)
 	    {
-            uint currIndex = uint(rand(randSeed) * cellSurfelCntF);
+            uint currIndex = targetShareCount == cellInfo.surfelCount ? i : uint(rand(randSeed) * cellSurfelCntF);
+            // if (passCount >= 16)
+			// 	break;
+            // uint currIndex = i;
 		    uint surfelIndex = cellToSurfel[cellOffset + currIndex];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];
             vec3 neiNor = decompress_unit_vec(neiSurfel.normal);
@@ -237,7 +240,7 @@ void main()
                 // lower the weight of new surfels
                 contribution *= smoothstep(0.f, 10.f, float(surfelRecycleInfo[surfelIndex].frame));
                 sharedRadiance += vec4(neiSurfel.radiance, 1.f) * contribution;
-
+                passCount++;
 		        
 		    }
             if(rtxState.debugging_mode == esNonUniformGrid) break;
