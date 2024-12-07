@@ -178,7 +178,9 @@ void main()
 
     // reconstruct world position from depth
     float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
+
     vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
+
 
     // camera ray
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;

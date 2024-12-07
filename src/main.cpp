@@ -59,10 +59,12 @@ int main(int argc, char **argv)
   setenv("VK_LAYER_SETTINGS_PATH", "../vk_layer_settings.txt", 1);
 #endif
   InputParser parser(argc, argv);
+  
   // std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
   // std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   //  std::string sceneFile = parser.getString("-f", "Hospital/scene.gltf");
   std::string sceneFile = parser.getString("-f", "station.glb");
+
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
   // Setup GLFW window
@@ -143,6 +145,7 @@ int main(int argc, char **argv)
   assert(!compatibleDevices.empty());
   vkctx.initDevice(compatibleDevices[0], contextInfo); // Use first compatible device
 
+
   SampleExample sample;
   sample.supportRayQuery(vkctx.hasDeviceExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME));
 
@@ -199,6 +202,7 @@ int main(int argc, char **argv)
 
   // create a sequence of random numbers
   sample.initHammerleySequence(16);
+
 
   // Profiler measure the execution time on the GPU
   nvvk::ProfilerVK profiler;
