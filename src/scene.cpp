@@ -695,11 +695,13 @@ void Scene::updateCamera(const VkCommandBuffer &cmdBuf, float aspectRatio)
     vec2 offset = m_hammersleySeq[m_frame % m_hammersleySeq.size()];
 
     // update jitter
-    m_camera.jitter = vec4(2.0f * (offset.x - 0.5f), 
-        2.0f * (offset.y - 0.5f), 
+    m_camera.jitter = vec4(
+        2.0f * (offset.x - 0.5f), 
+        2.0f * (offset.y - 0.5f),
         m_camera.jitter[0], 
         m_camera.jitter[1]);
-
+	m_camera.proj[2][0] = m_camera.jitter[0] / m_size.width;
+	m_camera.proj[2][1] = m_camera.jitter[1] / m_size.height;
     // print jitter
 	//std::cout << "Jitter: " << m_camera.jitter[0] << ", " << m_camera.jitter[1] << ", " << m_camera.jitter[2] << ", " << m_camera.jitter[3] << std::endl;
   }

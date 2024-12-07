@@ -33,13 +33,16 @@ layout(set = 0, binding = 9) uniform sampler2D bilateralCleanupColorSampler;
 layout(set = 1, binding = 2) uniform sampler2D gbufferDepth;
 layout(set = 2, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
 
-layout(set = 3, binding = 0) uniform image2D TAASampler1;
-layout(set = 3, binding = 1) uniform image2D TAASampler2;
-layout(set = 3, binding = 2) uniform sampler2D TAAColor1;
-layout(set = 3, binding = 3) uniform sampler2D TAAColor2;
+layout(set = 3, binding = 0) uniform image2D TAAColor1;
+layout(set = 3, binding = 1) uniform image2D TAAColor2;
+layout(set = 3, binding = 2) uniform sampler2D TAASampler1;
+layout(set = 3, binding = 3) uniform sampler2D TAASampler2;
 
 #include "globals.glsl"
 #include "shaderUtils.glsl"
+
+#define sample_PrevTAASampler(col, uv) if (rtxState.frame % 2 == 0) { col = texture(TAASampler1, prevUV).rgb; } else { col = texture(TAASampler2, prevUV).rgb; }
+#define store_outTAAImage(col, imageCoords) if (rtxState.frame % 2 == 0) { imageStore(TAAColor2, imageCoords, col); } else { imageStore(TAAColor1, imageCoords, col); }
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -51,21 +54,10 @@ void main()
     if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
         return; 
 
-//	if (rtxState.frame == 0)
-//	{
-//		vec3 color = texelFetch(bilateralCleanupColorSampler, imageCoords, 0).rgb;
-//		imageStore(outputTAAColor, imageCoords, vec4(color, 1.0));
-//		return;
-//	}
 
-	vec4 jitter = sceneCamera.jitter;
 	vec2 texSize = vec2(textureSize(bilateralCleanupColorSampler, 0));
-	jitter.xy /= texSize;
-	jitter.zw /= texSize;
-	jitter.xz = vec2(0);
-	jitter.yw *= 1.0;
 
-	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize + jitter.xy;
+	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize;
 
 	float depth = texelFetch(gbufferDepth, imageCoords, 0).r;
 	vec2 closestCoords = ivec2(0, 0);
@@ -116,11 +108,13 @@ void main()
 	// prev uv pos 
 	vec4 prevClip = sceneCamera.prevViewProj * vec4(worldPos, 1.0);
 	prevClip /= prevClip.w;
-	vec2 prevUV = prevClip.xy * 0.5 + 0.5 + jitter.zw;
-	vec3 prevCol = texture(bilateralCleanupColorSampler, prevUV).rgb;
+	vec2 prevUV = prevClip.xy * 0.5 + 0.5;
+//	vec3 prevCol = texture(prevTAASampler, prevUV).rgb;
+	vec3 prevCol;
+	sample_PrevTAASampler(prevCol, prevUV);
 
 	// unjittered color
-	vec2 unJitteredUV = uvCoords - jitter.xy;
+	vec2 unJitteredUV = uvCoords - sceneCamera.jitter.xy / texSize;
 	vec3 unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
 
 	// line box clipping
@@ -134,9 +128,10 @@ void main()
 	vec3 col_clipped = ma_unit > 1.0 ? vec3(p_clip) + v_clip / ma_unit : prevCol;
 
 	// final blend
-	vec3 finalColor = mix(prevCol, col_clipped, 0.1);
+	vec3 finalColor = mix(unJitteredCol, col_clipped, 0.9375);
 
-	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
+	store_outTAAImage(vec4(unJitteredCol, 1.0), imageCoords);
+//	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 
 
