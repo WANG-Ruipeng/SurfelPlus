@@ -141,7 +141,7 @@ void main()
     vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
     if (centerDirection == vec4(0.0))
     {
-		imageStore(filteredReflectionColor, imageCoords, vec4(0.0));
+		imageStore(filteredReflectionColor, imageCoords, vec4(-1.0));
 		return;
 	}
     float matID = centerDirection.x;
@@ -200,6 +200,6 @@ void main()
     vec3 colPrev = imageLoad(filteredReflectionColor, imageCoords).rgb;
     result = mix(colPrev, result, ratio);
 
-    imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, weightSum));
+    imageStore(filteredReflectionColor, imageCoords, vec4(result.rgb, variance));
     //imageStore(filteredReflectionColor, imageCoords, vec4(float(quadID)));
 }
