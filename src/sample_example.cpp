@@ -382,20 +382,23 @@ void SampleExample::createReflectionPass()
         m_surfel.getCellBufferDescLayout()
         }, & m_scene);
 
+    m_taaPass.createTAADescriptorSet(m_size, m_queues[eGCT1]);
+    m_taaPass.create(m_size, {
+        m_reflectionComputePass.getSamplerDescSetLayout(),
+        m_surfel.getGbufferImageDescLayout(),
+        m_scene.getDescLayout(),
+        m_taaPass.getSamplerDescSetLayout(),
+        }, &m_scene);
+
     m_temporalSpatialPass.create(m_size, { 
-        m_reflectionComputePass.getSamplerDescSetLayout() }, &m_scene);
+        m_reflectionComputePass.getSamplerDescSetLayout(),
+        m_taaPass.getSamplerDescSetLayout() }, &m_scene);
 
 	m_bilateralCleanupPass.create(m_size, {
 		m_reflectionComputePass.getSamplerDescSetLayout(),
         m_surfel.getGbufferImageDescLayout(), }, &m_scene);
 
-	m_taaPass.createTAADescriptorSet(m_size, m_queues[eGCT1]);
-	m_taaPass.create(m_size, {
-		m_reflectionComputePass.getSamplerDescSetLayout(), 
-        m_surfel.getGbufferImageDescLayout(),
-        m_scene.getDescLayout(),
-		m_taaPass.getSamplerDescSetLayout(),
-        }, &m_scene);
+	
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -915,8 +918,23 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         static_cast<uint32_t>(barriers.size()),
         barriers.data());
 
+    m_taaPass.run(cmdBuf, render_size, profiler, {
+        m_reflectionComputePass.getSamplerDescSet(),
+        m_surfel.getGbufferImageDescSet(),
+        m_scene.getDescSet(),
+        m_taaPass.getSamplerDescSet()
+        });
+
+    vkCmdPipelineBarrier(cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        0, 0, nullptr, 0, nullptr,
+        static_cast<uint32_t>(barriers.size()),
+        barriers.data());
+
     m_temporalSpatialPass.run(cmdBuf, render_size, profiler, {
-        m_reflectionComputePass.getSamplerDescSet()
+        m_reflectionComputePass.getSamplerDescSet(),
+        m_taaPass.getSamplerDescSet()
         });
 	
     vkCmdPipelineBarrier(cmdBuf,
@@ -931,19 +949,14 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getGbufferImageDescSet(),
         });
 
-    m_taaPass.run(cmdBuf, render_size, profiler, {
-        m_reflectionComputePass.getSamplerDescSet(),
-        m_surfel.getGbufferImageDescSet(),
-        m_scene.getDescSet(),
-		m_taaPass.getSamplerDescSet()
-        });
-
     vkCmdPipelineBarrier(cmdBuf,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         0, 0, nullptr, 0, nullptr,
         static_cast<uint32_t>(barriers.size()),
         barriers.data());
+
+    
 }
 
 vec2 Hammersley(float i, float numSamples)

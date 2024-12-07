@@ -228,9 +228,9 @@ void main()
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
 
     // Test TAA
-//    vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
-    vec3 reflectionColor;
-    sample_TAAColor(reflectionColor, gl_FragCoord.xy);
+    vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
+//    vec3 reflectionColor;
+//    sample_TAAColor(reflectionColor, gl_FragCoord.xy);
 
     // first several frames are noisy, so blend in
     reflectionColor *= smoothstep(0.0, 100.0, float(rtxState.frame));

@@ -46,7 +46,7 @@ void TAAPass::run(const VkCommandBuffer& cmdBuf, const VkExtent2D& size, nvvk::P
 
 void TAAPass::create(const VkExtent2D& fullSize, const std::vector<VkDescriptorSetLayout>& extraDescSetsLayout, Scene* _scene)
 {
-	VkExtent2D size = { fullSize.width, fullSize.height};
+	VkExtent2D size = { fullSize.width / 2, fullSize.height / 2};
 
 	std::vector<VkPushConstantRange> push_constants;
 	push_constants.push_back({ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RtxState) });

@@ -31,7 +31,12 @@ layout(set = 0, binding = 0) uniform image2D reflectionColor;
 layout(set = 0, binding = 1) uniform image2D reflectionDirection;
 layout(set = 0, binding = 2) uniform image2D reflectionPointBrdf;
 layout(set = 0, binding = 3) uniform image2D filteredReflectionColor;
-layout(set = 5, binding = 4) uniform image2D bilateralCleanupColor;
+layout(set = 0, binding = 4) uniform image2D bilateralCleanupColor;
+
+layout(set = 1, binding = 0) uniform image2D TAAColor1;
+layout(set = 1, binding = 1) uniform image2D TAAColor2;
+
+#define LoadTAAImage(col, imageCoord) if (rtxState.frame % 2 == 0) { col = imageLoad(TAAColor2, imageCoord); } else { col = imageLoad(TAAColor1, imageCoord); }
 
 const ivec2 samplePattern[4][16] = ivec2[4][16](
 	ivec2[16](
@@ -137,7 +142,10 @@ void main()
     //float radius = min(imageRes.x, imageRes.y) * 0.003;
     
     // Get center pixel values as reference
-    vec4 centerColor = imageLoad(reflectionColor, halfImageCoords);
+//    vec4 centerColor = imageLoad(reflectionColor, halfImageCoords);
+	vec4 centerColor;
+    LoadTAAImage(centerColor, halfImageCoords);
+
     vec4 centerDirection = imageLoad(reflectionDirection, halfImageCoords);
     if (centerDirection == vec4(0.0))
     {
@@ -164,7 +172,10 @@ void main()
 		ivec2 offset = dir * samplePattern[quadID][i];
 		ivec2 neighborCoords = halfImageCoords + offset;
 
-		vec4 neighborColor = imageLoad(reflectionColor, neighborCoords);
+//		vec4 neighborColor = imageLoad(reflectionColor, neighborCoords);
+		vec4 neighborColor;
+        LoadTAAImage(neighborColor, neighborCoords);
+
 		if (neighborColor.a == 0.0)
             continue;
         

@@ -27,8 +27,7 @@ layout(push_constant) uniform _RtxState
 
 
 
-layout(set = 0, binding = 4) uniform image2D bilateralCleanupColor;
-layout(set = 0, binding = 9) uniform sampler2D bilateralCleanupColorSampler;
+layout(set = 0, binding = 5) uniform sampler2D reflectionColorSampler;
 
 layout(set = 1, binding = 2) uniform sampler2D gbufferDepth;
 layout(set = 2, binding = eCamera,	scalar)		uniform _SceneCamera	{ SceneCamera sceneCamera; };
@@ -41,7 +40,7 @@ layout(set = 3, binding = 3) uniform sampler2D TAASampler2;
 #include "globals.glsl"
 #include "shaderUtils.glsl"
 
-#define sample_PrevTAASampler(col, uv) if (rtxState.frame % 2 == 0) { col = texture(TAASampler1, uv).rgb; } else { col = texture(TAASampler2, uv).rgb; }
+#define sample_PrevTAASampler(col, uv) if (rtxState.frame % 2 == 0) { col = texelFetch(TAASampler1, uv, 0).rgb; } else { col = texelFetch(TAASampler2, uv, 0).rgb; }
 #define store_outTAAImage(col, imageCoords) if (rtxState.frame % 2 == 0) { imageStore(TAAColor2, imageCoords, col); } else { imageStore(TAAColor1, imageCoords, col); }
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -55,7 +54,7 @@ void main()
         return; 
 
 
-	vec2 texSize = vec2(textureSize(bilateralCleanupColorSampler, 0));
+	vec2 texSize = vec2(textureSize(reflectionColorSampler, 0));
 
 	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize;
 
@@ -76,7 +75,7 @@ void main()
 			if (neighborCoords.x < 0 || neighborCoords.x >= 1.0 || neighborCoords.y < 0 || neighborCoords.y >= 1.0 || (i == 0 && j == 0))
 				continue;
 
-			vec3 neighborColor = texture(bilateralCleanupColorSampler, neighborCoords).rgb;
+			vec3 neighborColor = texture(reflectionColorSampler, neighborCoords).rgb;
 
 			// 3x3
 			max33 = max(max33, neighborColor.rgb);
@@ -111,14 +110,14 @@ void main()
 	vec2 prevUV = prevClip.xy * 0.5 + 0.5;
 //	vec3 prevCol = texture(prevTAASampler, prevUV).rgb;
 	vec3 prevCol;
-	sample_PrevTAASampler(prevCol, prevUV);
+	sample_PrevTAASampler(prevCol, ivec2(prevUV * texSize));
 
 	// current color
-	vec3 currentCol = texture(bilateralCleanupColorSampler, uvCoords).rgb;
+	vec3 currentCol = texture(reflectionColorSampler, uvCoords).rgb;
 
 	// unjittered color
 	vec2 unJitteredUV = uvCoords - sceneCamera.jitter.xy;
-	vec3 unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
+	vec3 unJitteredCol = texture(reflectionColorSampler, unJitteredUV).rgb;
 
 	// line box clipping
 	vec3 p_clip = 0.5 * (aabb_max + aabb_min);
