@@ -158,8 +158,8 @@ void RenderOutput::createPostDescriptor()
   vkDestroyDescriptorSetLayout(m_device, m_postDescSetLayout, nullptr);
 
   m_postDescPool = nvvk::createDescriptorPool(m_device, {
-    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
-    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4},
+    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 4 },
       }, 2);
 
   // This descriptor is passed to the RTX pipeline
@@ -175,39 +175,6 @@ void RenderOutput::createPostDescriptor()
   writes.emplace_back(bind.makeWrite(m_postDescSet, OutputBindings::eStore, &m_offscreenColor.descriptor));  // This will be used by the ray trace to write the image
   vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
-
-//void RenderOutput::createPostTAADescriptorLayout()
-//{
-//    // This descriptor is passed to the RTX pipeline
-//    // Ray tracing will write to the binding 1, but the fragment shader will be using binding 0, so it can use a sampler too.
-//
-//    m_bind_TAA.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
-//    m_bind_TAA.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
-//    m_bind_TAA.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT |VK_SHADER_STAGE_COMPUTE_BIT });
-//    m_bind_TAA.addBinding({ 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
-//
-//    m_postTAADescSetLayout = m_bind_TAA.createLayout(m_device);
-//    
-//}
-//
-//void RenderOutput::createPostTAADescriptorSet(const std::vector<nvvk::Texture>& texture)
-//{
-//
-//	std::vector<VkDescriptorImageInfo> descImg;
-//	for (auto& t : texture)
-//	{
-//		descImg.push_back(t.descriptor);
-//	}
-//
-//    m_postTAADescSet = nvvk::allocateDescriptorSet(m_device, m_postDescPool, m_postDescSetLayout);
-//    std::vector<VkWriteDescriptorSet> writes;
-//    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 0, &descImg[0]));
-//    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 1, &descImg[1]));
-//    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 2, &descImg[0]));
-//    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 3, &descImg[1]));
-//
-//    vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-//}
 
 
 //--------------------------------------------------------------------------------------------------
@@ -279,16 +246,23 @@ void RenderOutput::createPostTAADescriptorSet(const VkExtent2D& fullSize)
 			fullSize, VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
 			true);
+		auto bilateralCleanupCreateInfo3 = nvvk::makeImage2DCreateInfo(
+			fullSize, VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+			true);
 
 		// create image
 		nvvk::Image bilateralCleanup1 = m_pAlloc->createImage(bilateralCleanupCreateInfo1);
 		NAME_VK(bilateralCleanup1.image);
 		nvvk::Image bilateralCleanup2 = m_pAlloc->createImage(bilateralCleanupCreateInfo2);
 		NAME_VK(bilateralCleanup2.image);
+		nvvk::Image bilateralCleanup3 = m_pAlloc->createImage(bilateralCleanupCreateInfo3);
+		NAME_VK(bilateralCleanup3.image);
 
 		// create image view
 		VkImageViewCreateInfo bilateralCleanupvInfo1 = nvvk::makeImageViewCreateInfo(bilateralCleanup1.image, bilateralCleanupCreateInfo1);
 		VkImageViewCreateInfo bilateralCleanupvInfo2 = nvvk::makeImageViewCreateInfo(bilateralCleanup2.image, bilateralCleanupCreateInfo2);
+		VkImageViewCreateInfo bilateralCleanupvInfo3 = nvvk::makeImageViewCreateInfo(bilateralCleanup3.image, bilateralCleanupCreateInfo3);
 
 		// create sampler
 		VkSamplerCreateInfo bilateralCleanupSampler1{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -297,21 +271,28 @@ void RenderOutput::createPostTAADescriptorSet(const VkExtent2D& fullSize)
 		VkSamplerCreateInfo bilateralCleanupSampler2{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 		bilateralCleanupSampler2.magFilter = VK_FILTER_LINEAR;
 		bilateralCleanupSampler2.minFilter = VK_FILTER_LINEAR;
+		VkSamplerCreateInfo bilateralCleanupSampler3{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		bilateralCleanupSampler3.magFilter = VK_FILTER_LINEAR;
+		bilateralCleanupSampler3.minFilter = VK_FILTER_LINEAR;
 
 		// create texture
 		nvvk::Texture bilateralCleanupTex1 = m_pAlloc->createTexture(bilateralCleanup1, bilateralCleanupvInfo1, bilateralCleanupSampler1);
 		bilateralCleanupTex1.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		nvvk::Texture bilateralCleanupTex2 = m_pAlloc->createTexture(bilateralCleanup2, bilateralCleanupvInfo2, bilateralCleanupSampler2);
 		bilateralCleanupTex2.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		nvvk::Texture bilateralCleanupTex3 = m_pAlloc->createTexture(bilateralCleanup3, bilateralCleanupvInfo3, bilateralCleanupSampler3);
+		bilateralCleanupTex3.descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 		nvvk::CommandPool genCmdBuf(m_device, m_queueIndex);
 		auto              cmdBuf = genCmdBuf.createCommandBuffer();
 		nvvk::cmdBarrierImageLayout(cmdBuf, bilateralCleanup1.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 		nvvk::cmdBarrierImageLayout(cmdBuf, bilateralCleanup2.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		nvvk::cmdBarrierImageLayout(cmdBuf, bilateralCleanup3.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 		genCmdBuf.submitAndWait(cmdBuf);
 
 		m_images.push_back(bilateralCleanupTex1);
 		m_images.push_back(bilateralCleanupTex2);
+		m_images.push_back(bilateralCleanupTex3);
 
 	}
 
@@ -322,6 +303,8 @@ void RenderOutput::createPostTAADescriptorSet(const VkExtent2D& fullSize)
 		m_bind.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
 		m_bind.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 		m_bind.addBinding({ 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
+		m_bind.addBinding({ 4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+		m_bind.addBinding({ 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 
 		// allocate the descriptor set
 		m_postTAADescSetLayout = m_bind.createLayout(m_device);
@@ -331,15 +314,18 @@ void RenderOutput::createPostTAADescriptorSet(const VkExtent2D& fullSize)
 		// update the descriptor set
 		std::vector<VkWriteDescriptorSet> writes;
 
-		VkDescriptorImageInfo descImg[2] = {
+		VkDescriptorImageInfo descImg[3] = {
 			m_images[0].descriptor,
 			m_images[1].descriptor,
+			m_images[2].descriptor,
 		};
 
 		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 0, &descImg[0]));
 		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 1, &descImg[1]));
 		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 2, &descImg[0]));
 		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 3, &descImg[1]));
+		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 4, &descImg[2]));
+		writes.emplace_back(m_bind.makeWrite(m_postTAADescSet, 5, &descImg[2]));
 
 		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 

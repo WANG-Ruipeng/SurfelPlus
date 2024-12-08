@@ -82,7 +82,7 @@ typedef nvvk::ResourceAllocatorDedicated Allocator;
 #include "bilateral_cleanup_pass.h"
 #include "indirect_postprocess_pass.h"
 #include "taa_pass.h"
-
+#include "taa_sharpen_pass.h"
 class SampleGUI;
 
 //--------------------------------------------------------------------------------------------------
@@ -166,6 +166,7 @@ public:
   TemporalSpatialPass m_temporalSpatialPass;
   BilateralCleanupPass m_bilateralCleanupPass;
   TAAPass m_taaPass;
+  TAASharpenPass m_taaSharpenPass;
 
   // light pass
   LightPass m_lightPass;
