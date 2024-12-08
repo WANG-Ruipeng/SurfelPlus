@@ -79,6 +79,11 @@ layout(set = 6, binding = 7) uniform sampler2D ssaoMap;
 layout(set = 6, binding = 8) uniform sampler2D filteredReflectionColor;
 layout(set = 6, binding = 9) uniform sampler2D bilateralCleanupColor;
 
+layout(set = 7, binding = 2) uniform sampler2D TAASampler1;
+layout(set = 7, binding = 3) uniform sampler2D TAASampler2;
+
+#define sample_TAAColor(col, imageCoords) rtxState.frame % 2 == 0 ? col = texelFetch(TAASampler2, ivec2(imageCoords), 0).xyz : col = texelFetch(TAASampler1, ivec2(imageCoords), 0).xyz;
+
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
@@ -155,7 +160,12 @@ void main()
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-camRay.direction, state.normal)), state.mat.roughness)
         * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
+
+    // Test TAA
     vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
+//    vec3 reflectionColor;
+//    sample_TAAColor(reflectionColor, gl_FragCoord.xy);
+
     // first several frames are noisy, so blend in
     reflectionColor *= smoothstep(0.0, 100.0, float(rtxState.frame));
 

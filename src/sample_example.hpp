@@ -135,6 +135,7 @@ public:
   void updateHdrDescriptors();
   void updateUniformBuffer(const VkCommandBuffer& cmdBuf);
   VkRect2D getRenderRegion();
+  void runTAA(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler);
 
   void createSurfelResources();
   void createGbufferPass();

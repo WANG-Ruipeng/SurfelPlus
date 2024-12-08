@@ -157,9 +157,9 @@ void LightPass::createLightPassDescriptorSet(const VkDescriptorSetLayout& descSe
 
 	vkDestroyDescriptorPool(m_device, m_descPool, nullptr);
 
-	bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT });
+	bind.addBinding({ OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
 	bind.addBinding({ OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-					 VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR });
+					 VK_SHADER_STAGE_COMPUTE_BIT});
 	m_descPool = bind.createPool(m_device);
 	m_descSet = nvvk::allocateDescriptorSet(m_device, m_descPool, descSetLayout);
 

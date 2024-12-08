@@ -229,6 +229,7 @@ struct SceneCamera
   // Extra
   int nbLights;
   mat4  prevViewProj;
+  vec4  jitter; // .xy: current jitter, .zw: previous jitter
 };
 
 struct VertexAttributes
@@ -379,6 +380,8 @@ struct Tonemapper
   float Ywhite;  // Burning white
   float key;     // Log-average luminance
   int   dither;
+  int   frame;
+  vec3  padding;
 };
 
 
