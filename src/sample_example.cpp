@@ -969,14 +969,19 @@ vec2 Hammersley(float i, float numSamples)
     return vec2((i / numSamples), radicalInverseVDC);
 }
 
+#include <random>
 std::vector<vec2> SampleExample::hammersleySequence(int maxNumberPoints)
 {
 	std::vector<vec2> points;
 	for (int i = 0; i < maxNumberPoints; i++)
 	{
 		points.push_back(Hammersley(i, maxNumberPoints));
-		std::cout << points[i].x << " " << points[i].y << std::endl;
 	}
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(points.begin(), points.end(), g);
+
 	return points;
 }
 

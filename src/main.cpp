@@ -202,7 +202,7 @@ int main(int argc, char **argv)
       .detach();
 
   // create a sequence of random numbers
-  sample.initHammerleySequence(16);
+  sample.initHammerleySequence(6);
 
 
   // Profiler measure the execution time on the GPU

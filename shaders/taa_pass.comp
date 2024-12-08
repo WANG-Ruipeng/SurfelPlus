@@ -45,7 +45,7 @@ layout(set = 4, binding = 0) uniform sampler2D inImage;
 
 #define sample_PrevTAASampler(col, uv) if (rtxState.frame % 2 == 0) { col = texture(TAASampler1, uv).rgb; } else { col = texture(TAASampler2, uv).rgb; }
 #define store_outTAAImage(col, imageCoords) if (rtxState.frame % 2 == 0) { imageStore(TAAColor2, imageCoords, col); } else { imageStore(TAAColor1, imageCoords, col); }
-
+#define ISVALID(col) (col.r >= 0.0 && col.g >= 0.0 && col.b >= 0.0)
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 void main()
@@ -116,11 +116,7 @@ void main()
 	vec2 prevUV = prevClip.xy * 0.5 + 0.5;
 
 	vec3 prevCol;
-	if (prevUV .x < 0 || prevUV.x >= 1.0 || prevUV.y < 0 || prevUV.y >= 1.0)
-		prevCol = currentCol;
-	else
-		sample_PrevTAASampler(prevCol, prevUV);
-
+	sample_PrevTAASampler(prevCol, prevUV);
 
 	// unjittered color
 	vec2 unJitteredUV = uvCoords - sceneCamera.jitter.xy;
@@ -144,7 +140,7 @@ void main()
 	vec3 finalColor = mix(unJitteredCol, col_clipped, 0.95);
 
 //	store_outTAAImage(vec4(rtxState.frame == 0 ? currentCol : finalColor, 1.0), imageCoords);
-	store_outTAAImage(vec4(finalColor, 1.0), imageCoords);
+	store_outTAAImage(vec4(!ISVALID(finalColor) ? currentCol : finalColor, 1.0), imageCoords);
 //	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 
