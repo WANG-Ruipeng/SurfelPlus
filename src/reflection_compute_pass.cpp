@@ -112,7 +112,7 @@ void ReflectionComputePass::createReflectionPassDescriptorSet(const VkExtent2D& 
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
 		auto reflectBrdfCreateInfo = nvvk::makeImage2DCreateInfo(
-			size, VK_FORMAT_R16G16B16A16_SFLOAT,
+			size, VK_FORMAT_R32G32B32A32_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, true);
 
 		auto filteredReflectionCreateInfo = nvvk::makeImage2DCreateInfo(

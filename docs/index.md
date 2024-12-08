@@ -47,6 +47,133 @@ A grid-based surfel acceleration structure organizes surfels into spatial cells 
 - **Dynamic Scene Support**: Lighting changes are immediately reflected, making SurfelPlus ideal for interactive environments and games.
 - **Physically-Based Lighting**: Surfels inherently store surface and material properties, allow our rendering pipeline seamlessly to integrate into original PBR methods.
 
+## Rendering pipelines
+
+### Overview
+
+![image.png](/img/unitscale.png)
+
+*Rendering pipeline visualization by unit scale.*
+
+![image.png](/img/GPUruntime.png)
+
+*Rendering pipeline visualization by GPU runtime.*
+
+### G-Buffer Pass
+
+The **G-Buffer Pass** is responsible for capturing per-pixel information about the scene's geometry and surface properties, which are later used in lighting and shading computations. This pass encodes data such as object identifiers, world-space normals, and other attributes necessary for the rendering pipeline.
+
+![image.png](/img/DepthBuffer.png)
+
+*Depth Buffer*
+
+### Surfel Prepare Pass
+
+A pass that prepares all the data for surfels.
+
+### Surfel Update Pass
+
+The **Surfel Update Pass** is responsible for maintaining and updating the dynamic surfel data in real time. It processes active surfels to:
+
+- Recycle expired or invalid surfels based on specific criteria, such as lifespan, distance from the camera, or visibility status.
+- Adjust surfel radii dynamically based on camera distance and scene conditions to balance performance and visual quality.
+- Distribute surfels into appropriate grid cells for efficient spatial queries and interactions.
+- Allocate ray resources for surfel-based global illumination calculations, ensuring adequate sampling for indirect lighting.
+
+This pass ensures the surfel system remains efficient and responsive to scene changes, supporting real-time dynamic global illumination with consistent performance.
+
+### Cell Info Update Pass/Cell to Surfel Update Pass
+
+Calculate each cell’s information for grid acceleration.
+
+### Surfel Ray Tracing Pass Overview
+
+The **Surfel Ray Tracing Pass** is responsible for casting rays from surfels to compute their radiance, which is essential for indirect lighting in the scene. This pass integrates ray-guided sampling and cosine-weighted hemisphere sampling to ensure accurate and efficient light transport calculations.
+
+1. **Ray Generation**: Uses either **ray-guided sampling** (based on irradiance maps) or **cosine-weighted sampling** (based on the surfel's orientation) to determine the direction of rays. The ray-guided sampling prioritizes high-irradiance directions for better accuracy, while cosine-weighted sampling provides fallback sampling when irradiance data is insufficient.
+2. **Radiance Calculation:** Casts rays from surfel positions into the scene using our custom path tracing method. Then, computes the radiance gathered by the surfel through ray interactions with the scene to achieve light interactions between surfels
+3. **Surfel Updates**: Updates each surfel ray with its computed radiance, direction, and probability density function for use in subsequent lighting computations. Here, we also clamps high luminance values to improve stability and avoid firefly effects in the scene.
+4. **Dynamic Adjustments**: Adapts ray tracing depth based on the surfel's activeness to optimize performance without sacrificing realism.
+
+This pass is critical for accurately simulating light propagation and reflection in the scene, contributing to the high-quality global illumination achieved by **SurfelPlus**.
+
+### Surfel Integration Pass Overview
+
+The **Surfel Integration Pass** is responsible for aggregating the radiance contributions collected by surfel rays, updating surfel properties, and sharing irradiance data among nearby surfels. This pass plays a crucial role in achieving consistent and smooth global illumination.
+
+1. **Radiance Aggregation**: Gathers and accumulates radiance data from surfel rays stored in the memory and applies **MSME filtering** to stabilize radiance values, reducing flickering and noise.
+2. **Irradiance Map Update**: Updates the **irradiance map** for each surfel, storing directional irradiance information in a 6x6 grid for efficient reuse in guided sampling. We also writes depth information into a corresponding depth map to assist with visibility checks.
+3. **Shared Radiance Contribution**: Enables nearby surfels to share irradiance data within a local spatial cell. Uses factors like normal alignment, distance, and surfel lifespan to weight contributions, ensuring consistent and physically plausible lighting.
+4. **Adaptive Integration**: Differentiates behavior for newly created surfels and established ones to avoid sudden changes in irradiance values. Then, we normalizes contributions across samples, ensuring accurate energy conservation.
+
+This pass ensures that surfels maintain smooth and stable lighting across frames while leveraging shared data to enhance global illumination accuracy and performance.
+
+![image.png](/img/Radiance.png)
+
+*Radiance in each surfel*
+
+### Surfel Generation Pass Overview
+
+The **Surfel Generation Pass** computes indirect lighting contributions for each pixel based on nearby surfels, updates shading information, and dynamically generates new surfels to ensure adequate coverage in the scene. This pass enhances the lighting of the rendered image by incorporating smooth and detailed global illumination.
+
+1. **Indirect Lighting Calculation**: Aggregates radiance contributions from nearby surfels within the same spatial cell. Factors like distance, normal alignment, and surfel radius are used to weight contributions, ensuring realistic lighting effects.
+2. **Coverage and Contribution Analysis**: Evaluates coverage and contribution metrics for surfels within the pixel's vicinity to determine lighting consistency and detect potential gaps in surfel representation.
+3. **Dynamic Surfel Generation**: Generates new surfels dynamically in underrepresented regions to maintain proper lighting coverage. The position, radius, and radiance of new surfels are initialized based on the scene's current lighting conditions.
+4. **Debugging and Visualization**: Here, we provide supports multiple debugging modes, including visualizing radiance, surfel IDs, variance, and surfel radius. This provides insights into surfel contributions and the overall quality of indirect lighting.
+5. **Adaptive Surfel Removal**: Removes surfels in regions with excessive coverage or low contribution to optimize memory usage and computational performance.
+
+This pass ensures that the shading information is consistently accurate, while dynamically adapting the surfel distribution to maintain high-quality global illumination in real-time scenarios.
+
+![image.png](/img/surfelVisualization.png)
+
+*Each color cell represents one surfel*
+
+### Reflection Compute Pass Overview
+
+The **Reflection Compute Pass** computes specular reflections using stochastic sampling and reservoir sampling techniques. It calculates accurate reflection contributions while efficiently handling complex material properties and varying surface roughness.
+
+1. **Stochastic Sampling**: Uses randomized sampling to generate reflection candidates for each pixel. Handles specular lobe sampling based on material properties like roughness and metallicity.
+2. **Reservoir Sampling**: Implements a weighted reservoir sampling approach to select the best reflection candidate based on probability density and radiance.
+3. **Reflection Computation**: Traces reflection rays to gather radiance from the scene using surfel-based reflections. Applies BRDF evaluation and energy conservation to calculate the final reflection color.
+4. **Firefly Suppression**: Includes a threshold-based luminance clamp to prevent outliers (fireflies) in the reflection output, ensuring stable and realistic visuals.
+
+This pass provides high-quality specular reflections, essential for realistic rendering of glossy and metallic surfaces, while maintaining efficiency through adaptive sampling techniques.
+
+### Reflection Filtering Pass Overview
+
+The **Reflection Filtering Pass** refines the specular reflection data by applying spatial reconstruction and temporal accumulation techniques. This pass ensures smooth and visually accurate reflections while mitigating noise and artifacts.
+
+1. **Spatial Reconstruction Filtering**: Uses a neighborhood sampling pattern to collect and average reflection data from nearby pixels. Incorporates **sample weighting** based on BRDF contributions, material consistency, and PDF values to prioritize relevant samples.
+2. **Material Consistency Check**: Ensures that only samples with matching material IDs contribute to the reflection data, preserving material-specific characteristics.
+3. **Variance Calculation**: Computes the variance of sampled contributions to measure the reliability and stability of the filtered reflections.
+4. **Temporal Accumulation**: Combines current filtered results with the previous frame's reflections to enhance temporal stability and reduce flickering.
+5. **Adaptive Sampling Patterns**: Leverages stochastic sampling with predefined patterns (Poisson Disk in our code) to balance performance and quality across different pixel regions.
+
+![image.png](/img/spatial_temporal.png)
+
+*Reflection lighting in the scene*
+
+### Bilateral Cleanup Pass Overview
+
+The **Bilateral Cleanup Pass** refines the filtered reflection data by applying a bilateral filter that considers spatial, color, and normal similarity. This pass enhances the smoothness of reflections while preserving sharp edges and important details.
+
+1. **Variance-Based Filtering**: Handles pixels differently based on their variance:
+    - **Culled Pixels**: Variance below a threshold results in the pixel being discarded.
+    - **Low-Variance Pixels**: Retains the original reflection data.
+    - **High-Variance Pixels**: Applies bilateral filtering to smooth the data.
+2. **Bilateral Filtering**:Combines three weights to refine the reflection data:
+    - **Spatial Weight**: Penalizes contributions from farther neighbors.
+    - **Range Weight**: Reduces the impact of neighbors with significantly different colors.
+    - **Normal Weight**: Incorporates geometric similarity by considering surface normal alignment.
+3. **Dynamic Kernel Radius**: Adapts the filter kernel radius based on pixel variance, allowing for more aggressive smoothing in high-variance areas while maintaining sharpness elsewhere.
+4. **Edge Preservation**: Ensures that boundaries and fine details are preserved by factoring in normal similarity and color differences.
+
+This pass ensures high-quality reflection visuals by reducing noise and artifacts while maintaining important surface details and transitions, providing a polished final image.
+
+![image.png](/img/bilateral.png)
+
+*Filtered reflection image for denoising*
+
 # Milestones Development Log
 
 ## Milestone 1
@@ -152,7 +279,7 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 
 - **Better Surfelization & Tracing**: Enhanced surfel generation and tracing algorithms to improve accuracy and reduce artifacts.
 - **Higher Resolution & Improved Performance**: Increased rendering resolution from **1080x720** to **2560x1440** while keeping over 120 FPS for smoother performance.
-- **Non-Uniform Acceleration Structure**: Replaced the uniform grid with a non-uniform structure for more efficient surfel queries and better scalability.
+- **Non-Uniform Acceleration Structure**: Replaced the uniform grid with a non-uniform structure for more efficient surfel queries and better scalability. We have observe a 15% fps increase in out [test stadium scene](https://sketchfab.com/3d-models/al-wakrah-stadium-worldcup-2022-d7452e247d55493e8e6a9c086a4eafe6).
 - **Improved Stability**:
     - Render pipeline synchronization to prevent flickering and inconsistencies.
     - G-buffer depth bias and ray offset techniques to mitigate precision issues.
@@ -177,3 +304,36 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 - **Non-Uniform Acceleration Structure**: Successfully implemented.
 
 These improvements position **SurfelPlus** as a highly efficient and visually robust renderer capable of dynamic global illumination with high performance and quality.
+
+## Final
+
+### Completed Goals:
+
+1. **Glossy Indirect Lighting**:
+    - Fully implemented support for glossy reflections, enhancing visual realism by simulating accurate light bounces on glossy surfaces. This feature significantly improves the fidelity of materials like polished metals and glass.
+2. **Spatial-Temporal Filtering for Glossy Reflections**:
+    - Successfully integrated stochastically spatial-temporal filtering techniques for glossy reflections. This approach improves both temporal stability and spatial consistency, reducing flickering and noise in scenes.
+
+### Additional Features Implemented:
+
+1. **Bilateral Filtering**:
+    - Added a bilateral filtering stage after spatial-temporal filtering to further smooth indirect lighting. This step preserves edge details while eliminating noise, resulting in cleaner and more visually appealing outputs.
+2. **Temporal Anti-Aliasing (TAA)**:
+    - Implemented TAA to address aliasing artifacts, particularly in high-contrast areas of the scene.
+    - The current implementation focuses on **motion vectors derived from camera movement**, which provide smoother visuals during dynamic camera interactions.
+    - Due to time constraints, we did not include **ray hit re-projection**, but the groundwork has been laid for future extensions.
+3. **Screen-Space Ambient Occlusion (SSAO)**:
+    - Integrated SSAO into the rendering pipeline to enhance the perception of depth and contact shadows. This feature improves the overall realism by adding subtle occlusion effects in areas where light is naturally obstructed.
+    ![image.png](/img/SSAO.png) 
+
+These enhancements collectively elevate the visual quality and performance of **SurfelPlus**, making it a robust and versatile renderer for real-time global illumination in dynamic environments.
+
+### Demo
+
+| Large open scene | Closed scene |
+|-----------------|----------------|
+| ![image.png](/img/FLargeOpen.png) | ![image.png](/img/FClose.png) |
+
+| With Glossy Indirect Lighting | Without Glossy Indirect Lighting |
+|-----------------|----------------|
+| ![image.png](/img/FDiffuse.png) | ![image.png](/img/FNoDiffuse.png) |
