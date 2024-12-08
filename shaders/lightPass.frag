@@ -200,6 +200,7 @@ void main()
         }
         else if (rtxState.debugging_mode == esOcclusion){
             fragColor.xyz = vec3(ssao);
+        }
         else if (rtxState.debugging_mode == esNoReflection){
             fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
             fragColor.a = 1.0;
