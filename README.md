@@ -68,3 +68,79 @@ std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 ```
 
 Enjoy! :)
+
+## Surfel GI Render Passes Overview
+
+- Prepare Stage
+    - Gbuffer Pass
+- Surfel Calculation Stage
+    - Surfel Prepare Pass
+    - Surfel Update Pass
+    - Cell Info Update Pass
+    - Cell to Surfel Update Pass
+    - Surfel Ray Trace Pass
+    - Surfel Generation & Evaluation Pass
+- Reflection Calculation Stage
+    - Reflection Trace Pass
+    - Spatial Temporal Filtering Pass
+    - Bilateral Filtering Pass
+- Integrate Stage
+    - SSAO Pass
+    - Light Integrate Pass
+    - TAA Pass
+    - Tone Mapping Pass
+
+### Gbuffer Pass
+
+
+
+### Surfel Prepare Pass
+
+
+
+### Surfel Update Pass
+
+
+
+### Cell Info Update Pass
+
+
+
+### Cell to Surfel Update Pass
+
+
+
+### Surfel Ray Trace Pass
+
+
+
+### Surfel Generation & Evaluation Pass
+
+
+
+
+### Reflection Trace Pass
+
+
+
+### Spatial Temporal Filtering Pass
+
+
+
+### Bilateral Filtering Pass
+
+
+
+### SSAO Pass
+
+
+
+### Light Integrate Pass
+
+
+
+### TAA Pass
+
+
+
+### Tone Mapping Pass
