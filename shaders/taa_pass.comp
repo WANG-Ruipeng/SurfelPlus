@@ -105,20 +105,28 @@ void main()
 	// reconstruct world pos from depth 
 	vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
 
+	// current color
+	vec3 currentCol = texture(bilateralCleanupColorSampler, uvCoords).rgb;
+
 	// prev uv pos 
 	vec4 prevClip = sceneCamera.prevViewProj * vec4(worldPos, 1.0);
 	prevClip /= prevClip.w;
 	vec2 prevUV = prevClip.xy * 0.5 + 0.5;
-//	vec3 prevCol = texture(prevTAASampler, prevUV).rgb;
-	vec3 prevCol;
-	sample_PrevTAASampler(prevCol, prevUV);
 
-	// current color
-	vec3 currentCol = texture(bilateralCleanupColorSampler, uvCoords).rgb;
+	vec3 prevCol;
+	if (prevUV .x < 0 || prevUV.x >= 1.0 || prevUV.y < 0 || prevUV.y >= 1.0)
+		prevCol = currentCol;
+	else
+		sample_PrevTAASampler(prevCol, prevUV);
+
 
 	// unjittered color
 	vec2 unJitteredUV = uvCoords - sceneCamera.jitter.xy;
-	vec3 unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
+
+	vec3 unJitteredCol;
+	if (unJitteredUV.x < 0 || unJitteredUV.x >= 1.0 || unJitteredUV.y < 0 || unJitteredUV.y >= 1.0)
+		unJitteredCol = currentCol;
+	else unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
 
 	// line box clipping
 	vec3 p_clip = 0.5 * (aabb_max + aabb_min);
