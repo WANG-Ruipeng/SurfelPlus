@@ -8,7 +8,10 @@ This project is developed base on Nvidia's [vk_raytrace renderer](https://github
 
 **IMPORTANT**: This readme file will only include the basic setup and usage for this project. For a complete development log and demo, please visit this site: [SurfelPlus Project Page](https://wang-ruipeng.github.io/SurfelPlus/)
 
+## Demos
 ![DemoImage.png](docs/img/logo.png)
+
+https://github.com/user-attachments/assets/2aecac2c-b9ec-486c-b237-a38070e0a42e
 
 ## Introduction
 

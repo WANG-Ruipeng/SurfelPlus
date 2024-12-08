@@ -152,7 +152,7 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 
 - **Better Surfelization & Tracing**: Enhanced surfel generation and tracing algorithms to improve accuracy and reduce artifacts.
 - **Higher Resolution & Improved Performance**: Increased rendering resolution from **1080x720** to **2560x1440** while keeping over 120 FPS for smoother performance.
-- **Non-Uniform Acceleration Structure**: Replaced the uniform grid with a non-uniform structure for more efficient surfel queries and better scalability.
+- **Non-Uniform Acceleration Structure**: Replaced the uniform grid with a non-uniform structure for more efficient surfel queries and better scalability. We have observe a 15% fps increase in out [test stadium scene](https://sketchfab.com/3d-models/al-wakrah-stadium-worldcup-2022-d7452e247d55493e8e6a9c086a4eafe6).
 - **Improved Stability**:
     - Render pipeline synchronization to prevent flickering and inconsistencies.
     - G-buffer depth bias and ray offset techniques to mitigate precision issues.
@@ -177,3 +177,35 @@ For Milestone 3, we addressed key issues identified in Milestone 2 and implement
 - **Non-Uniform Acceleration Structure**: Successfully implemented.
 
 These improvements position **SurfelPlus** as a highly efficient and visually robust renderer capable of dynamic global illumination with high performance and quality.
+
+## Final
+
+### Completed Goals:
+
+1. **Glossy Indirect Lighting**:
+    - Fully implemented support for glossy reflections, enhancing visual realism by simulating accurate light bounces on glossy surfaces. This feature significantly improves the fidelity of materials like polished metals and glass.
+2. **Spatial-Temporal Filtering for Glossy Reflections**:
+    - Successfully integrated stochastically spatial-temporal filtering techniques for glossy reflections. This approach improves both temporal stability and spatial consistency, reducing flickering and noise in scenes.
+
+### Additional Features Implemented:
+
+1. **Bilateral Filtering**:
+    - Added a bilateral filtering stage after spatial-temporal filtering to further smooth indirect lighting. This step preserves edge details while eliminating noise, resulting in cleaner and more visually appealing outputs.
+2. **Temporal Anti-Aliasing (TAA)**:
+    - Implemented TAA to address aliasing artifacts, particularly in high-contrast areas of the scene.
+    - The current implementation focuses on **motion vectors derived from camera movement**, which provide smoother visuals during dynamic camera interactions.
+    - Due to time constraints, we did not include **ray hit re-projection**, but the groundwork has been laid for future extensions.
+3. **Screen-Space Ambient Occlusion (SSAO)**:
+    - Integrated SSAO into the rendering pipeline to enhance the perception of depth and contact shadows. This feature improves the overall realism by adding subtle occlusion effects in areas where light is naturally obstructed.
+
+These enhancements collectively elevate the visual quality and performance of **SurfelPlus**, making it a robust and versatile renderer for real-time global illumination in dynamic environments.
+
+### Demo
+
+| Large open scene | Close scene |
+|-----------------|----------------|
+| ![image.png](/img/FLargeOpen.png) | ![image.png](/img/FClose.png) |
+
+| With Glossy Indirect Lighting | Without Glossy Indirect Lighting |
+|-----------------|----------------|
+| ![image.png](/img/FDiffuse.png) | ![image.png](/img/FNoDiffuse.png) |
