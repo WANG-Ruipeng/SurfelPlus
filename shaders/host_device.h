@@ -229,7 +229,7 @@ struct SceneCamera
   // Extra
   int nbLights;
   mat4  prevViewProj;
-  vec4  jitter; // .xy: current jitter, .zw: previous jitter
+  vec4  jitter; // .xy: current jitter, .z: scale, .w: padding
 };
 
 struct VertexAttributes
