@@ -44,7 +44,7 @@ layout(set = 1, binding = 4) uniform image2D postTAAColor;
 #define sample_TAASampler(uv) (rtxState.frame % 2 == 0 ? texture(TAASampler2, uv).rgb: texture(TAASampler1, uv).rgb)
 
 
-#define VALIDCOORDS(coords) (coords.x >= 0 && coords.x < 1.0f && coords.y >= 0 && coords.y < 1.0f)
+#define VALIDUV(coords) (coords.x >= 0 && coords.x < 1.0f && coords.y >= 0 && coords.y < 1.0f)
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -65,10 +65,10 @@ void main()
 	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize;
 
 	vec3 center = sample_TAASampler(uvCoords);
-	vec3 left = VALIDCOORDS(leftUV) ? sample_TAASampler(leftUV) : center;
-	vec3 right = VALIDCOORDS(rightUV) ? sample_TAASampler(rightUV) : center;
-	vec3 up = VALIDCOORDS(upUV) ? sample_TAASampler(upUV) : center;
-	vec3 down = VALIDCOORDS(downUV) ? sample_TAASampler(downUV) : center;
+	vec3 left = VALIDUV(leftUV) ? sample_TAASampler(leftUV) : center;
+	vec3 right = VALIDUV(rightUV) ? sample_TAASampler(rightUV) : center;
+	vec3 up = VALIDUV(upUV) ? sample_TAASampler(upUV) : center;
+	vec3 down = VALIDUV(downUV) ? sample_TAASampler(downUV) : center;
 
 	vec3 col = 5.0 * center - (left + right + up + down);
 	
