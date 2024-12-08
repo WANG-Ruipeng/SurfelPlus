@@ -38,6 +38,8 @@ layout(set = 3, binding = 1) uniform image2D TAAColor2;
 layout(set = 3, binding = 2) uniform sampler2D TAASampler1;
 layout(set = 3, binding = 3) uniform sampler2D TAASampler2;
 
+layout(set = 4, binding = 0) uniform sampler2D inImage;
+
 #include "globals.glsl"
 #include "shaderUtils.glsl"
 
@@ -55,7 +57,7 @@ void main()
         return; 
 
 
-	vec2 texSize = vec2(textureSize(bilateralCleanupColorSampler, 0));
+	vec2 texSize = vec2(textureSize(inImage, 0));
 
 	vec2 uvCoords = (vec2(imageCoords) + vec2(0.5)) / texSize;
 
@@ -76,7 +78,7 @@ void main()
 			if (neighborCoords.x < 0 || neighborCoords.x >= 1.0 || neighborCoords.y < 0 || neighborCoords.y >= 1.0 || (i == 0 && j == 0))
 				continue;
 
-			vec3 neighborColor = texture(bilateralCleanupColorSampler, neighborCoords).rgb;
+			vec3 neighborColor = texture(inImage, neighborCoords).rgb;
 
 			// 3x3
 			max33 = max(max33, neighborColor.rgb);
@@ -106,7 +108,7 @@ void main()
 	vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
 
 	// current color
-	vec3 currentCol = texture(bilateralCleanupColorSampler, uvCoords).rgb;
+	vec3 currentCol = texture(inImage, uvCoords).rgb;
 
 	// prev uv pos 
 	vec4 prevClip = sceneCamera.prevViewProj * vec4(worldPos, 1.0);
@@ -126,7 +128,7 @@ void main()
 	vec3 unJitteredCol;
 	if (unJitteredUV.x < 0 || unJitteredUV.x >= 1.0 || unJitteredUV.y < 0 || unJitteredUV.y >= 1.0)
 		unJitteredCol = currentCol;
-	else unJitteredCol = texture(bilateralCleanupColorSampler, unJitteredUV).rgb;
+	else unJitteredCol = texture(inImage, unJitteredUV).rgb;
 
 	// line box clipping
 	vec3 p_clip = 0.5 * (aabb_max + aabb_min);
@@ -141,7 +143,7 @@ void main()
 	// final blend
 	vec3 finalColor = mix(unJitteredCol, col_clipped, 0.95);
 
-	store_outTAAImage(vec4(finalColor, 1.0), imageCoords);
+	store_outTAAImage(vec4(rtxState.frame == 0 ? currentCol : finalColor, 1.0), imageCoords);
 //	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 

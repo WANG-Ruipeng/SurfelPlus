@@ -38,9 +38,15 @@ layout(location = 0) out vec4 fragColor;
 
 layout(set = 0, binding = 0) uniform sampler2D inImage;
 
+layout(set = 1, binding = 2) uniform sampler2D TAASampler1;
+layout(set = 1, binding = 3) uniform sampler2D TAASampler2;
+
+
+
 layout(push_constant) uniform _Tonemapper
 {
   Tonemapper tm;
+  RtxState rtxState;
 };
 
 // http://www.thetenthplanet.de/archives/5367

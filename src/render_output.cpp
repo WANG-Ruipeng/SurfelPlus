@@ -109,7 +109,9 @@ void RenderOutput::createOffscreenRender(const VkExtent2D& size)
   }
 
 
+
   createPostDescriptor();
+  createPostTAADescriptorLayout();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -121,14 +123,16 @@ void RenderOutput::createPostPipeline(const VkRenderPass& renderPass)
   vkDestroyPipelineLayout(m_device, m_postPipelineLayout, nullptr);
 
   // Push constants in the fragment shader
-  VkPushConstantRange pushConstantRanges{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Tonemapper)};
+  std::vector<VkPushConstantRange> pushConstants{ {VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PostPushConstant)}};
+  //VkPushConstantRange pushConstantRanges{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Tonemapper)};
 
+  std::vector<VkDescriptorSetLayout> descSetLayouts = { m_postDescSetLayout, m_postTAADescSetLayout };
   // Creating the pipeline layout
   VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-  pipelineLayoutCreateInfo.setLayoutCount         = 1;
-  pipelineLayoutCreateInfo.pSetLayouts            = &m_postDescSetLayout;
+  pipelineLayoutCreateInfo.setLayoutCount         = 2;
+  pipelineLayoutCreateInfo.pSetLayouts            = descSetLayouts.data();
   pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-  pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRanges;
+  pipelineLayoutCreateInfo.pPushConstantRanges    = pushConstants.data();
   vkCreatePipelineLayout(m_device, &pipelineLayoutCreateInfo, nullptr, &m_postPipelineLayout);
 
   // Pipeline: completely generic, no vertices
@@ -153,13 +157,18 @@ void RenderOutput::createPostDescriptor()
   vkDestroyDescriptorPool(m_device, m_postDescPool, nullptr);
   vkDestroyDescriptorSetLayout(m_device, m_postDescSetLayout, nullptr);
 
+  m_postDescPool = nvvk::createDescriptorPool(m_device, {
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2 },
+    {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
+      }, 2);
+
   // This descriptor is passed to the RTX pipeline
   // Ray tracing will write to the binding 1, but the fragment shader will be using binding 0, so it can use a sampler too.
-  bind.addBinding({OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT});
+  bind.addBinding({OutputBindings::eSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
   bind.addBinding({OutputBindings::eStore, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
                    VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR});
   m_postDescSetLayout = bind.createLayout(m_device);
-  m_postDescPool      = bind.createPool(m_device);
   m_postDescSet       = nvvk::allocateDescriptorSet(m_device, m_postDescPool, m_postDescSetLayout);
 
   std::vector<VkWriteDescriptorSet> writes;
@@ -167,6 +176,40 @@ void RenderOutput::createPostDescriptor()
   writes.emplace_back(bind.makeWrite(m_postDescSet, OutputBindings::eStore, &m_offscreenColor.descriptor));  // This will be used by the ray trace to write the image
   vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
+
+void RenderOutput::createPostTAADescriptorLayout()
+{
+    // This descriptor is passed to the RTX pipeline
+    // Ray tracing will write to the binding 1, but the fragment shader will be using binding 0, so it can use a sampler too.
+
+    m_bind_TAA.addBinding({ 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+    m_bind_TAA.addBinding({ 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT });
+    m_bind_TAA.addBinding({ 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT |VK_SHADER_STAGE_COMPUTE_BIT });
+    m_bind_TAA.addBinding({ 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT });
+
+    m_postTAADescSetLayout = m_bind_TAA.createLayout(m_device);
+    
+}
+
+void RenderOutput::createPostTAADescriptorSet(const std::vector<nvvk::Texture>& texture)
+{
+
+	std::vector<VkDescriptorImageInfo> descImg;
+	for (auto& t : texture)
+	{
+		descImg.push_back(t.descriptor);
+	}
+
+    m_postTAADescSet = nvvk::allocateDescriptorSet(m_device, m_postDescPool, m_postDescSetLayout);
+    std::vector<VkWriteDescriptorSet> writes;
+    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 0, &descImg[0]));
+    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 1, &descImg[1]));
+    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 2, &descImg[0]));
+    writes.emplace_back(m_bind_TAA.makeWrite(m_postTAADescSet, 3, &descImg[1]));
+
+    vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+
 
 //--------------------------------------------------------------------------------------------------
 // Draw a full screen quad with the attached image
@@ -182,14 +225,14 @@ void RenderOutput::run(VkCommandBuffer cmdBuf)
   vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 }
 
-void RenderOutput::run(VkCommandBuffer cmdBuf, VkDescriptorSet descSet)
+void RenderOutput::run(VkCommandBuffer cmdBuf, std::vector<VkDescriptorSet> descSets)
 {
     LABEL_SCOPE_VK(cmdBuf);
 
-
-    vkCmdPushConstants(cmdBuf, m_postPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Tonemapper), &m_tonemapper);
+	PostPushConstant pushc{ m_tonemapper, m_state };
+    vkCmdPushConstants(cmdBuf, m_postPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PostPushConstant), &pushc);
     vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_postPipeline);
-    vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_postPipelineLayout, 0, 1, &descSet, 0, nullptr);
+    vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_postPipelineLayout, 0, static_cast<uint32_t>(descSets.size()), descSets.data(), 0, nullptr);
     vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 }
 
@@ -202,4 +245,9 @@ void RenderOutput::genMipmap(VkCommandBuffer cmdBuf)
   LABEL_SCOPE_VK(cmdBuf);
   nvvk::cmdGenerateMipmaps(cmdBuf, m_offscreenColor.image, m_offscreenColorFormat, m_size, nvvk::mipLevels(m_size), 1,
                            VK_IMAGE_LAYOUT_GENERAL);
+}
+
+void RenderOutput::setState(const RtxState& state)
+{
+	m_state = state;
 }

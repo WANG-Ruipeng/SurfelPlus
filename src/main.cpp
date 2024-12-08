@@ -282,6 +282,9 @@ int main(int argc, char **argv)
                                 sample.m_taaPass.getSamplerDescSet()});
         sample.m_lightPass.endRenderPass(cmdBuf);
       }
+
+      sample.runTAA(cmdBuf, profiler);
+
     }
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
@@ -301,6 +304,7 @@ int main(int argc, char **argv)
     {
       sample.m_surfel.gbufferLayoutTransition(cmdBuf);
       sample.m_lightPass.layoutTransition(cmdBuf);
+
     }
 
     profiler.endFrame();

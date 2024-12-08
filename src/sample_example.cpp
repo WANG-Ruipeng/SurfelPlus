@@ -395,7 +395,11 @@ void SampleExample::createReflectionPass()
         m_surfel.getGbufferImageDescLayout(),
         m_scene.getDescLayout(),
 		m_taaPass.getSamplerDescSetLayout(),
+		m_offscreen.getDescLayout()
         }, &m_scene);
+
+	//m_offscreen.createPostTAADescriptorSet(m_taaPass.getImages());
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -520,11 +524,16 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
   m_offscreen.m_tonemapper.zoom           = m_descaling ? 1.0f / m_descalingLevel : 1.0f;
   m_offscreen.m_tonemapper.renderingRatio = size / area;
 
+  m_offscreen.setState(m_rtxState);
+
   if (m_busy)
     m_offscreen.run(cmdBuf);
   else
-	m_offscreen.run(cmdBuf, m_lightPass.getDescriptorSet());
-	//m_offscreen.run(cmdBuf, m_surfel.getIndirectLightDescSet());
+      m_offscreen.run(cmdBuf, {
+      m_lightPass.getDescriptorSet(),
+	  m_taaPass.getSamplerDescSet()
+        });
+      //m_offscreen.run(cmdBuf, m_taaPass.getSamplerDescSet());
 
   if(m_showAxis)
     m_axis.display(cmdBuf, CameraManip.getMatrix(), m_size);
@@ -865,7 +874,7 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
 
     LABEL_SCOPE_VK(cmdBuf);
 
-    auto sec = profiler.timeRecurring("Surfel Calculate", cmdBuf);
+    auto sec = profiler.timeRecurring("Compute Reflection", cmdBuf);
 
     VkExtent2D render_size = m_renderRegion.extent;
     if (m_descaling)
@@ -931,19 +940,19 @@ void SampleExample::computeReflection(const VkCommandBuffer& cmdBuf, nvvk::Profi
         m_surfel.getGbufferImageDescSet(),
         });
 
-    m_taaPass.run(cmdBuf, render_size, profiler, {
-        m_reflectionComputePass.getSamplerDescSet(),
-        m_surfel.getGbufferImageDescSet(),
-        m_scene.getDescSet(),
-		m_taaPass.getSamplerDescSet()
-        });
+  //  m_taaPass.run(cmdBuf, render_size, profiler, {
+  //      m_reflectionComputePass.getSamplerDescSet(),
+  //      m_surfel.getGbufferImageDescSet(),
+  //      m_scene.getDescSet(),
+		//m_taaPass.getSamplerDescSet()
+  //      });
 
-    vkCmdPipelineBarrier(cmdBuf,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        0, 0, nullptr, 0, nullptr,
-        static_cast<uint32_t>(barriers.size()),
-        barriers.data());
+    //vkCmdPipelineBarrier(cmdBuf,
+    //    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    //    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    //    0, 0, nullptr, 0, nullptr,
+    //    static_cast<uint32_t>(barriers.size()),
+    //    barriers.data());
 }
 
 vec2 Hammersley(float i, float numSamples)
@@ -975,4 +984,60 @@ std::vector<vec2> SampleExample::hammersleySequence(int maxNumberPoints)
 void SampleExample::initHammerleySequence(int maxNumberPoints)
 {
 	m_scene.setHammersleySequence(hammersleySequence(maxNumberPoints));
+}
+
+void SampleExample::runTAA(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& profiler)
+{
+    if (m_busy)
+    {
+        m_gui->showBusyWindow();  // Busy while loading scene
+        return;
+    }
+
+    LABEL_SCOPE_VK(cmdBuf);
+
+    auto sec = profiler.timeRecurring("Compute Reflection", cmdBuf);
+
+    VkExtent2D render_size = m_renderRegion.extent;
+    if (m_descaling)
+        render_size = VkExtent2D{ render_size.width / m_descalingLevel, render_size.height / m_descalingLevel };
+
+    VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+    VkImageMemoryBarrier offscreenMemoryBarrier = {};
+    offscreenMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    offscreenMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    offscreenMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    offscreenMemoryBarrier.image = m_lightPass.getTexture().image;
+    offscreenMemoryBarrier.subresourceRange = subresourceRange;
+
+    vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &offscreenMemoryBarrier);
+    m_rtxState.size = { render_size.width, render_size.height };
+    m_taaPass.setPushContants(m_rtxState);
+
+    m_taaPass.run(cmdBuf, render_size, profiler, {
+        m_reflectionComputePass.getSamplerDescSet(),
+        m_surfel.getGbufferImageDescSet(),
+        m_scene.getDescSet(),
+        m_taaPass.getSamplerDescSet(),
+        m_lightPass.getDescriptorSet(),
+        });
+
+    std::vector<VkImageMemoryBarrier> imageMemoryBarriers;
+    for (auto image : m_taaPass.getImages())
+    {
+        VkImageMemoryBarrier imageMemoryBarrier = {};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageMemoryBarrier.image = image.image;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+        imageMemoryBarriers.push_back(imageMemoryBarrier);
+    }
+
+    vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, imageMemoryBarriers.size(), imageMemoryBarriers.data());
+    m_rtxState.size = { render_size.width, render_size.height };
+    m_taaPass.setPushContants(m_rtxState);
+
+    
 }

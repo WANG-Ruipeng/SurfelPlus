@@ -37,6 +37,7 @@ public:
     // getters
     VkDescriptorSetLayout getSamplerDescSetLayout() { return m_sampleDescSetLayout; }
     VkDescriptorSet getSamplerDescSet() { return m_sampleDescSet; }
+	std::vector<nvvk::Texture>& getImages() { return m_images; }
 
 private:
     // Setup
