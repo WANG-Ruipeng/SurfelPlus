@@ -156,6 +156,7 @@ void main()
         * (1.0 - state.mat.metallic));
     vec3 directLighting = hit ? vec3(0) : directLight.radiance;
     vec3 reflectionColor = texelFetch(bilateralCleanupColor, ivec2(gl_FragCoord.xy), 0).rgb;
+    reflectionColor = max(reflectionColor, vec3(0.0));
     // first several frames are noisy, so blend in
     reflectionColor *= smoothstep(0.0, 100.0, float(rtxState.frame));
 

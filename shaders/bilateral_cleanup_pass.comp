@@ -85,7 +85,7 @@ void main()
                 continue;
             
             vec4 neighborColor = imageLoad(filteredReflectionColor, neighborCoords);
-            if(neighborColor.x == 0 && neighborColor.y == 0 && neighborColor.z == 0) continue;
+            if(neighborColor.w <= 0.0) continue;
 
             // Read Normal
             vec3 neighborNormal = decompress_unit_vec(texelFetch(gbufferNormal, neighborCoords, 0).r);
