@@ -82,7 +82,7 @@ layout(set = 6, binding = 9) uniform sampler2D bilateralCleanupColor;
 layout(set = 7, binding = 2) uniform sampler2D TAASampler1;
 layout(set = 7, binding = 3) uniform sampler2D TAASampler2;
 
-#define sample_TAAColor(col, imageCoords) rtxState.frame % 2 == 0 ? col = texelFetch(TAASampler2, ivec2(imageCoords), 0).xyz : col = texelFetch(TAASampler2, ivec2(imageCoords), 0).xyz;
+#define sample_TAAColor(col, imageCoords) rtxState.frame % 2 == 0 ? col = texelFetch(TAASampler2, ivec2(imageCoords), 0).xyz : col = texelFetch(TAASampler1, ivec2(imageCoords), 0).xyz;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);

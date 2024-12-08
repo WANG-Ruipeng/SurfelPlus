@@ -143,7 +143,8 @@ void main()
 	// final blend
 	vec3 finalColor = mix(unJitteredCol, col_clipped, 0.95);
 
-	store_outTAAImage(vec4(rtxState.frame == 0 ? currentCol : finalColor, 1.0), imageCoords);
+//	store_outTAAImage(vec4(rtxState.frame == 0 ? currentCol : finalColor, 1.0), imageCoords);
+	store_outTAAImage(vec4(finalColor, 1.0), imageCoords);
 //	imageStore(bilateralCleanupColor, imageCoords, vec4(finalColor, 1.0));
 	
 

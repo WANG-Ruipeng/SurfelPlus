@@ -363,7 +363,7 @@ void SampleExample::createLightPass()
         m_surfel.getGbufferImageDescLayout(), 
         m_surfel.getIndirectLightDescLayout(), 
         m_reflectionComputePass.getSamplerDescSetLayout(),
-        m_taaPass.getSamplerDescSetLayout()}, & m_scene);
+        m_offscreen.getSamplerDescSetLayout()}, & m_scene);
     m_lightPass.createLightPassDescriptorSet(m_offscreen.getDescLayout());
 }
 
@@ -389,12 +389,12 @@ void SampleExample::createReflectionPass()
 		m_reflectionComputePass.getSamplerDescSetLayout(),
         m_surfel.getGbufferImageDescLayout(), }, &m_scene);
 
-	m_taaPass.createTAADescriptorSet(m_size, m_queues[eGCT1]);
+	//m_taaPass.createTAADescriptorSet(m_size, m_queues[eGCT1]);
 	m_taaPass.create(m_size, {
 		m_reflectionComputePass.getSamplerDescSetLayout(), 
         m_surfel.getGbufferImageDescLayout(),
         m_scene.getDescLayout(),
-		m_taaPass.getSamplerDescSetLayout(),
+		m_offscreen.getSamplerDescSetLayout(),
 		m_offscreen.getDescLayout()
         }, &m_scene);
 
@@ -523,15 +523,14 @@ void SampleExample::drawPost(VkCommandBuffer cmdBuf)
 
   m_offscreen.m_tonemapper.zoom           = m_descaling ? 1.0f / m_descalingLevel : 1.0f;
   m_offscreen.m_tonemapper.renderingRatio = size / area;
-
-  m_offscreen.setState(m_rtxState);
+  m_offscreen.m_tonemapper.frame          = m_rtxState.frame;
 
   if (m_busy)
     m_offscreen.run(cmdBuf);
   else
       m_offscreen.run(cmdBuf, {
       m_lightPass.getDescriptorSet(),
-	  m_taaPass.getSamplerDescSet()
+	  m_offscreen.getSamplerDescSet(),
         });
       //m_offscreen.run(cmdBuf, m_taaPass.getSamplerDescSet());
 
@@ -1019,12 +1018,12 @@ void SampleExample::runTAA(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& prof
         m_reflectionComputePass.getSamplerDescSet(),
         m_surfel.getGbufferImageDescSet(),
         m_scene.getDescSet(),
-        m_taaPass.getSamplerDescSet(),
+        m_offscreen.getSamplerDescSet(),
         m_lightPass.getDescriptorSet(),
         });
 
     std::vector<VkImageMemoryBarrier> imageMemoryBarriers;
-    for (auto image : m_taaPass.getImages())
+    for (auto image : m_offscreen.getImages())
     {
         VkImageMemoryBarrier imageMemoryBarrier = {};
         imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

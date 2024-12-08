@@ -67,14 +67,20 @@ public:
   VkDescriptorSetLayout getDescLayout() { return m_postDescSetLayout; }
   VkDescriptorSet       getDescSet() { return m_postDescSet; }
 
-  void createPostTAADescriptorSet(const std::vector<nvvk::Texture>& texture);
+  //void createPostTAADescriptorSet(const std::vector<nvvk::Texture>& texture);
   void setState(const RtxState& state);
+
+  // getters
+  VkDescriptorSetLayout getSamplerDescSetLayout() { return m_postTAADescSetLayout; }
+  VkDescriptorSet getSamplerDescSet() { return m_postTAADescSet; }
+  std::vector<nvvk::Texture>& getImages() { return m_images; }
 
 private:
   void createOffscreenRender(const VkExtent2D& size);
   void createPostPipeline(const VkRenderPass& renderPass);
   void createPostDescriptor();
-  void createPostTAADescriptorLayout();
+  //void createPostTAADescriptorLayout();
+  void createPostTAADescriptorSet(const VkExtent2D& fullSize);
 
   VkDescriptorPool      m_postDescPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_postDescSetLayout{VK_NULL_HANDLE};
@@ -97,6 +103,6 @@ private:
   nvvk::DescriptorSetBindings m_bind_TAA{};
 
   VkExtent2D m_size{};
-
   RtxState m_state;
+  std::vector<nvvk::Texture> m_images;
 };

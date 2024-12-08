@@ -379,6 +379,8 @@ struct Tonemapper
   float Ywhite;  // Burning white
   float key;     // Log-average luminance
   int   dither;
+  int   frame;
+  vec3  padding;
 };
 
 
