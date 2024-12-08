@@ -69,6 +69,7 @@ int main(int argc, char **argv)
   //std::string sceneFile = parser.getString("-f", "modern_bedroom/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "station.glb");
 
+
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
   // Setup GLFW window
@@ -205,7 +206,7 @@ int main(int argc, char **argv)
       .detach();
 
   // create a sequence of random numbers
-  sample.initHammerleySequence(16);
+  sample.initHammerleySequence(6);
 
 
   // Profiler measure the execution time on the GPU
@@ -281,9 +282,13 @@ int main(int argc, char **argv)
                                 sample.m_descSet,
                                 sample.m_surfel.getGbufferImageDescSet(),
                                 sample.m_surfel.getIndirectLightDescSet(),
-                                sample.m_reflectionComputePass.getSamplerDescSet()});
+                                sample.m_reflectionComputePass.getSamplerDescSet(),
+                                sample.m_offscreen.getSamplerDescSet()});
         sample.m_lightPass.endRenderPass(cmdBuf);
       }
+
+      sample.runTAA(cmdBuf, profiler);
+
     }
 
     // Rendering pass in swapchain framebuffer + tone mapper, UI
@@ -303,6 +308,7 @@ int main(int argc, char **argv)
     {
       sample.m_surfel.gbufferLayoutTransition(cmdBuf);
       sample.m_lightPass.layoutTransition(cmdBuf);
+
     }
 
     profiler.endFrame();

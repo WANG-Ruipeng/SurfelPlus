@@ -30,7 +30,6 @@
 #include "nvvk/descriptorsets_vk.hpp"
 #include "shaders/host_device.h"
 
-
 class RenderOutput
 {
 public:
@@ -48,13 +47,19 @@ public:
       .dither         = 1,
   };
 
+  struct PostPushConstant
+  {
+	  Tonemapper tonemapper;
+	  RtxState state;
+  };
+
 public:
   void setup(const VkDevice& device, const VkPhysicalDevice& physicalDevice, uint32_t familyIndex, nvvk::ResourceAllocator* allocator);
   void destroy();
   void create(const VkExtent2D& size, const VkRenderPass& renderPass);
   void update(const VkExtent2D& size);
   void run(VkCommandBuffer cmdBuf);
-  void run(VkCommandBuffer cmdBuf, VkDescriptorSet descSet);
+  void run(VkCommandBuffer cmdBuf, std::vector<VkDescriptorSet> descSets);
   void genMipmap(VkCommandBuffer cmdBuf);
   const VkFormat getOffscreenColorFormat() const {return m_offscreenColorFormat; }
   nvvk::Texture& getOffscreenColor() { return m_offscreenColor; }
@@ -62,14 +67,26 @@ public:
   VkDescriptorSetLayout getDescLayout() { return m_postDescSetLayout; }
   VkDescriptorSet       getDescSet() { return m_postDescSet; }
 
+  //void createPostTAADescriptorSet(const std::vector<nvvk::Texture>& texture);
+  void setState(const RtxState& state);
+
+  // getters
+  VkDescriptorSetLayout getSamplerDescSetLayout() { return m_postTAADescSetLayout; }
+  VkDescriptorSet getSamplerDescSet() { return m_postTAADescSet; }
+  std::vector<nvvk::Texture>& getImages() { return m_images; }
+
 private:
   void createOffscreenRender(const VkExtent2D& size);
   void createPostPipeline(const VkRenderPass& renderPass);
   void createPostDescriptor();
+  //void createPostTAADescriptorLayout();
+  void createPostTAADescriptorSet(const VkExtent2D& fullSize);
 
   VkDescriptorPool      m_postDescPool{VK_NULL_HANDLE};
   VkDescriptorSetLayout m_postDescSetLayout{VK_NULL_HANDLE};
   VkDescriptorSet       m_postDescSet{VK_NULL_HANDLE};
+  VkDescriptorSetLayout m_postTAADescSetLayout{ VK_NULL_HANDLE };
+  VkDescriptorSet       m_postTAADescSet{ VK_NULL_HANDLE };
   VkPipeline            m_postPipeline{VK_NULL_HANDLE};
   VkPipelineLayout      m_postPipelineLayout{VK_NULL_HANDLE};
   nvvk::Texture         m_offscreenColor;
@@ -83,6 +100,9 @@ private:
   nvvk::DebugUtil          m_debug;   // Utility to name objects
   VkDevice                 m_device;
   uint32_t                 m_queueIndex;
+  nvvk::DescriptorSetBindings m_bind_TAA{};
 
   VkExtent2D m_size{};
+  RtxState m_state;
+  std::vector<nvvk::Texture> m_images;
 };

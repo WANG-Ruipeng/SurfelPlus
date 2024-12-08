@@ -38,10 +38,19 @@ layout(location = 0) out vec4 fragColor;
 
 layout(set = 0, binding = 0) uniform sampler2D inImage;
 
+layout(set = 1, binding = 2) uniform sampler2D TAASampler1;
+layout(set = 1, binding = 3) uniform sampler2D TAASampler2;
+
+
+
+
 layout(push_constant) uniform _Tonemapper
 {
   Tonemapper tm;
 };
+
+#define sample_TAAColor(uv) (tm.frame % 2 == 0 ? texture(TAASampler2, uv).rgba : texture(TAASampler1, uv).rgba)
+#define sample_TAAColor_lod(uv, lod) (tm.frame % 2 == 0 ? texture(TAASampler2, uv, lod).rgba : texture(TAASampler1, uv, lod).rgba)
 
 // http://www.thetenthplanet.de/archives/5367
 // Apply dithering to hide banding artifacts.
@@ -79,8 +88,8 @@ vec3 toneLocalExposure(vec3 RGB, float logAvgLum)
   float scale[7] = float[7](1, 2, 4, 8, 16, 32, 64);
   for(int i = 0; i < 7; ++i)
   {
-    float v1 = luminance(texture(inImage, uvCoords * tm.zoom, i).rgb) * factor;
-    float v2 = luminance(texture(inImage, uvCoords * tm.zoom, i + 1).rgb) * factor;
+    float v1 = luminance(sample_TAAColor_lod(uvCoords * tm.zoom, i).rgb) * factor;
+    float v2 = luminance(sample_TAAColor_lod(uvCoords * tm.zoom, i + 1).rgb) * factor;
     if(abs(v1 - v2) / ((tm.key * pow(2, phi) / (scale[i] * scale[i])) + v1) > epsilon)
     {
       La = v1;
@@ -98,11 +107,11 @@ vec3 toneLocalExposure(vec3 RGB, float logAvgLum)
 void main()
 {
   // Raw result of ray tracing
-  vec4 hdr = texture(inImage, uvCoords * tm.zoom).rgba;
+  vec4 hdr = sample_TAAColor(uvCoords * tm.zoom).rgba;
 
   if(((tm.autoExposure >> 0) & 1) == 1)
   {
-    vec4  avg     = textureLod(inImage, vec2(0.5), 20);  // Get the average value of the image
+    vec4  avg     = sample_TAAColor_lod(vec2(0.5), 20);  // Get the average value of the image
     float avgLum2 = luminance(avg.rgb);                  // Find the luminance
     if(((tm.autoExposure >> 1) & 1) == 1)
       hdr.rgb = toneLocalExposure(hdr.rgb, avgLum2);  // Adjust exposure

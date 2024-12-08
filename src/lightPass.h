@@ -40,6 +40,8 @@ public:
 	void createLightPassDescriptorSet(const VkDescriptorSetLayout& descSetLayout);
 	VkDescriptorSet getDescriptorSet() { return m_descSet; };
 	void layoutTransition(VkCommandBuffer cmdBuf);
+	const nvvk::Texture& getTexture() { return m_offscreenColor; };
+
 private:
 	// Setup
 	nvvk::ResourceAllocator* m_pAlloc{ nullptr };  // Allocator for buffer, images, acceleration structures
