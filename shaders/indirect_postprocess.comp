@@ -24,18 +24,66 @@ layout(push_constant) uniform _RtxState
 
 
 #include "globals.glsl"
+#include "compress.glsl"
 #include "random.glsl"
 
 // scene buffers
 layout(set = 0, binding = 0,  scalar)		uniform _SceneCamera		{ SceneCamera sceneCamera; };
 
 // gbuffers
-layout(set = 1, binding = 0)	uniform usampler2D primObjIDMap;
-layout(set = 1, binding = 1)	uniform usampler2D normalMap;
-layout(set = 1, binding = 2)	uniform sampler2D depthMap;
+layout(set = 1, binding = 0) uniform usampler2D gbufferPrim;
+layout(set = 1, binding = 1) uniform usampler2D gbufferNormal;
+layout(set = 1, binding = 2) uniform sampler2D gbufferDepth;
 
 // indirect buffer
-layout(set = 2,   binding = 1)				uniform image2D	resultImage;
+layout(set = 2, binding = 1) uniform image2D	indirectMap;
+
+layout(set = 3, binding = 2) uniform image2D indirectSSAO;
+
+#include "shaderUtils.glsl"
+
+uint randSeed;
+
+#define SSAO_LIMIT 40
+#define SSAO_SAMPLES 4
+#define SSAO_RADIUS 1.5
+#define SSAO_FALLOFF 1.5
+#define SSAO_THICKNESSMIX 0.2
+#define SSAO_MAX_STRIDE 16.0
+vec2 camToGbufferUVScale;
+
+vec3 getCamRayFromUV(in vec2 uv)
+{
+	vec2 d = uv * 2.0 - 1.0;
+	vec4 origin    = sceneCamera.viewInverse * vec4(0, 0, 0, 1);
+	vec4 target    = sceneCamera.projInverse * vec4(d.x, d.y, 1, 1);
+	vec4 direction = sceneCamera.viewInverse * vec4(normalize(target.xyz), 0);
+	return direction.xyz;
+}
+
+void SliceSample(vec2 tc_base, vec2 aoDir, int t, vec3 samplePos, vec3 v, inout float closest)
+{
+    vec2 uv = tc_base + aoDir * t;
+    float depth = textureLod(gbufferDepth, uv * camToGbufferUVScale, 0).x;
+	if (depth == 1.0)
+		return;
+
+	vec3 worldPos = WorldPosFromDepth(uv, depth) - 0.1 * v;
+    vec3 p = worldPos - samplePos;
+    float current = dot(v, normalize(p));
+    float falloff = clamp((SSAO_RADIUS - length(p)) / SSAO_FALLOFF, 0.0, 1.0);
+    if(current > closest)
+        closest = mix(closest, current, falloff);
+    closest = mix(closest, current, SSAO_THICKNESSMIX * falloff);
+}
+
+float IntegrateArc(float h1, float h2, float n)
+{
+    float cosN = cos(n);
+    float sinN = sin(n);
+    return 0.25 * (-cos(2.0 * h1 - n) + cosN + 2.0 * h1 * sinN - cos(2.0 * h2 - n) + cosN + 2.0 * h2 * sinN);
+}
+
 
 
 // Compute input
@@ -45,16 +93,86 @@ void main()
 {
 	ivec2 imageRes    = rtxState.size / 2;
 	ivec2 imageCoords = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = (vec2(imageCoords) + vec2(0.5f)) / vec2(imageRes);
 
 	if (imageCoords.x >= imageRes.x || imageCoords.y >= imageRes.y)
 	{
 		return;
 	}
-	float depth = texelFetch(depthMap, imageCoords * 2, 0).r;
+	float depth = texelFetch(gbufferDepth, imageCoords * 2, 0).r;
 
 	if (depth == 1.f)
 	{
 		return;
 	}
+
+	camToGbufferUVScale = vec2(rtxState.size) / vec2(textureSize(gbufferDepth, 0));
+	vec2 viewsizediv = 1.0 / vec2(imageRes);
+	vec2 uv = (vec2(imageCoords) + 0.5) * viewsizediv;
+
+	vec3 worldPos = WorldPosFromDepth(uv, depth);
+	randSeed = initRandom(imageRes, imageCoords, lowbias32(rtxState.totalFrames));
+
+	vec2 subpixel_jitter = rtxState.frame == 0 ? vec2(0.5f, 0.5f) : vec2(rand(randSeed), rand(randSeed));
+	const vec2 pixelCenter = vec2(imageCoords) + subpixel_jitter;
+	vec2 jitterUV        = pixelCenter / vec2(imageRes);
+
+	vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
+	float linearDepth = distance(camPos, worldPos);
+	vec3 camDir = getCamRayFromUV(jitterUV);
+	vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, imageCoords * 2, 0).r);
+
+	float stride = min((1.0 / linearDepth) * SSAO_LIMIT, SSAO_MAX_STRIDE);
+	//float stride = 4.0;
+	vec2 dirMult = viewsizediv.xy * stride;
+	vec3 v = normalize(-camDir);
+
+	uint frameSeed = lowbias32(rtxState.totalFrames);
+
+	float dirAngle = (PI / 16.0) * (((int(imageCoords.x) + int(imageCoords.y) & 3) << 2) + (int(imageCoords.x) & 3)) + rand(frameSeed) * M_TWO_PI;
+    vec2 aoDir = dirMult * vec2(sin(dirAngle), cos(dirAngle));
+
+	vec3 toDir = getCamRayFromUV(uv + aoDir);
+    vec3 planeNormal = normalize(cross(v, -toDir));
+    vec3 projectedNormal = normal - planeNormal * dot(normal, planeNormal);
+
+	vec3 projectedDir = normalize(normalize(toDir) + v);
+    float n = acos(dot(-projectedDir, normalize(projectedNormal))) - M_PI_2;
+
+	if (isnan(n))
+	{
+		return;
+	}
+
+	float c1 = -1.0;
+    float c2 = -1.0;
+    
+    vec2 tc_base = uv + aoDir * (0.25 * ((int(imageCoords.y) - int(imageCoords.x)) & 3) - 0.375 + (rand(frameSeed) - 0.5f));
+
+	for(int i = -1; i >= -SSAO_SAMPLES; i--)
+    {
+        SliceSample(tc_base, aoDir, i, worldPos, v, c1);
+    }
+    for(int i = 1; i <= SSAO_SAMPLES; i++)
+    {
+        SliceSample(tc_base, aoDir, i, worldPos, v, c2);
+    }
+    
+    float h1a = -acos(c1);
+    float h2a = acos(c2);
+    
+    float h1 = n + max(h1a - n, -M_PI_2);
+    float h2 = n + min(h2a - n, M_PI_2);
+    
+    float ssao = mix(1.0, IntegrateArc(h1, h2, n), length(projectedNormal));
+	float ratio = 1.0 / max(1.0, float(rtxState.frame + 1));
+	float prevSSAO = imageLoad(indirectSSAO, imageCoords).r;
+	ssao = mix(prevSSAO, ssao, ratio);
+
+//    vec3 indirectCol = imageLoad(indirectMap, imageCoords).rgb;
+//	indirectCol *= clamp(ssao, 0.0, 1.0);
+//	vec3 prevCol = imageLoad(indirectSSAO, imageCoords).rgb;
+//    indirectCol = mix(prevCol, indirectCol, ratio);
+
+	imageStore(indirectSSAO, imageCoords, vec4(vec3(ssao), 1.0));
+	
 }

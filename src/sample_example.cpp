@@ -336,14 +336,15 @@ void SampleExample::createSurfelResources()
         m_scene.getDescLayout(),
 		}, & m_scene);
 
-	m_indirectPostprocessPass.create(m_size, {
-        m_scene.getDescLayout(),
-        m_surfel.getGbufferSamplerDescLayout(),
-		m_surfel.getIndirectLightDescLayout()
-		}, &m_scene);
-
     createReflectionPass();
 	createLightPass();
+
+    m_indirectPostprocessPass.create(m_size, {
+        m_scene.getDescLayout(),
+        m_surfel.getGbufferSamplerDescLayout(),
+        m_surfel.getIndirectLightDescLayout(),
+        m_reflectionComputePass.getSamplerDescSetLayout()
+        }, &m_scene);
 	
 }
 
@@ -716,7 +717,8 @@ void SampleExample::calculateSurfels(const VkCommandBuffer& cmdBuf, nvvk::Profil
 	m_indirectPostprocessPass.run(cmdBuf, render_size, profiler, {
 		m_scene.getDescSet(),
 		m_surfel.getGbufferSamplerDescSet(),
-		m_surfel.getIndirectLightDescSet()
+		m_surfel.getIndirectLightDescSet(),
+        m_reflectionComputePass.getSamplerDescSet()
 		});
 
 
