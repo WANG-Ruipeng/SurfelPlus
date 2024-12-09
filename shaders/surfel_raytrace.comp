@@ -156,7 +156,6 @@ void main()
 	surfelRay.dir_o = compress_unit_vec(dirL);
 	surfelRay.pdf = pdf;
 
-
 	surfelRayBuffer[index] = surfelRay;
 
 }

@@ -137,7 +137,7 @@ float brdfWeight(vec3 V, vec3 N, vec3 L, float roughness)
     return G * D;
 }
 
-bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
+bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, uint randSeed, inout vec4 irradiance)
 {
     irradiance = vec4(0.0f);
     vec3 camPos = getCameraPosition(sceneCamera);
@@ -159,8 +159,8 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     const uint searchRange = min(16, cellInfo.surfelCount);
 	uint searchCnt = 0;
 
-    uint randSeed = initRandom(uvec2(rtxState.totalFrames, floatBitsToUint(worldPos.x)),
-        uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.totalFrames);
+    //uint randSeed = initRandom(uvec2(rtxState.frame, floatBitsToUint(worldPos.x)),
+    //    uvec2(floatBitsToUint(worldPos.y), floatBitsToUint(worldPos.z)), rtxState.totalFrames);
 
 	uint targetCnt = min(64, cellInfo.surfelCount);
 	float surfelCntF = float(cellInfo.surfelCount);
@@ -225,6 +225,10 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
 	if (irradiance.w > 0.1f)
 	{
 		irradiance /= irradiance.w;
+	}
+    else
+	{
+		return false;
 	}
   
     //
@@ -339,10 +343,10 @@ vec3 surfelPathTrace(Ray r, int maxDepth, uint surfelIndex, inout float firstDep
         // Color at vertices
         state.mat.albedo *= sstate.color;
 
-        //diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+        diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
 
-        diffuseRatio = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-r.direction, state.normal)), state.mat.roughness)
-            * (1.0 - state.mat.metallic));
+        //diffuseRatio = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-r.direction, state.normal)), state.mat.roughness)
+        //    * (1.0 - state.mat.metallic));
 
         // Debugging info
         /*if (rtxState.debugging_mode != eNoDebug && rtxState.debugging_mode < eRadiance)
@@ -426,7 +430,8 @@ vec3 surfelPathTrace(Ray r, int maxDepth, uint surfelIndex, inout float firstDep
 		if (dot(sstate.position, surfelPos) < radius * radius)
 		{
 			vec4 irradiance = vec4(0.0);
-			bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
+            uint randSeed = tea(surfelIndex, rtxState.totalFrames);
+			bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, randSeed, irradiance);
 			if (rst)
 			{
                 // apply diffuse ratio
@@ -590,7 +595,9 @@ vec3 surfelRefelctionTrace(Ray r, int maxDepth, inout float firstDepth, inout Bs
 	if (depth == maxDepth && valid)
     {
         vec4 irradiance = vec4(0.0);
-        bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, irradiance);
+        uint randSeed = initRandom(uvec2(rtxState.frame, floatBitsToUint(sstate.position.x)),
+                uvec2(floatBitsToUint(sstate.position.y), floatBitsToUint(sstate.position.z)), rtxState.totalFrames);
+        bool rst = finalizePathWithSurfel(sstate.position, sstate.normal, randSeed, irradiance);
         //bool rst = false;
         if (rst)
         {

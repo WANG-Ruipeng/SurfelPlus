@@ -99,7 +99,7 @@ void main()
         }
     }
 
-    uint samplePack = max(1u, surfel.rayCount / 4);
+    uint samplePack = max(4u, surfel.rayCount / 4);
     uint packCounter = 0;
     vec3 meanRadiance = vec3(0.0);
     for (uint i = 0; i < surfel.rayCount; i++)
@@ -209,8 +209,8 @@ void main()
         for (uint i = 0; i < cellSurfelCount; i++)
 	    {
             //uint currIndex = targetShareCount == cellInfo.surfelCount ? i : uint(rand(randSeed) * cellSurfelCntF);
-            if (passCount >= 16)
-			 	break;
+            //if (passCount >= 16)
+			// 	break;
             uint currIndex = i;
 		    uint surfelIndex = cellToSurfel[cellOffset + currIndex];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];

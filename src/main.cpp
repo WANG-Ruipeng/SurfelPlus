@@ -61,18 +61,18 @@ int main(int argc, char **argv)
   InputParser parser(argc, argv);
   
   //std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
-   //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
-  //std::string sceneFile = parser.getString("-f", "late_night_office.glb");
+  //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
+  std::string sceneFile = parser.getString("-f", "late_night_office.glb");
   //  std::string sceneFile = parser.getString("-f", "Hospital/scene.gltf");
    //std::string sceneFile = parser.getString("-f", "station.glb");
-  std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
+  //std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
   //std::string sceneFile = parser.getString("-f", "apocal/apocal.gltf");
    //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "afterrain/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "station/station.glb");
   //std::string sceneFile = parser.getString("-f", "late_night_office.glb");
   //std::string sceneFile = parser.getString("-f", "station/station.glb");
-  // std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
+   //std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
   // std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   // std::string sceneFile = parser.getString("-f", "modern_bedroom/scene.gltf");
   // std::string sceneFile = parser.getString("-f", "postwar.glb");
@@ -225,9 +225,9 @@ int main(int argc, char **argv)
 
   // Used for Live Demo
   // Press any keys to continue the program
-  // std::cout << "Press any key to continue the program" << std::endl;
-  // char ProgramStart;
-  // std::cin >> ProgramStart;
+   std::cout << "Press any key to continue the program" << std::endl;
+   char ProgramStart;
+   std::cin >> ProgramStart;
 
   bool isfirstFrame = true;
   // Main loop
