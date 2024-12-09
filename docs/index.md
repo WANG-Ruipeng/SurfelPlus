@@ -242,6 +242,36 @@ Information needed (material, world position, etc.) for Direct lighting was obta
 | :------------------------------------: | :--------------------------------------: | :--------------------------------: |
 | ![](/img/lightPass/directlighting.png) | ![](/img/lightPass/indirectLighting.png) | ![](/img/lightPass/reflection.png) |
 
+### TAA Pass
+
+The TAA pass **jitters** the view frustum and strategically **averges** the color between multiple frames.
+
+Position Reconstruction: Reconstruct world position using depth buffer and screen uv.
+
+Previous Frame Reprojection: Using the view-projection matrix of last frame to calculate uv of world position of current pixel in last frame.
+
+|          Reprojection          |
+| :----------------------------: |
+| ![](/img/TAA/reprojection.png) |
+
+Neighbor Color Vector AABB: Sample the 3x3 neighbor color and adjacent neighbor color (surrounding pixels in "+" pattern), calculate aabb of color vector
+
+|           AABB           |
+| :----------------------: |
+| ![](/img/TAA/33plus.png) |
+
+Neighbor Color Clipping: clip the current color towards history color instead of just clamping it. In this way color from previous frame is trivially accepted to reduce ghost and smearing effect.
+
+|    Clamping and Clipping    |
+| :-------------------------: |
+| ![](/img/TAA/clampclip.png) |
+
+Blend and weigh history frames: Lerp between colors of past frame and this frame. Higher feedback factor will have a faster converge but will introduce artifacts.
+
+|          Blend          |
+| :---------------------: |
+| ![](/img/TAA/blend.png) |
+
 # Milestones Development Log
 
 ## Milestone 1
