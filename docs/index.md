@@ -71,6 +71,8 @@ A grid-based surfel acceleration structure organizes surfels into spatial cells 
     - TAA Pass
     - Tone Mapping Pass
 
+![image.png](/img/HeaderImage.png)
+
 ### G-Buffer Pass
 
 The **G-Buffer Pass** is responsible for capturing per-pixel information about the scene's geometry and surface properties, which are later used in lighting and shading computations. This pass encodes data such as primitive object ID, compressed world-space normals, and other attributes necessary for the rendering pipeline.
@@ -396,6 +398,36 @@ These improvements position **SurfelPlus** as a highly efficient and visually ro
     ![image.png](/img/SSAO.png) 
 
 These enhancements collectively elevate the visual quality and performance of **SurfelPlus**, making it a robust and versatile renderer for real-time global illumination in dynamic environments.
+
+### TAA Pass
+
+The TAA pass **jitters** the view frustum and strategically **averges** the color between multiple frames.
+
+Position Reconstruction: Reconstruct world position using depth buffer and screen uv.
+
+Previous Frame Reprojection: Using the view-projection matrix of last frame to calculate uv of world position of current pixel in last frame.
+
+|             Reprojection             |
+| :----------------------------------: |
+| ![](/img/TAA/reprojection.png) |
+
+Neighbor Color Vector AABB: Sample the 3x3 neighbor color and adjacent neighbor color (surrounding pixels in "+" pattern), calculate aabb of color vector
+
+|              AABB              |
+| :----------------------------: |
+| ![](/img/TAA/33plus.png) |
+
+Neighbor Color Clipping: clip the current color towards history color instead of just clamping it. In this way color from previous frame is trivially accepted to reduce ghost and smearing effect.
+
+|       Clamping and Clipping       |
+| :-------------------------------: |
+| ![](/img/TAA/clampclip.png) |
+
+Blend and weigh history frames: Lerp between colors of past frame and this frame. Higher feedback factor will have a faster converge but will introduce artifacts.
+
+|             Blend             |
+| :---------------------------: |
+| ![](/img/TAA/blend.png) |
 
 ### Demo
 
