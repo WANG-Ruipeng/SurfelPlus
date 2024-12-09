@@ -69,4 +69,5 @@ InputParser parser(argc, argv);
 std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
 std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 ```
+
 Enjoy! :)
