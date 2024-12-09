@@ -232,6 +232,16 @@ A ssao pass to add more realism to the scene. Use temporal accumulation to do de
 
 ![](/img/SSAO.png)
 
+### Light Integrate Pass
+
+This pass calculates **direct lighting** and integrats it with **indirect and reflection** information that gathered from previous passes.  
+Information needed (material, world position, etc.) for Direct lighting was obtained and uncompressed/reconstructed from G-Buffer, then ray-query features was used to compute shading accordingly.
+
+|  Direct Lighting  | Indirect Lighting | Reflection |
+| :------------------------------------------: | :--------------------------------------------: | :--------------------------------------: |
+| ![](/img/lightPass/directlighting.png) | ![](/img/lightPass/indirectLighting.png) | ![](/img/lightPass/reflection.png) |
+
+
 # Milestones Development Log
 
 ## Milestone 1
