@@ -451,13 +451,13 @@ Blend and weigh history frames: Lerp between colors of past frame and this frame
 
 |            Blend             |
 | :--------------------------: |
-| ![](/docs/img/TAA/blend.png) |
+| ![](/img/TAA/blend.png) |
 
 Sharpen: Filter the final image with Laplace operator
 
 |            No TAA            |           TAA (Unsharpened)           |           TAA (Sharpened)           |
 | :--------------------------: | :-----------------------------------: | :---------------------------------: |
-| ![](/docs/img/TAA/NOTAA.png) | ![](/docs/img/TAA/TAAUnsharpened.png) | ![](/docs/img/TAA/TAASharpened.png) |
+| ![](/img/TAA/NOTAA.png) | ![](/img/TAA/TAAUnsharpened.png) | ![](/img/TAA/TAASharpened.png) |
 
 ### Demo
 
