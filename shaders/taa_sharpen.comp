@@ -72,5 +72,5 @@ void main()
 
 	vec3 col = 5.0 * center - (left + right + up + down);
 	
-	imageStore(postTAAColor, imageCoords, vec4(clamp(col, 0, 1.0f), 1.0));
+	imageStore(postTAAColor, imageCoords, vec4(max(vec3(0), col), 1.0));
 }

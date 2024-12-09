@@ -62,12 +62,13 @@ int main(int argc, char **argv)
   
   //std::string sceneFile   = parser.getString("-f", "Sponza/Sponza.gltf");
    //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
+  std::string sceneFile = parser.getString("-f", "late_night_office.glb");
   //  std::string sceneFile = parser.getString("-f", "Hospital/scene.gltf");
   // std::string sceneFile = parser.getString("-f", "station.glb");
-  std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
+  //std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
   //std::string sceneFile = parser.getString("-f", "apocal/apocal.gltf");
    //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
-  std::string sceneFile = parser.getString("-f", "afterrain/scene.gltf");
+  //std::string sceneFile = parser.getString("-f", "afterrain/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "station/station.glb");
   // std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
   // std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
