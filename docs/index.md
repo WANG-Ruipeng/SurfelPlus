@@ -403,6 +403,8 @@ These improvements position **SurfelPlus** as a highly efficient and visually ro
 
 ## Final
 
+[Click here for final presentation PDF.](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/SurfelPlus%20Final.pdf)
+
 ### Completed Goals:
 
 1. **Glossy Indirect Lighting**:
