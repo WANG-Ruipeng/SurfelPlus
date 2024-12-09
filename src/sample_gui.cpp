@@ -174,7 +174,8 @@ bool SampleGUI::guiRayTracing()
                                    "UniformGrid",
 								   "NonUniformGrid",
                                    "ReflectionOnly",
-                                   "NoReflection"
+                                   "NoReflection",
+								   "Occlusion"
                                });
 
     if(rtxState.debugging_mode == eHeatmap)

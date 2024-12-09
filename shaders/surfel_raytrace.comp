@@ -83,7 +83,7 @@ void main()
     vec3 dirL;
     float pdf;
 
-	if (isFull && (surfelBuffer[surfelIndex].rayCount > 8))
+	if (isFull && (surfelBuffer[surfelIndex].rayCount > 16))
     //if (isFull)
     {
 	    ivec2 IrradianceMapRes = textureSize(surfelIrradianceSampler, 0);
@@ -146,7 +146,7 @@ void main()
 	//ray.origin = OffsetRay(ray.origin, N);
     ray.origin += 0.05f * N;
 
-    int maxDepth = isSleeping ? 4 : 3;
+    int maxDepth = isSleeping ? 5 : 3;
     surfelRay.radiance = surfelPathTrace(ray, maxDepth, surfelIndex, surfelRay.t);
     float lum = dot(surfelRay.radiance, vec3(0.212671f, 0.715160f, 0.072169f));
     if(lum > rtxState.fireflyClampThreshold)

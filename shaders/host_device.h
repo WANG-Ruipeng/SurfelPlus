@@ -199,7 +199,7 @@ struct CellCounter
 };
 
 //Uniform grid
-const float surfelSize = 1.5f;
+const float surfelSize = 1.3f;
 const float cellSize = 2.0f;
 const float surfelMinSizeRatio = 0.15f;
 const uint kCellDimension = 64u;

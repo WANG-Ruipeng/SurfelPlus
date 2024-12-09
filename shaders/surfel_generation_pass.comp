@@ -180,12 +180,12 @@ void main()
 			else if (rtxState.debugging_mode == esRadius)
 				imageStore(resultImage, imageCoords, vec4(vec3(mainSurfel.radius), 1.f));
 			else
-			    imageStore(resultImage, imageCoords, vec4(vec3(0), 1.f));
+			    imageStore(resultImage, imageCoords, vec4(vec3(indirectLighting), 1.f));
 		}
 		else imageStore(resultImage, imageCoords, vec4(vec3(0), 1.f));
 	} else imageStore(resultImage, imageCoords, vec4(indirectLighting, 1.f));
 
-	//if ((rtxState.totalFrames & 0x000000ff) != 0) return;
+	//if ((rtxState.totalFrames & 0x000003ff) != 0) return;
 
 	coverage += rand(randSeed) * 1e-10;
 	uint coverageData = floatBitsToUint(coverage);
@@ -241,8 +241,8 @@ void main()
 
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
-		coverage < 1.5f && 
-		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
+		coverage < 2.0f && 
+		rand(randSeed) < depth * 0.3f * max(0.0, 2.0 - coverage))
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
