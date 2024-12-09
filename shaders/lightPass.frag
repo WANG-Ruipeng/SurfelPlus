@@ -175,6 +175,7 @@ void main()
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
     
     fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor) * ssao;
+    //fragColor.xyz = (indirectLight);
 
     if(rtxState.debugging_mode != eNoDebug)
     {

@@ -242,7 +242,9 @@ void main()
 	if (surfelCounter.aliveSurfelCnt < kMaxSurfelCount &&
 		coverage == groupMinCoverage &&
 		coverage < 1.5f && 
-		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage))
+		rand(randSeed) < depth * 0.3f * max(0.0, 1.5 - coverage)
+		// && rtxState.frame % 200 == 0 && rtxState.frame != 0
+		)
 	{
 		uint surfelAliveIndex = atomicAdd(surfelCounter.aliveSurfelCnt,1);
 		if (surfelAliveIndex < kMaxSurfelCount)
