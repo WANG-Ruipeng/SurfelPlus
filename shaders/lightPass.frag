@@ -92,32 +92,14 @@ vec3 hsv2rgb(vec3 c) {
 
 void main()
 {
+    if (gl_FragCoord.x > rtxState.size.x || gl_FragCoord.y > rtxState.size.y)
+        return;
     uint primObjID = texelFetch(gbufferPrim, ivec2(gl_FragCoord.xy), 0).r;
     vec2 uv = (gl_FragCoord.xy + vec2(0.5)) / vec2(textureSize(gbufferPrim,0));
 
-    uint nodeID = primObjID >> 23;
-    uint instanceID = sceneNodes[nodeID].primMesh;
-    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
-    uint primID = primObjID & 0x007FFFFF;
-    InstanceData pinfo = geoInfo[instanceID];
-
-    // Primitive buffer addresses
-    Indices  indices  = Indices(pinfo.indexAddress);
-    Vertices vertices = Vertices(pinfo.vertexAddress);
-
-    // Indices of this triangle primitive.
-    uvec3 tri = indices.i[primID];
-
-    // All vertex attributes of the triangle.
-    VertexAttributes attr0 = vertices.v[tri.x];
-    VertexAttributes attr1 = vertices.v[tri.y];
-    VertexAttributes attr2 = vertices.v[tri.z];
-
     // reconstruct world position from depth
     float depth = texelFetch(gbufferDepth, ivec2(gl_FragCoord.xy), 0).r;
-
     vec3 worldPos = WorldPosFromDepth(uvCoords, depth);
-
 
     // camera ray
     vec3 camPos = (sceneCamera.viewInverse * vec4(0, 0, 0, 1)).xyz;
@@ -138,6 +120,25 @@ void main()
       fragColor = vec4(env * rtxState.hdrMultiplier, 1.0);
       return;
     }
+
+    uint nodeID = primObjID >> 23;
+    uint instanceID = sceneNodes[nodeID].primMesh;
+    mat4 worldMat = sceneNodes[nodeID].worldMatrix;
+    uint primID = primObjID & 0x007FFFFF;
+    InstanceData pinfo = geoInfo[instanceID];
+
+    // Primitive buffer addresses
+    Indices  indices  = Indices(pinfo.indexAddress);
+    Vertices vertices = Vertices(pinfo.vertexAddress);
+
+    // Indices of this triangle primitive.
+    uvec3 tri = indices.i[primID];
+
+    // All vertex attributes of the triangle.
+    VertexAttributes attr0 = vertices.v[tri.x];
+    VertexAttributes attr1 = vertices.v[tri.y];
+    VertexAttributes attr2 = vertices.v[tri.z];
+    
 
     // decompress normal
     vec3 normal = decompress_unit_vec(texelFetch(gbufferNormal, ivec2(gl_FragCoord.xy), 0).r);
