@@ -248,10 +248,38 @@ A ssao pass to add more realism to the scene. Use temporal accumulation to do de
 This pass calculates **direct lighting** and integrats it with **indirect and reflection** information that gathered from previous passes.  
 Information needed (material, world position, etc.) for Direct lighting was obtained and uncompressed/reconstructed from G-Buffer, then ray-query features was used to compute shading accordingly.
 
-|               Direct Lighting                |               Indirect Lighting                |                Reflection                |
-| :------------------------------------------: | :--------------------------------------------: | :--------------------------------------: |
-| ![](./docs/img/lightPass/directlighting.png) | ![](./docs/img/lightPass/indirectLighting.png) | ![](./docs/img/lightPass/reflection.png) |
+|                Combined                |               Direct Lighting                |               Indirect Lighting                |                Reflection                |
+| :------------------------------------: | :------------------------------------------: | :--------------------------------------------: | :--------------------------------------: |
+| ![](./docs/img/lightPass/combined.png) | ![](./docs/img/lightPass/directlighting.png) | ![](./docs/img/lightPass/indirectLighting.png) | ![](./docs/img/lightPass/reflection.png) |
 
 ### TAA Pass
+
+The TAA pass **jitters** the view frustum and strategically **averges** the color between multiple frames.
+
+Position Reconstruction: Reconstruct world position using depth buffer and screen uv.
+
+Previous Frame Reprojection: Using the view-projection matrix of last frame to calculate uv of world position of current pixel in last frame.
+
+|             Reprojection             |
+| :----------------------------------: |
+| ![](./docs/img/TAA/reprojection.png) |
+
+Neighbor Color Vector AABB: Sample the 3x3 neighbor color and adjacent neighbor color (surrounding pixels in "+" pattern), calculate aabb of color vector
+
+|              AABB              |
+| :----------------------------: |
+| ![](./docs/img/TAA/33plus.png) |
+
+Neighbor Color Clipping: clip the current color towards history color instead of just clamping it. In this way color from previous frame is trivially accepted to reduce ghost and smearing effect.
+
+|       Clamping and Clipping       |
+| :-------------------------------: |
+| ![](./docs/img/TAA/clampclip.png) |
+
+Blend and weigh history frames: Lerp between colors of past frame and this frame. Higher feedback factor will have a faster converge but will introduce artifacts.
+
+|             Blend             |
+| :---------------------------: |
+| ![](./docs/img/TAA/blend.png) |
 
 ### Tone Mapping Pass
