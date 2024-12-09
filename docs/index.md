@@ -409,10 +409,10 @@ These enhancements collectively elevate the visual quality and performance of **
 
 # References
 
-[GIBS: SIGGRAPH 2021 talk](https://www.ea.com/seed/news/siggraph21-global-illumination-surfels)
-[GIBS: SIGGRAPH 2024 talk](https://advances.realtimerendering.com/s2024/content/EA-GIBS2/Apers_Advances-s2024_Shipping-Dynamic-GI.pdf).
-[Stochastic All the Thing](https://media.contentapi.ea.com/content/dam/ea/seed/presentations/dd18-seed-raytracing-in-hybrid-real-time-rendering.pdf)
-[Unreal Engine 5.5](https://github.com/EpicGames/UnrealEngine/tree/5.5)
-[SurfelGI-W298](https://github.com/W298/SurfelGI)
-[Stochasitc Screen-Space Reflections](https://www.ea.com/frostbite/news/stochastic-screen-space-reflections)
-[Ground Truth Ambient Occlusion](https://old.reddit.com/r/opengl/comments/96api8/has_anyone_successfully_implemented_groundtruth_ao/e40d2ie/)
+[GIBS: SIGGRAPH 2021 talk](https://www.ea.com/seed/news/siggraph21-global-illumination-surfels)  
+[GIBS: SIGGRAPH 2024 talk](https://advances.realtimerendering.com/s2024/content/EA-GIBS2/Apers_Advances-s2024_Shipping-Dynamic-GI.pdf)  
+[Stochastic All the Thing](https://media.contentapi.ea.com/content/dam/ea/seed/presentations/dd18-seed-raytracing-in-hybrid-real-time-rendering.pdf)  
+[Unreal Engine 5.5](https://github.com/EpicGames/UnrealEngine/tree/5.5)  
+[SurfelGI-W298](https://github.com/W298/SurfelGI)  
+[Stochasitc Screen-Space Reflections](https://www.ea.com/frostbite/news/stochastic-screen-space-reflections)  
+[Ground Truth Ambient Occlusion](https://old.reddit.com/r/opengl/comments/96api8/has_anyone_successfully_implemented_groundtruth_ao/e40d2ie/)  
