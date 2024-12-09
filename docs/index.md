@@ -130,16 +130,14 @@ The Surfel Integration Pass is responsible for aggregating the radiance contribu
 -   Radiance Aggregation: Gathers and accumulates radiance data from surfel rays stored in the memory. Each surfel would have maximum 64 rays in each frame. These rays are divided to 4 packs and each pack would contribute to the surfel irradiance using MSME. MSME algorithm would also calculate the surfel variance and accumulation weight so that surfels can be more responsive to environment change and converge in a smoother way.
 
 -   Irradiance Map Update: Updates the irradiance map for each surfel, storing directional irradiance information in a 6x6 grid for efficient reuse in guided sampling. We also writes depth information into a corresponding depth map to assist with visibility checks.
-
+    ![](/img/surfelIrradiance.png)
+    _Radiance in each surfel_
+    
 -   Shared Radiance Contribution: Enables nearby surfels to share irradiance data within a local spatial cell. This step accelerate surfel convergence a lot. Uses factors like normal alignment, distance, and surfel lifespan to weight contributions, ensuring consistent and plausible lighting. Stochastic sampling strategy is also applied here.
 
 -   Adaptive Integration: Differentiates behavior for newly created surfels and established ones to avoid sudden changes in irradiance values. Then, we normalizes contributions across samples, ensuring accurate energy conservation.
 
 This pass ensures that surfels maintain smooth and stable lighting across frames while leveraging shared data to enhance global illumination accuracy and performance.
-
-![](/img/surfelIrradiance.png)
-
-_Radiance in each surfel_
 
 ### Surfel Generation & Evaluation Pass
 
