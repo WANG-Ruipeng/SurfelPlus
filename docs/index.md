@@ -433,19 +433,19 @@ Previous Frame Reprojection: Using the view-projection matrix of last frame to c
 
 |            Reprojection             |
 | :---------------------------------: |
-| ![](/docs/img/TAA/reprojection.png) |
+| ![](/img/TAA/reprojection.png) |
 
 Neighbor Color Vector AABB: Sample the 3x3 neighbor color and adjacent neighbor color (surrounding pixels in "+" pattern), calculate aabb of color vector
 
 |             AABB              |
 | :---------------------------: |
-| ![](/docs/img/TAA/33plus.png) |
+| ![](/img/TAA/33plus.png) |
 
 Neighbor Color Clipping: clip the current color towards history color instead of just clamping it. In this way color from previous frame is trivially accepted to reduce ghost and smearing effect.
 
 |      Clamping and Clipping       |
 | :------------------------------: |
-| ![](/docs/img/TAA/clampclip.png) |
+| ![](/img/TAA/clampclip.png) |
 
 Blend and weigh history frames: Lerp between colors of past frame and this frame. Higher feedback factor will have a faster converge but will introduce artifacts.
 
