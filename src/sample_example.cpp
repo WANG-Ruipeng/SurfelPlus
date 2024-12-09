@@ -987,7 +987,10 @@ std::vector<vec2> SampleExample::hammersleySequence(int maxNumberPoints)
 	}
 
     std::random_device rd;
-    std::mt19937 g(rd());
+    // 4257880815, 734147533
+	auto seed = rd();
+    //std::cout << seed << std::endl;
+    std::mt19937 g(4257880815);
     std::shuffle(points.begin(), points.end(), g);
 
     /*std::vector<vec2> points{
