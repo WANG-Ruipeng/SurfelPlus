@@ -175,7 +175,7 @@ void main()
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
     vec3 noreflect = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
 
-    fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor) * ssao;
+    fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission * diffuseAlbedo + reflectionColor) * ssao;
 
     if(rtxState.debugging_mode != eNoDebug)
     {

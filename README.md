@@ -2,13 +2,14 @@
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project.**
 
-*A project by Zhen Ren, Ruipeng Wang and Jinxiang Wang*
+_A project by Zhen Ren, Ruipeng Wang and Jinxiang Wang_
 
 This project is developed base on Nvidia's [vk_raytrace renderer](https://github.com/nvpro-samples/vk_raytrace/tree/master).
 
 **IMPORTANT**: This readme file will only include the basic setup and usage for this project. For a complete development log and demo, please visit this site: [SurfelPlus Project Page](https://wang-ruipeng.github.io/SurfelPlus/)
 
 ## Demos
+
 ![DemoImage.png](docs/img/logo.png)
 
 https://github.com/user-attachments/assets/2aecac2c-b9ec-486c-b237-a38070e0a42e
@@ -29,33 +30,33 @@ cd ./build
 cmake-gui ..
 ```
 
-- The original vk_raytrace renderer will require cloning both the nvpro_core and the vk_raytrace renderer itself. In our project, we did this for you so you only have to clone this repository.
-- We recommend build this project based on Visual Studio 2022 as it is used by everyone in the team.
+-   The original vk_raytrace renderer will require cloning both the nvpro_core and the vk_raytrace renderer itself. In our project, we did this for you so you only have to clone this repository.
+-   We recommend build this project based on Visual Studio 2022 as it is used by everyone in the team.
 
 ## Usage
 
 **Controls**
 
-| Action | Description |
-| --- | --- |
-| `LMB` | Rotate around the target |
-| `RMB` | Dolly in/out |
-| `MMB` | Pan along view plane |
-| `LMB + Shift` | Dolly in/out |
-| `LMB + Ctrl` | Pan |
-| `LMB + Alt` | Look around |
-| `Mouse wheel` | Dolly in/out |
-| `Mouse wheel + Shift` | Zoom in/out (FOV) |
-| `Space` | Set interest point on the surface under the mouse cursor. |
-| `F10` | Toggle UI pane. |
+| Action                | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `LMB`                 | Rotate around the target                                  |
+| `RMB`                 | Dolly in/out                                              |
+| `MMB`                 | Pan along view plane                                      |
+| `LMB + Shift`         | Dolly in/out                                              |
+| `LMB + Ctrl`          | Pan                                                       |
+| `LMB + Alt`           | Look around                                               |
+| `Mouse wheel`         | Dolly in/out                                              |
+| `Mouse wheel + Shift` | Zoom in/out (FOV)                                         |
+| `Space`               | Set interest point on the surface under the mouse cursor. |
+| `F10`                 | Toggle UI pane.                                           |
 
 **Change glTF model**
 
-- Drag and drop glTF files (`.gltf` or `.glb`) into viewer
+-   Drag and drop glTF files (`.gltf` or `.glb`) into viewer
 
 **Change HDR lighting**
 
-- Drag and drop HDR files (`.hdr`) into viewer
+-   Drag and drop HDR files (`.hdr`) into viewer
 
 ## Loading Different Models
 
@@ -71,24 +72,24 @@ Enjoy! :)
 
 ## Surfel GI Render Passes Overview
 
-- Prepare Stage
-    - Gbuffer Pass
-- Surfel Calculation Stage
-    - Surfel Prepare Pass
-    - Surfel Update Pass
-    - Cell Info Update Pass
-    - Cell to Surfel Update Pass
-    - Surfel Ray Trace Pass
-    - Surfel Generation & Evaluation Pass
-- Reflection Calculation Stage
-    - Reflection Trace Pass
-    - Spatial Temporal Filtering Pass
-    - Bilateral Filtering Pass
-- Integrate Stage
-    - SSAO Pass
-    - Light Integrate Pass
-    - TAA Pass
-    - Tone Mapping Pass
+-   Prepare Stage
+    -   Gbuffer Pass
+-   Surfel Calculation Stage
+    -   Surfel Prepare Pass
+    -   Surfel Update Pass
+    -   Cell Info Update Pass
+    -   Cell to Surfel Update Pass
+    -   Surfel Ray Trace Pass
+    -   Surfel Generation & Evaluation Pass
+-   Reflection Calculation Stage
+    -   Reflection Trace Pass
+    -   Spatial Temporal Filtering Pass
+    -   Bilateral Filtering Pass
+-   Integrate Stage
+    -   SSAO Pass
+    -   Light Integrate Pass
+    -   TAA Pass
+    -   Tone Mapping Pass
 
 ### Gbuffer Pass
 
@@ -104,13 +105,13 @@ A pass that reset some counters and prepares all the buffer for later accumulati
 
 The Surfel Update Pass is responsible for maintaining and updating the dynamic surfel data in real time. It processes active surfels to:
 
-- Recycle expired or invalid surfels based on specific criteria, such as lifespan, distance from the camera, total surfel count, or visibility status.
+-   Recycle expired or invalid surfels based on specific criteria, such as lifespan, distance from the camera, total surfel count, or visibility status.
 
-- Adjust surfel radius dynamically based on camera distance and scene conditions to balance performance and visual quality. The cell radius is bounded by cell size to keep surfels right in their cells.
+-   Adjust surfel radius dynamically based on camera distance and scene conditions to balance performance and visual quality. The cell radius is bounded by cell size to keep surfels right in their cells.
 
-- Distribute surfels into appropriate grid cells for efficient spatial queries and interactions. Surfels would check the surrounding 3x3 cells so that surfels crossing multiple cells can be correctly recorded in each cell.
+-   Distribute surfels into appropriate grid cells for efficient spatial queries and interactions. Surfels would check the surrounding 3x3 cells so that surfels crossing multiple cells can be correctly recorded in each cell.
 
-- Allocate ray resources for surfel-based global illumination calculations, ensuring adequate sampling for indirect lighting. The ray allocation is influenced by surfel variance, surfel life and surfel visibility.
+-   Allocate ray resources for surfel-based global illumination calculations, ensuring adequate sampling for indirect lighting. The ray allocation is influenced by surfel variance, surfel life and surfel visibility.
 
 This pass ensures the surfel system remains efficient and responsive to scene changes, supporting real-time dynamic global illumination with consistent performance. However, surfel recycle may dispose some surfels in unseen area, causing the GI to re-converge when camera looks at them.
 
@@ -174,9 +175,7 @@ Adaptive Surfel Removal: Removes surfels in regions with excessive coverage to o
 
 This pass evaluates the indirect diffuse lighting using nearby surfels, while dynamically adapting the surfel distribution to maintain high-quality and uniform global illumination in real-time scenarios.
 
-
 ![](./docs/img/surfelization1.png)
-
 
 ### Reflection Trace Pass
 
@@ -186,9 +185,9 @@ RIS: Implements a weighted reservoir sampling approach to select the best reflec
 
 Reflection Computation: Traces reflection rays to gather radiance from the scene using both raw trace and surfel-based indirect lighting. The idea is similar to surfel ray trace. This approach accelerate reflection convergence surprisingly.
 
-| Without surfel indirect, max bounce = 6 | With surfel indirect, max bounce = 1|
-| :-: | :-: |
-| ![](./docs/img/reflectionWOsurfel.png) | ![](./docs/img/reflectionWsurfel.png) |
+| Without surfel indirect, max bounce = 6 | With surfel indirect, max bounce = 1  |
+| :-------------------------------------: | :-----------------------------------: |
+| ![](./docs/img/reflectionWOsurfel.png)  | ![](./docs/img/reflectionWsurfel.png) |
 
 From the above image, you can see the huge difference achieved by surfel indirect lighting even with only 1 bounce.
 
@@ -247,10 +246,13 @@ A ssao pass to add more realism to the scene. Use temporal accumulation to do de
 
 ### Light Integrate Pass
 
+This pass calculates **direct lighting** and integrats it with **indirect and reflection** information that gathered from previous passes.  
+Information needed (material, world position, etc.) for Direct lighting was obtained and uncompressed/reconstructed from G-Buffer, then ray-query features was used to compute shading accordingly.
 
+|               Direct Lighting                |               Indirect Lighting                |                Reflection                |
+| :------------------------------------------: | :--------------------------------------------: | :--------------------------------------: |
+| ![](./docs/img/lightPass/directlighting.png) | ![](./docs/img/lightPass/indirectLighting.png) | ![](./docs/img/lightPass/reflection.png) |
 
 ### TAA Pass
-
-
 
 ### Tone Mapping Pass
