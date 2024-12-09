@@ -154,7 +154,7 @@ void main()
 
     //vec3 indirectLight = texelFetch(indirectLightMap, ivec2(gl_FragCoord.xy) / 2, 0).rgb;
     vec3 indirectLight = texture(indirectLightMap, uv * 0.5).rgb;
-    float ssao = texture(ssaoMap, uv).r;
+    float ssao = clamp(texture(ssaoMap, uv).r, 0.0, 1.0);
     ssao = mix(1.0, ssao, smoothstep(0.0, 50.0, float(rtxState.frame)));
     //vec3 diffuseAlbedo = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
     vec3 diffuseAlbedo = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-camRay.direction, state.normal)), state.mat.roughness)
@@ -173,9 +173,15 @@ void main()
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
-    vec3 noreflect = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
+    vec3 noreflect = directLighting + diffuseAlbedo * indirectLight + state.mat.emission * state.mat.albedo;
 
-    fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission * diffuseAlbedo + reflectionColor) * ssao;
+//    vec2 uvScreen = vec2(gl_FragCoord.xy) / vec2(rtxState.size);
+//    if (-5.8 * (uvScreen.x - 0.5) + 0.5 > uvScreen.y)
+//        fragColor.xyz = (noreflect + reflectionColor) * ssao;
+//    else
+//        fragColor.xyz = indirectLight;
+
+    fragColor.xyz = (noreflect + reflectionColor) * ssao;
 
     if(rtxState.debugging_mode != eNoDebug)
     {

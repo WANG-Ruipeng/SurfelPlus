@@ -45,8 +45,8 @@ static void onErrorCallback(int error, const char *description)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static int const SAMPLE_WIDTH = 2562;
-static int const SAMPLE_HEIGHT = 1118;
+static int const SAMPLE_WIDTH = 1920;
+static int const SAMPLE_HEIGHT = 1080;
 
 //--------------------------------------------------------------------------------------------------
 // Application Entry
@@ -70,11 +70,7 @@ int main(int argc, char **argv)
    //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "afterrain/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "station/station.glb");
-  // std::string sceneFile = parser.getString("-f", "station/station_lowRough.glb");
-  // std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
-  // std::string sceneFile = parser.getString("-f", "modern_bedroom/scene.gltf");
-  // std::string sceneFile = parser.getString("-f", "postwar.glb");
-  // std::string sceneFile = parser.getString("-f", "railway_station.glb");
+  //std::string sceneFile = parser.getString("-f", "late_night_office.glb");
 
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
 
