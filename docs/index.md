@@ -33,12 +33,12 @@ In global illumination, surfels serve as intermediaries for light propagation an
     SurfelPlus leverages Vulkan's capabilities for direct lighting, while surfels handle the more performance-intensive indirect light calculations. This hybrid approach optimizes rendering performance without sacrificing visual quality.
 
 3.  **Global Illumination Pipeline**
-    - **Surfel Preparation**: Surfels are generated or updated based on the surfel coverage of the screen. Each surfel's properties (e.g., normal, color, and reflectance) are computed to match the underlying surface.
-    - **Surfel Visibility and Culling**: Surfels outside the camera's view frustum or occluded by other geometry are efficiently culled to reduce computational overhead.
-    - **Lighting Calculation**: Light bounces are simulated using surfel-to-surfel interactions, enabling indirect light accumulation in the scene.
+    -   **Surfel Preparation**: Surfels are generated or updated based on the surfel coverage of the screen. Each surfel's properties (e.g., normal, color, and reflectance) are computed to match the underlying surface.
+    -   **Surfel Visibility and Culling**: Surfels outside the camera's view frustum or occluded by other geometry are efficiently culled to reduce computational overhead.
+    -   **Lighting Calculation**: Light bounces are simulated using surfel-to-surfel interactions, enabling indirect light accumulation in the scene.
 4.  **Grid-based surfel acceleration structure**
     A grid-based surfel acceleration structure organizes surfels into spatial cells for fast neighbor queries and updates. This method enables efficient surfel-to-surfel interactions and scalable indirect lighting computations.
-        ![image.png](/img/Grid-Based.png)
+    ![image.png](/img/Grid-Based.png)
 
 ### Advantages of Surfel-Based GI
 
@@ -403,33 +403,33 @@ Position Reconstruction: Reconstruct world position using depth buffer and scree
 
 Previous Frame Reprojection: Using the view-projection matrix of last frame to calculate uv of world position of current pixel in last frame.
 
-|          Reprojection          |
-| :----------------------------: |
-| ![](/img/TAA/reprojection.png) |
+|            Reprojection             |
+| :---------------------------------: |
+| ![](/docs/img/TAA/reprojection.png) |
 
 Neighbor Color Vector AABB: Sample the 3x3 neighbor color and adjacent neighbor color (surrounding pixels in "+" pattern), calculate aabb of color vector
 
-|           AABB           |
-| :----------------------: |
-| ![](/img/TAA/33plus.png) |
+|             AABB              |
+| :---------------------------: |
+| ![](/docs/img/TAA/33plus.png) |
 
 Neighbor Color Clipping: clip the current color towards history color instead of just clamping it. In this way color from previous frame is trivially accepted to reduce ghost and smearing effect.
 
-|    Clamping and Clipping    |
-| :-------------------------: |
-| ![](/img/TAA/clampclip.png) |
+|      Clamping and Clipping       |
+| :------------------------------: |
+| ![](/docs/img/TAA/clampclip.png) |
 
 Blend and weigh history frames: Lerp between colors of past frame and this frame. Higher feedback factor will have a faster converge but will introduce artifacts.
 
-|          Blend          |
-| :---------------------: |
-| ![](/img/TAA/blend.png) |
+|            Blend             |
+| :--------------------------: |
+| ![](/docs/img/TAA/blend.png) |
 
 Sharpen: Filter the final image with Laplace operator
 
-|            No TAA             |           TAA (Unsharpened)            |            TAA (Sharpened)             |
-| :---------------------------: | :------------------------------------: | :------------------------------------: |
-| ![](./docs/img/TAA/NOTAA.png) | ![](./docs/img/TAA/TAAUnsharpened.png) | ![](./docs/img/TAA/TAAUnsharpened.png) |
+|            No TAA            |           TAA (Unsharpened)           |           TAA (Sharpened)           |
+| :--------------------------: | :-----------------------------------: | :---------------------------------: |
+| ![](/docs/img/TAA/NOTAA.png) | ![](/docs/img/TAA/TAAUnsharpened.png) | ![](/docs/img/TAA/TAASharpened.png) |
 
 ### Demo
 
