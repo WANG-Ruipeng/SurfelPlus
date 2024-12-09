@@ -58,6 +58,7 @@ In global illumination, surfels serve as intermediaries for light propagation an
     -   Cell Info Update Pass
     -   Cell to Surfel Update Pass
     -   Surfel Ray Trace Pass
+    -   Surfel Integrate Pass
     -   Surfel Generation & Evaluation Pass
 -   Reflection Calculation Stage
     -   Reflection Trace Pass
