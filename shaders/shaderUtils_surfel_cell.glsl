@@ -168,6 +168,7 @@ bool finalizePathWithSurfel(vec3 worldPos, vec3 worldNor, inout vec4 irradiance)
     for (uint i = 0; i < targetCnt; i++)
     {
         uint currIndex = targetCnt == cellInfo.surfelCount ? i : uint(rand(randSeed) * surfelCntF);
+        //uint currIndex = i;
 
         uint surfelIndex = cellToSurfel[cellOffset + currIndex];
         Surfel surfel = surfelBuffer[surfelIndex];

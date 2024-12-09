@@ -173,9 +173,9 @@ void main()
     Light randLight = selectRandomLight(114514);
     float dist = distance(randLight.position, worldPos);
     //fragColor.xyz = directLighting + diffuseAlbedo * 1 / (dist * dist) * randLight.color * randLight.intensity;
-    
+    vec3 noreflect = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
+
     fragColor.xyz = (directLighting + diffuseAlbedo * indirectLight + state.mat.emission + reflectionColor) * ssao;
-    //fragColor.xyz = (indirectLight);
 
     if(rtxState.debugging_mode != eNoDebug)
     {
@@ -214,7 +214,7 @@ void main()
             fragColor.xyz = vec3(ssao);
         }
         else if (rtxState.debugging_mode == esNoReflection){
-            fragColor.xyz = directLighting + diffuseAlbedo * indirectLight + state.mat.emission;
+            fragColor.xyz = noreflect;
             fragColor.a = 1.0;
         }
         else{

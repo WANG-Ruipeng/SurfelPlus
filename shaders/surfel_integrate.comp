@@ -108,14 +108,20 @@ void main()
 		float depth = clamp(rayResult.t, 0, surfel.radius) / surfel.radius;
 
 		vec3 norL = decompress_unit_vec(rayResult.dir_o);
-        totalRadiance += rayResult.radiance * norL.z / max(1e-12f, rayResult.pdf);
+        vec3 inRadiance = rayResult.radiance * norL.z / max(1e-12f, rayResult.pdf);
+        float lum = dot(inRadiance, vec3(0.212671f, 0.715160f, 0.072169f));
+        if(lum > rtxState.fireflyClampThreshold)
+        {
+            inRadiance *= rtxState.fireflyClampThreshold / lum;
+        }
+        totalRadiance += inRadiance;
 
         packCounter++;
         if (packCounter == samplePack || i == surfel.rayCount - 1)
         {
 			totalRadiance /= packCounter;
 			packCounter = 0;
-            MSME(totalRadiance, surfel.msmeData, 0.02);
+            MSME(totalRadiance, surfel.msmeData, 0.01);
             totalRadiance = vec3(0.0);
 		}
 
@@ -200,12 +206,12 @@ void main()
         float cellSurfelCntF = float(cellSurfelCount);
         uint passCount = 0;
 
-        for (uint i = 0; i < targetShareCount; i++)
+        for (uint i = 0; i < cellSurfelCount; i++)
 	    {
-            uint currIndex = targetShareCount == cellInfo.surfelCount ? i : uint(rand(randSeed) * cellSurfelCntF);
-            // if (passCount >= 16)
-			// 	break;
-            // uint currIndex = i;
+            //uint currIndex = targetShareCount == cellInfo.surfelCount ? i : uint(rand(randSeed) * cellSurfelCntF);
+            if (passCount >= 16)
+			 	break;
+            uint currIndex = i;
 		    uint surfelIndex = cellToSurfel[cellOffset + currIndex];
 		    Surfel neiSurfel = surfelBuffer[surfelIndex];
             vec3 neiNor = decompress_unit_vec(neiSurfel.normal);
@@ -218,7 +224,7 @@ void main()
 				continue;
 
             //float cellRadius = 1.0 * cellSize * sqrt(3.0);
-            float surfelRad = surfel.radius + neiSurfel.radius;
+            float surfelRad = 2.0 * surfel.radius;
 
 		    if (dist < surfelRad)
             {
@@ -247,9 +253,9 @@ void main()
 	    }
         
 
-        if (sharedRadiance.w > 0.01)
+        if (sharedRadiance.w > 0.1)
         {
-            //sharedRadiance += vec4(totalRadiance, 1.f);
+            //sharedRadiance += vec4(surfel.msmeData.mean, 1.f);
             sharedRadiance.xyz /= sharedRadiance.w;
             MSME(sharedRadiance.xyz, surfel.msmeData, 0.04);
 //            vec3 mean = mix(
