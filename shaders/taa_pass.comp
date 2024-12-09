@@ -90,13 +90,12 @@ void main()
 				maxCross = max(maxCross, neighborColor.rgb);
 				minCross = min(minCross, neighborColor.rgb);
 			}
-
-			float neighborDepth = texelFetch(gbufferDepth, imageCoords + ivec2(i, j), 0).r;
-			if (neighborDepth < depth)
-			{
-//				depth = neighborDepth;
-				closestCoords = neighborCoords;
-			}
+//			float neighborDepth = texelFetch(gbufferDepth, imageCoords + ivec2(i, j), 0).r;
+//			if (neighborDepth < depth)
+//			{
+////				depth = neighborDepth;
+//				closestCoords = neighborCoords;
+//			}
 		}
 	}
 

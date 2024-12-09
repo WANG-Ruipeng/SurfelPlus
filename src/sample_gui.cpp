@@ -125,6 +125,7 @@ bool SampleGUI::guiCamera()
 //
 bool SampleGUI::guiRayTracing()
 {
+
   auto  Normal = ImGuiH::Control::Flags::Normal;
   bool  changed{false};
   auto& rtxState(_se->m_rtxState);
@@ -139,9 +140,10 @@ bool SampleGUI::guiRayTracing()
                           &_se->m_descalingLevel, nullptr, Normal, 1, 8);
 
   changed |= GuiH::Selection("Pbr Mode", "PBR material model", &rtxState.pbrMode, nullptr, Normal, {"Disney", "Gltf"});
+
   // add slider to change scene camera parameter
   changed |= GuiH::Slider("Jitter Scale", "", & _se->m_scene.getCamera().jitter.z, nullptr, Normal, 0.0f, 2.0f);
-
+  changed |= GuiH::Slider("Sharpness", "", &_se->m_scene.getCamera().jitter.w, nullptr, Normal, 0.1f, 3.0f);
   static bool bAnyHit = true;
   if(_se->m_rndMethod == SampleExample::RndMethod::eRtxPipeline)
   {

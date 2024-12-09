@@ -68,7 +68,7 @@ int main(int argc, char **argv)
   //std::string sceneFile = parser.getString("-f", "apocal/apocal.gltf");
    //std::string sceneFile = parser.getString("-f", "Street/scene.gltf");
   //std::string sceneFile = parser.getString("-f", "modern_bedroom/scene.gltf");
-  //std::string sceneFile = parser.getString("-f", "station.glb");
+  //std::string sceneFile = parser.getString("-f", "station/station.glb");
 
 
   std::string hdrFilename = parser.getString("-e", "std_env.hdr");
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
       .detach();
 
   // create a sequence of random numbers
-  sample.initHammerleySequence(6);
+  sample.initHammerleySequence(8);
 
 
   // Profiler measure the execution time on the GPU

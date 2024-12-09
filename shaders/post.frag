@@ -40,7 +40,7 @@ layout(set = 0, binding = 0) uniform sampler2D inImage;
 
 layout(set = 1, binding = 2) uniform sampler2D TAASampler1;
 layout(set = 1, binding = 3) uniform sampler2D TAASampler2;
-
+layout(set = 1, binding = 5) uniform sampler2D postTAASampler;
 
 
 
@@ -49,8 +49,12 @@ layout(push_constant) uniform _Tonemapper
   Tonemapper tm;
 };
 
-#define sample_TAAColor(uv) (tm.frame % 2 == 0 ? texture(TAASampler2, uv).rgba : texture(TAASampler1, uv).rgba)
-#define sample_TAAColor_lod(uv, lod) (tm.frame % 2 == 0 ? texture(TAASampler2, uv, lod).rgba : texture(TAASampler1, uv, lod).rgba)
+//#define sample_TAAColor(uv) (tm.frame % 2 == 0 ? texture(TAASampler2, uv).rgba : texture(TAASampler1, uv).rgba)
+//#define sample_TAAColor_lod(uv, lod) (tm.frame % 2 == 0 ? texture(TAASampler2, uv, lod).rgba : texture(TAASampler1, uv, lod).rgba)
+
+#define sample_TAAColor(uv) (texture(postTAASampler, uv).rgba)
+#define sample_TAAColor_lod(uv, lod) (texture(postTAASampler, uv, lod).rgba)
+
 
 // http://www.thetenthplanet.de/archives/5367
 // Apply dithering to hide banding artifacts.

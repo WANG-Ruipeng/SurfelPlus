@@ -46,6 +46,8 @@ void Scene::setup(const VkDevice &device, const VkPhysicalDevice &physicalDevice
   m_pAlloc = allocator;
   m_queue = queue;
   m_debug.setup(device);
+  m_camera.jitter.z = 0.0f;
+  m_camera.jitter.w = 0.787f;
 }
 
 //--------------------------------------------------------------------------------------------------

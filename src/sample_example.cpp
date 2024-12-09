@@ -87,6 +87,7 @@ void SampleExample::setup(const VkInstance&               instance,
   m_temporalSpatialPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_bilateralCleanupPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_taaPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
+  m_taaSharpenPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
   m_lightPass.setup(m_device, physicalDevice, queues[eGCT0].familyIndex, &m_alloc);
 
   // Create and setup all renderers
@@ -397,6 +398,11 @@ void SampleExample::createReflectionPass()
         m_scene.getDescLayout(),
 		m_offscreen.getSamplerDescSetLayout(),
 		m_offscreen.getDescLayout()
+        }, &m_scene);
+
+    m_taaSharpenPass.create(m_size, {
+        m_scene.getDescLayout(),
+        m_offscreen.getSamplerDescSetLayout(),
         }, &m_scene);
 
 	//m_offscreen.createPostTAADescriptorSet(m_taaPass.getImages());
@@ -1041,9 +1047,21 @@ void SampleExample::runTAA(const VkCommandBuffer& cmdBuf, nvvk::ProfilerVK& prof
         imageMemoryBarriers.push_back(imageMemoryBarrier);
     }
 
+    vkCmdPipelineBarrier(cmdBuf,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        0, 0, nullptr, 0, nullptr,
+        static_cast<uint32_t>(imageMemoryBarriers.size()),
+        imageMemoryBarriers.data());
+
+    m_taaSharpenPass.setPushContants(m_rtxState);
+    m_taaSharpenPass.run(cmdBuf, render_size, profiler, {
+        m_scene.getDescSet(),
+        m_offscreen.getSamplerDescSet(),
+        });
+
+
     vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, imageMemoryBarriers.size(), imageMemoryBarriers.data());
-    m_rtxState.size = { render_size.width, render_size.height };
-    m_taaPass.setPushContants(m_rtxState);
 
     
 }
