@@ -6,6 +6,7 @@
 # Introduction
 
 **SurfelPlus** is a real-time dynamic global illumination renderer built on top of NVIDIA's vk_raytrace framework. Using **Vulkan ray tracing** and **surfel-based** techniques, SurfelPlus aims to deliver high-quality lighting effects with dynamic scene updates, providing an efficient solution for realistic and immersive visual rendering in real time.
+[Click here for the project pitch PDF.](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/ProjectPitch.pdf)
 
 # Technical Overview
 
@@ -246,7 +247,7 @@ Information needed (material, world position, etc.) for Direct lighting was obta
 
 ## Milestone 1
 
-[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone1.pdf)
+[Click here for the original PDF.](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/SurfelPlusMilestone1.pdf)
 
 For our first milestone, we made significant progress in setting up the foundation of our renderer:
 
@@ -292,7 +293,7 @@ These improvements aim to advance the overall efficiency and realism of our rend
 
 ## Milestone 2
 
-[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone2.pdf)
+[Click here for the original PDF.](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/SurfelPlusMilestone2.pdf)
 
 For Milestone 2, we achieved significant advancements in our surfel-based GI system:
 
@@ -334,7 +335,7 @@ Looking ahead to Milestone 3 and the final stage of the project, our goals inclu
 
 ## Milestone 3
 
-[Click here for the original PDF.](https://medias.wangruipeng.com/SurfelPlusMilestone3.pdf)
+[Click here for the original PDF.](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/SurfelPlusMilestone3.pdf)
 
 For Milestone 3, we addressed key issues identified in Milestone 2 and implemented significant improvements:
 
@@ -405,3 +406,13 @@ These enhancements collectively elevate the visual quality and performance of **
 | With Glossy Indirect Lighting | Without Glossy Indirect Lighting |
 |-----------------|----------------|
 | ![image.png](/img/FDiffuse.png) | ![image.png](/img/FNoDiffuse.png) |
+
+# References
+
+[GIBS: SIGGRAPH 2021 talk](https://www.ea.com/seed/news/siggraph21-global-illumination-surfels)
+[GIBS: SIGGRAPH 2024 talk](https://advances.realtimerendering.com/s2024/content/EA-GIBS2/Apers_Advances-s2024_Shipping-Dynamic-GI.pdf).
+[Stochastic All the Thing](https://media.contentapi.ea.com/content/dam/ea/seed/presentations/dd18-seed-raytracing-in-hybrid-real-time-rendering.pdf)
+[Unreal Engine 5.5](https://github.com/EpicGames/UnrealEngine/tree/5.5)
+[SurfelGI-W298](https://github.com/W298/SurfelGI)
+[Stochasitc Screen-Space Reflections](https://www.ea.com/frostbite/news/stochastic-screen-space-reflections)
+[Ground Truth Ambient Occlusion](https://old.reddit.com/r/opengl/comments/96api8/has_anyone_successfully_implemented_groundtruth_ao/e40d2ie/)
