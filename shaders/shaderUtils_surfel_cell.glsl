@@ -343,7 +343,7 @@ vec3 surfelPathTrace(Ray r, int maxDepth, uint surfelIndex, inout float firstDep
         // Color at vertices
         state.mat.albedo *= sstate.color;
 
-        diffuseRatio = state.mat.albedo * (M_1_OVER_PI * (1.0 - state.mat.metallic));
+        diffuseRatio = state.mat.albedo * (1.0 - state.mat.metallic);
 
         //diffuseRatio = state.mat.albedo * (1.0 - F_SchlickRoughness(state.mat.f0, max(0.0, dot(-r.direction, state.normal)), state.mat.roughness)
         //    * (1.0 - state.mat.metallic));

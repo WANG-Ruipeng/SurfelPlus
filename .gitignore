@@ -6,3 +6,5 @@
 Gemfile
 /_site
 Gemfile.lock
+
+!/downloaded_resources/late_night_office.glb
