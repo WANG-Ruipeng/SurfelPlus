@@ -3,6 +3,8 @@
 ![DemoImage.png](/img/DemoImage.png)
 ![DemoImage.png](/img/logo.png)
 
+Update: We are happy to announce that this project is accpeted into SIGGRAPH 25 Poster track! The original paper could be found here: [SurfelPlus: A Surfel-Based Global Illumination Solution Optimized for Low-End Graphics Hardware] (https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/Poster.pdf)
+
 # Introduction
 
 **SurfelPlus** is a real-time dynamic global illumination renderer built on top of NVIDIA's vk_raytrace framework. Using **Vulkan ray tracing** and **surfel-based** techniques, SurfelPlus aims to deliver high-quality lighting effects with dynamic scene updates, providing an efficient solution for realistic and immersive visual rendering in real time.
