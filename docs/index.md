@@ -3,7 +3,7 @@
 ![DemoImage.png](/img/DemoImage.png)
 ![DemoImage.png](/img/logo.png)
 
-Update: We are happy to announce that this project is accpeted into SIGGRAPH 25 Poster track! The original paper could be found here: [SurfelPlus: A Surfel-Based Global Illumination Solution Optimized for Low-End Graphics Hardware] (https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/Poster.pdf)
+Update: We are happy to announce that this project is accpeted into SIGGRAPH 25 Poster track! The original paper could be found here: ![SurfelPlus: A Surfel-Based Global Illumination Solution Optimized for Low-End Graphics Hardware] (https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/Poster.pdf)
 
 # Introduction
 
