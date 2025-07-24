@@ -4,7 +4,7 @@
 
 _A project by Zhen Ren, Ruipeng Wang and Jinxiang Wang_
 
-This project is accpeted into SIGGRAPH 25 Poster track, the original paper could be found here: [SurfelPlus: A Surfel-Based Global Illumination Solution Optimized for Low-End Graphics Hardware](https://github.com/WANG-Ruipeng/SurfelPlus/blob/master/docs/files/Poster.pdf)
+This project is accpeted into SIGGRAPH 25 Poster track, the original paper could be found here: [SurfelPlus: A Surfel-Based Global Illumination Solution Optimized for Low-End Graphics Hardware](https://dl.acm.org/doi/10.1145/3721250.3742969)
 
 **IMPORTANT**: This readme file will only include the basic setup and usage for this project. For a complete development log and demo, please visit this site: [SurfelPlus Project Page](https://wang-ruipeng.github.io/SurfelPlus/)
 
